@@ -1,0 +1,128 @@
+resolver = TaxonNamesResolver(taxnames_file, datasource, indir =\
+		input_dirs[1], outdir = output_dir, taxon_id = taxon_id)
+res = resolver._res.search(resolver.terms)
+resolver._store.add(res)
+# Check for no records
+no_records = resolver._count(nrecords = 1)
+if len(no_records) > 0:
+	print 'Secondary searches ...'
+	res = resolver._res.search(no_records, prelim = False)
+	if res:
+		resolver._store.add(res)
+	no_records = resolver._count(nrecords = 1)
+
+multi_records = resolver._count(greater = True, nrecords = 1)
+
+print 'Choosing best records to return ...'
+res = sieve(resolver, multi_records, resolver.taxon_id)
+resolver._store.replace(res)
+# Parse and write-out
+resolver._parseResults()
+resolver._writeResults()
+
+def sieve(resolver, multiple_records, tax_group = False):
+	GnrStore = resolver._store
+	def writeAsJson(term, results):
+		record = {'supplied_name_string': term}
+		if len(results) > 0:
+			record['results'] = results
+		return record
+	def boolResults(results, bool_li, rand = False):
+		if rand:
+			results = [results[0]] # choose first record (most likely best?)
+		elif sum(bool_li) == 1:
+			results = [results[bool_li.index(1)]]
+		elif sum(bool_li) == 0:
+			return [] # return 'no_record'
+		else:
+			results = [result for i, result in enumerate(results) if bool_li[i]]
+		return results
+	sieved = []
+	ranks = ['species', 'subgenus', 'genus', 'family', 'order', 'superorder', 'class',\
+	'superclass', 'subphylum', 'phylum', 'kingdom', 'superkingdom']
+	for term in multiple_records:
+		print term
+		results = GnrStore[term]
+		while len(results) > 1:
+			# in correct taxonomic group?
+			if tax_group:
+				key_str = 'classification_path_ids'
+				bool_tg = [0] * len(results)
+				for i,result in enumerate(results):
+					class_ids = result[key_str].split('|')
+					class_ids = [int(tid) for tid in class_ids]
+					if tax_group in class_ids:
+						bool_tg[i] = 1
+			else:
+				bool_tg = [1 for e in range(len(results))]
+			results = boolResults(results, bool_tg)
+			print "here"
+			print len(results)
+			# what score?
+			scores = [result['score'] for result in results]
+			bool_score = [1 if score == max(scores) else 0 for score in scores]
+			results = boolResults(results, bool_score)
+			print "here"
+			# what rank?
+			res_ranks = [result['classification_path_ranks'].split('|')[-1] for result in results]
+			for j, rank in enumerate(ranks):
+				bool_rank = [1 if res_rank == rank else 0 for res_rank in res_ranks]
+				if sum(bool_rank) > 0:
+					break
+			results = boolResults(results, bool_rank)
+			results = boolResults(results, bool_rank, rand = True)
+		record = writeAsJson(term, results)
+		sieved.append(record)
+	return sieved
+	
+
+
+
+GnrStore = resolver._store
+def writeAsJson(term, results):
+	record = {'supplied_name_string': term}
+	if len(results) > 0:
+		record['results'] = results
+	return record
+def boolResults(results, bool_li, rand = False):
+	if rand:
+		results = [results[0]] # choose first record (most likely best?)
+	elif sum(bool_li) == 1:
+		results = [results[bool_li.index(1)]]
+	elif sum(bool_li) == 0:
+		return [] # return 'no_record'
+	else:
+		results = [result for i, result in enumerate(results) if bool_li[i]]
+	return results
+sieved = []
+ranks = ['species', 'subgenus', 'genus', 'family', 'order', 'superorder', 'class',\
+'superclass', 'subphylum', 'phylum', 'kingdom', 'superkingdom']
+for term in multiple_records:
+	print term
+	results = GnrStore[term]
+	while len(results) > 1:
+		# in correct taxonomic group?
+if tax_group:
+key_str = 'classification_path_ids'
+bool_tg = [0] * len(results)
+for i,result in enumerate(results):
+	class_ids = result[key_str].split('|')
+	class_ids = [int(tid) for tid in class_ids]
+	if tax_group in class_ids:
+		bool_tg[i] = 1
+	results = boolResults(results, bool_tg)
+		# what score?
+		scores = [result['score'] for result in results]
+		bool_score = [1 if score == max(scores) else 0 for score in scores]
+		results = boolResults(results, bool_score)
+		# what rank?
+		res_ranks = [result['classification_path_ranks'].split('|')[-1] for result in results]
+		for j, rank in enumerate(ranks):
+			bool_rank = [1 if res_rank == rank else 0 for res_rank in res_ranks]
+			if sum(bool_rank) > 0:
+				break
+		results = boolResults(results, bool_rank)
+		results = boolResults(results, bool_rank, rand = True)
+	record = writeAsJson(term, results)
+	sieved.append(record)
+return sieved
