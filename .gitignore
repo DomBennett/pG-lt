@@ -43,3 +43,8 @@ nosetests.xml
 
 # emacs temp files
 *~
+
+# Rstudio files
+.Rproj.user
+*.Rhistory
+*.Rproj
