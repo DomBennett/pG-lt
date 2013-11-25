@@ -7,6 +7,10 @@
 # 2. findLineage() can handle taxon IDs and returns a lineage of taxon ids if used.
 # 3. Adapated findRelativeSequences() to work with taxon ids
 # TODO: must adapt cladeSpecies() as above
+# (post-masters)
+# I changed the raxml function:
+# 1. in the stage file setting method to 'raxmlHPC' -- because this is the standard variant of raxml now
+# 2. since i removed the requires folder, I set the .run function's changeDir argument of the termination pipe default to false.
 
 # Import
 from Bio import Entrez #Taxonomy lookup
@@ -259,7 +263,7 @@ def sequenceDownload(spName, geneName, thorough=False, rettype='gb', noSeqs=1, s
 		if isinstance(spName, int):
 			searchTerm = "txid" + str(spName) + "[Primary Organism]"
 		else:
-			searchTerm = spName + "[Primary Organism]"		
+			searchTerm = spName + "[Primary Organism]" # Primary to avoid viruses for example
 		if gene: searchTerm = "(" + searchTerm + ") AND " + gene + "[Gene]"
 		if titleText: searchTerm = "(" + searchTerm + ") AND " + titleText + " [Title]"
 		if not includePartial: searchTerm = "(" + searchTerm + ") NOT " + "partial [Title]"
@@ -897,7 +901,7 @@ def RAxML(alignment, method='localVersion', tempStem='temp', outgroup=None, time
 	if not runNow:
 		return commandLine
 	pipe = TerminationPipe(commandLine, timeout)
-	pipe.run()
+	pipe.run(changeDir = False)
 	if not pipe.failure:
 		if 'startingOnly' in method:
 			tree = Phylo.read('RAxML_parsimonyTree.' + outputFile, "newick")
@@ -1825,7 +1829,7 @@ class TerminationPipe(object):
 		self.stdout = 'EMPTY'
 		self.silent = silent
 	
-	def run(self, silent=None, changeDir=True):
+	def run(self, silent=None, changeDir=False):
 		def silentTarget():
 			if sys.platform == 'win32':
 				if changeDir:

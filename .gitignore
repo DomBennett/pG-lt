@@ -33,3 +33,13 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Stage folders
+1_taxids
+2_download
+3_alignments
+4_phylogenies
+5_screen
+
+# emacs temp files
+*~

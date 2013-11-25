@@ -3,8 +3,11 @@
 ## Dominic John Bennett
 ## 31/08/2013
 
+import sys, os
 import numpy as np
 import random
+sys.path.append(os.path.join(os.getcwd(), 'functions'))
+import phyloGenerator_adapted as pG
 
 def parseSeqsObj(seqs_obj, gene_overlap, genes, min_nspp):
 	"""Take seqs_obj and remove sequences outside of median +- overlap. Drop species and genes with too little data or no outgroup"""
@@ -45,8 +48,8 @@ def parseSeqsObj(seqs_obj, gene_overlap, genes, min_nspp):
 						format(genes[j], ntaxa_gene)
 	return (parsed_seqs_obj, new_genes, nseqs, medians, ntaxa)
 	
-def alignSeqsObj(gene_obj, align_len_max, nfails, median, prop):
-	"""Take a gene_obj and generate 100 alignments. Return empty list if alignment fails nfails times in a row."""
+def alignSeqsObj(gene_obj, align_len_max, nfails, median, nseqs, prop):
+	"""Take a gene_obj and generate alignments. Return empty list if alignment fails nfails times in a row."""
 	# separate outgroup seqs from rest!
 	out_obj = [e for e in gene_obj if e[0].id == "outgroup"]
 	gene_obj = [e for e in gene_obj if e[0].id != "outgroup"]
@@ -75,9 +78,9 @@ def alignSeqsObj(gene_obj, align_len_max, nfails, median, prop):
 			alen = align[0][0].get_alignment_length()
 			if alen > alen_max:
 				count_fails += 1
-				continue
-			aligns.append(align[0][0])
-			count_fails = 0
+			else:
+				aligns.append(align[0][0])
+				count_fails = 0
 		else:
 			return ([], nruns)
 	return (aligns, nruns)

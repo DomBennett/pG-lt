@@ -4,6 +4,10 @@
 ## In: 3_alignments | Out: 4_phylogenies
 ## 14/08/2013
 
+## Parameters
+max_ngenes = 3 # the maximum number genes to be used in phylogeny estimation
+min_ngenes = 2 # the minimum ...
+
 ## Print stage
 print "\n\nThis is stage 4: phylogenies\n"
 
@@ -21,37 +25,62 @@ if not os.path.isdir(output_dir):
 
 
 ## Loop through studies
-a_files = os.listdir(input_dir)
-a_files = [e for e in a_files if not re.search("^log\.txt$", e)]
+studies = sorted(os.listdir(input_dir))
+studies = [st for st in studies if not re.search("^log\.txt$", st)]
 counter = 0
-studies = list(set([re.sub("_gene_.*_[0-9]*\.faa$", "", e) for e in a_files]))
 print 'Looping through studies ...'
 nphylos_all = 0
 for i in range(len(studies)):
 
 	## what study?
 	print '\n\nWorking on: [{0}]'.format(studies[i])
-	
+	study_dir = os.path.join(os.getcwd(), input_dir, studies[i])
+	genes = sorted(os.listdir(study_dir))
+
 	## reading in alignments
 	print "Reading in alignments ..."
-	pattern = "^" + studies[i]
-	study_files = [e for e in a_files if re.search(pattern, e)]
-	aligns = []
-	for study_file in study_files:
-		gene = re.split("_gene_|_[0-9]*\.faa", study_file)[-2]
-		align = pG.AlignIO.read(os.path.join(input_dir, study_file), "fasta")
-		aligns.append((align, gene)) # a list of tuples of the phylogeny AND the gene that made it
-	naligns = len(aligns)
-	print "Done. Read in [{0}] alignments".format(naligns)
+	align_obj = {}
+	for gene in genes:
+		align_obj[gene] = []
+		gene_dir = os.path.join(study_dir, gene)
+		a_files = os.listdir(gene_dir)
+		for a_file in a_files:
+			a_file_path = os.path.join(gene_dir, a_file)
+			align = pG.AlignIO.read(a_file_path, "fasta")
+			align_obj[gene].append(align)
+	naligns = [len(align_obj[e]) for e in align_obj.keys()]
+	print "Done. Read in [{0}] alignments for [{1}]".format(naligns,align_obj.keys())
+	
+	## working out combinations
+	#try:
+	#	niterations = int(np.prod(naligns)) # N.B. this is not the true number of combinations (depends on min and max genes)
+	#except OverflowError:
+	#	niterations = 100
+	#if niterations > 100: # limit to 100
+	#	niterations = 100
+	niterations = 10
 	
 	## run phylogenies
-	print "Generating [{0}] phylogenies ...".format(naligns)
+	print "Generating [{0}] phylogenies ...".format(niterations)
+	# reset min and max ngenes if too many or too few
+	temp_max_ngenes = max_ngenes
+	temp_min_ngenes = min_ngenes
+	if len(align_obj) < max_ngenes:
+		temp_max_ngenes = len(align_obj)
+
+	if len(align_obj) < min_ngenes:
+		temp_min_ngenes = len(align_obj)
+
+	ngenes_range = range(temp_min_ngenes, temp_max_ngenes+1)
 	nphylos = 0
-	for j in range(naligns):
-		align_obj = aligns[j][0]
-		gene = aligns[j][1]
+	for j in range(niterations):
+		ngenes = random.sample(ngenes_range, 1)[0]
+		genes = random.sample(align_obj.keys(), ngenes)
+		alignment = [random.sample(align_obj[e], 1)[0] for e in genes]
 		try:
-			phylo = pG.RAxML(align_obj)
+			phylo = pG.RAxML(alignment, method = "raxmlHPC")
+			#pG.Phylo.draw_ascii(phylo) # what does it look like?
+			# TODO: phylo.depths()
 		except:
 			print '... Unexpected error: RAxML ...'
 			raxml_files = os.listdir(os.getcwd())
@@ -59,14 +88,10 @@ for i in range(len(studies)):
 				re.search("(^RAxML.*$|^.*\.phylip$|^.*\.fasta$)", f)]
 			for f in raxml_files:
 				os.remove(f)
-			continue	
-		raxml_files = os.listdir(os.getcwd())
-		raxml_files = [f for f in raxml_files if \
-			re.search("(^RAxML.*$|^.*\.phylip$|^.*\.fasta$)", f)]
-		for f in raxml_files:
-			os.remove(f)
+			continue
+		gene_str = "|".join(genes)
 		pG.Phylo.write(phylo, os.path.join(output_dir, studies[i] + "_gene_" +\
-			gene + "_" + str(j) + '.tre'), 'newick')
+			gene_str + "_" + str(j) + '.tre'), 'newick')
 		nphylos += 1
 	print 'Done. [{0}] phylogenies for [{1}].'.format(nphylos, studies[i])
 	counter += 1

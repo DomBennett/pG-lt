@@ -14,7 +14,7 @@ from taxon_names_resolver import TaxonNamesResolver
 from gen_tax_tree import genTaxTree
 
 ## Dirs
-input_dirs = os.path.join(os.getcwd(), '0_names')
+input_dir = os.path.join(os.getcwd(), '0_names')
 output_dir = os.path.join(os.getcwd(), '1_taxids')
 if not os.path.isdir(output_dir):
     os.mkdir(output_dir)
@@ -22,7 +22,7 @@ if not os.path.isdir(output_dir):
 ## Reading in taxadata
 print "Reading in taxadata.csv ..."
 taxadict = {}
-with open(os.path.join(input_dir, 'taxadata.csv'), 'rb') as csvfile:
+with open(os.path.join(input_dir,'taxadata.csv'), 'rb') as csvfile:
 	taxreader = csv.DictReader(csvfile)
 	for row in taxreader:
 		taxadict[row['study']] = [row['parentID'], row['sisterID']]

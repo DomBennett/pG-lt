@@ -1,13 +1,13 @@
 ## MRes Project 2013
 ## Stage 5: Screen phylogenies
-## In: 2_taxids, 5_phylogenies | Out: 6_screen
+## In: 2_taxids, 5_phylogenies | Out: 5_screen
 ## 28/08/2013
 
 ## Print stage
 cat("\n\nThis is stage 5: screen\n")
 
 ## Parameters
-min.rtt.multiplier <- 10 # how much larger then max rtt dist is to the median
+min.rtt.multiplier <- 100 # how much larger than max rtt dist is to the median
 pblack <- 0.9 # the proportion of trees dropped due to long branches across a study that
               # cause the responsible ids and genes to be black listed when the process is
               # re-run.
@@ -17,7 +17,7 @@ require("ape")
 
 ## Dirs
 input.dirs <- c("1_taxids", "4_phylogenies")
-output.dirs <- c("5_screen", "results")
+output.dir <- "5_screen"
 if(!file.exists(output.dir))
 {
   dir.create(output.dir)
@@ -66,7 +66,7 @@ for (i in 1:length(taxa.names.obj)) {
   }
 }
 name.modifiers <- list(unresolved.names, resolved.names)
-save(name.modifiers, file = file.path(output.dirs[2], "name_modifiers.RData"))
+save(name.modifiers, file = file.path(output.dir, "name_modifiers.RData"))
 cat('\nDone.')
 
 ## Screen the phylogenies
