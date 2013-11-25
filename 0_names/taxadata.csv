@@ -1,0 +1,6 @@
+study,parentID,parent,sisterID,sister,genes,Notes
+bee,34735,Apoidea,34725,Vespoidea,COI|cytb|COII|28S,
+plant,3193,Embryophyta,3208,Bryophyta,rcbl|matk,
+bird,8782,Aves,1294634,Crocodylia,COI|cytb|COII|28S,
+reptile,8457,Sauropsida,40674,Mammalia,COI|cytb|COII|28S,
+mammal,40674,Mammalia,8782,Aves,COI|cytb|COII|28S,
