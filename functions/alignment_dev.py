@@ -26,7 +26,7 @@ class SeqObj(dict):
 			lengths = []
 			with open(seqdir, "rU") as infile:
 				for record in pG.SeqIO.parse(infile, "fasta"):
-					if record.seq.count('N') == 0 and record.seq.count('n') == 0:
+					if record.seq.count('N') == 0 and record.seq.count('n') == 0: # removing sequences w/ Ns TODO: move this to download
 						if 200 < len(record) < 1000:
 							record.id = name
 							lengths.append(len(record))

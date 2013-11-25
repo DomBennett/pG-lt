@@ -1,0 +1,20 @@
+## 25/11/2013
+## D.J. Bennett
+## README on the sources of the phylogenies used
+## I took a random subsample from each of these mega-phylogenies
+
+## Reptiles (I really mean Squamata ...)
+Pyron, R. A., Burbrink, F. T., & Wiens, J. J. (2013). A phylogeny and revised classification of Squamata, including 4161 species of lizards and snakes. BMC evolutionary biology, 13(1), 93. doi:10.1186/1471-2148-13-93
+
+## Birds (taken random subset using Global Tree website [http://birdtree.org/])
+# (Website returns a distribution of trees I converted the reutnred distribution of 1000 trees into a consensus tree with 0.5 clade support using sumtrees.py)
+Jetz, W., Thomas, G. H., Joy, J. B., Hartmann, K., & Mooers, A. O. (2012). The global diversity of birds in space and time. Nature, 491(7424), 444–8. doi:10.1038/nature11631
+
+## Plants
+Durka, W., & Michalski, S. G. (2012). Daphne: a dated phylogeny of a large European flora for phylogenetically informed ecological analyses. Ecology, 93(10), 2297–2297. doi:10.1890/12-0743.1
+
+## Mammals (Nature supplement, first tree)
+Bininda-Emonds, O. R. P., Cardillo, M., Jones, K. E., MacPhee, R. D. E., Beck, R. M. D., Grenyer, R., … Purvis, A. (2007). The delayed rise of present-day mammals. Nature, 446(7135), 507–12. doi:10.1038/nature05634
+
+## Bees
+Danforth, B. N., Cardinal, S., Praz, C., Almeida, E. A. B., & Michez, D. (2013). The impact of molecular data on our understanding of bee phylogeny and evolution. Annual review of entomology, 58, 57–78. doi:10.1146/annurev-ento-120811-153633
