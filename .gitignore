@@ -40,6 +40,7 @@ nosetests.xml
 3_alignments
 4_phylogenies
 5_screen
+x_compare
 
 # emacs temp files
 *~
@@ -48,3 +49,4 @@ nosetests.xml
 .Rproj.user
 *.Rhistory
 *.Rproj
+*.RData
