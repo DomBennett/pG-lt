@@ -8,7 +8,7 @@
 minfails = 10 # the minimum sequence quality
 max_pgap = 0.5 # the proportion of gaps in a sequence for a good alignment
 #min_align_len = 200 # minimum alignment length
-iterations = 100 # number of iterations to perform
+iterations = 10 # number of iterations to perform
 #max_attempts = 10 # the maximum number of failed in a row alignments
 
 
@@ -82,43 +82,41 @@ for i in range(len(studies)):
 	## alignment
 	print "\nRunning alignments ..."
 	all_alignments = []
+        study_dir = os.path.join(output_dir, studies[i])
+	if not os.path.isdir(study_dir):
+		os.mkdir(study_dir)
 	for gene,seq_obj in seqs_obj:
 		print "Aligning gene [{0}] for [{1}] species ...".\
 			format(gene, len(seq_obj))
 		gene_alignments = []
 		try:
-			for j in range(iterations):
-				print "iteration [{0}]".format(j)
-				t0 = time.clock()
-				alignment = incrAlign(seq_obj, max_pgap)
-				t1 = time.clock() - t0
-				print "... aligned [{0}] species in [{1}]".format(len(alignment), t1)
-				gene_alignments.append(alignment)
-		except OutgroupError:
-			print "Outgroup dropped!"
-			continue
-		except RuntimeError:
-			print "Alignment hit counter max"
-			continue
-		all_alignments.append((gene, gene_alignments))
-				
-	## writing out
-	study_dir = os.path.join(output_dir, studies[i])
-	if not os.path.isdir(study_dir):
-		os.mkdir(study_dir)
-	for gene,alignments in all_alignments:
-		for j,alignment in enumerate(gene_alignments):
+                    # Generate alignments
+                    for j in range(iterations):
+			print "iteration [{0}]".format(j)
+			t0 = time.clock()
+			alignment = incrAlign(seq_obj, max_pgap)
+			t1 = time.clock() - t0
+			print "... aligned [{0}] species in [{1}]".format(len(alignment), t1)
+			gene_alignments.append(alignment)
+                    # Write out alignments
+                    print "... writing out alignments for [{0}] alignments".format(len(gene_alignments))
+                    for j,alignment in enumerate(gene_alignments):
 			gene_dir = os.path.join(study_dir, gene)
 			if not os.path.isdir(gene_dir):
 				os.mkdir(gene_dir)
 			alength = alignment.get_alignment_length()
 			ngap = sum([e.seq.count("-") for e in alignment])
-			output_file = "g_ngap{0}_alength{1}.faa".format(ngap,alength)
+			output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
 			output_path = os.path.join(gene_dir, output_file)
 			with open(output_path, "w") as outfile:
 				count = pG.SeqIO.write(alignment, outfile, "fasta")
 			naligns_all += 1
-				
+                except OutgroupError:
+			print "Outgroup dropped!"
+		except RuntimeError:
+			print "Alignment hit counter max"     
+        counter += 1
+
 ## Remove mafft files
 mafft_files = os.listdir(os.getcwd())
 mafft_files = [f for f in mafft_files if re.search("\.fasta$", f)]

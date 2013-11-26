@@ -1,6 +1,6 @@
 study,parentID,parent,sisterID,sister,genes,Notes
-bee,34735,Apoidea,34725,Vespoidea,COI|cytb|COII|28S,
+bee,34735,Apoidea,34725,Vespoidea,COI:cytochrome oxidase I:cytochrome oxidase subunit I|cytb|COII:cytochrome oxidase II:cytochrome oxidase subunit II|28S|18S|16S|NADH,
 plant,3193,Embryophyta,3208,Bryophyta,rcbl|matk,
-bird,8782,Aves,1294634,Crocodylia,COI|cytb|COII|28S,
-reptile,8457,Sauropsida,40674,Mammalia,COI|cytb|COII|28S,
-mammal,40674,Mammalia,8782,Aves,COI|cytb|COII|28S,
+bird,8782,Aves,1294634,Crocodylia,COI:cytochrome oxidase I:cytochrome oxidase subunit I|cytb|COII:cytochrome oxidase II:cytochrome oxidase subunit II|28S|18S|16S|NADH,
+reptile,8457,Sauropsida,40674,Mammalia,COI:cytochrome oxidase I:cytochrome oxidase subunit I|cytb|COII:cytochrome oxidase II:cytochrome oxidase subunit II|28S|18S|16S|NADH,
+mammal,40674,Mammalia,8782,Aves,COI:cytochrome oxidase I:cytochrome oxidase subunit I|cytb|COII:cytochrome oxidase II:cytochrome oxidase subunit II|28S|18S|16S|NADH,

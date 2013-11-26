@@ -268,6 +268,7 @@ def sequenceDownload(spName, geneName, thorough=False, rettype='gb', noSeqs=1, s
 		if titleText: searchTerm = "(" + searchTerm + ") AND " + titleText + " [Title]"
 		if not includePartial: searchTerm = "(" + searchTerm + ") NOT " + "partial [Title]"
 		if not includeGenome: searchTerm = "(" + searchTerm + ") NOT " + "genome [Title]"
+		print searchTerm
 		firstSearch = eSearch(searchTerm, retStart, retMax)
 		if firstSearch:
 			if int(firstSearch['Count']) <= noSeqs:

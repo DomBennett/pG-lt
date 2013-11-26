@@ -6,7 +6,7 @@
 
 ## Parameters
 max_ngenes = 3 # the maximum number genes to be used in phylogeny estimation
-min_ngenes = 2 # the minimum ...
+min_ngenes = 1 # the minimum ...
 
 ## Print stage
 print "\n\nThis is stage 4: phylogenies\n"
@@ -58,7 +58,7 @@ for i in range(len(studies)):
 	#	niterations = 100
 	#if niterations > 100: # limit to 100
 	#	niterations = 100
-	niterations = 10
+	niterations = 100
 	
 	## run phylogenies
 	print "Generating [{0}] phylogenies ...".format(niterations)

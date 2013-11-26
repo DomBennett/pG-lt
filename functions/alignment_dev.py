@@ -121,14 +121,14 @@ def incrAlign(seqobj, max_pgap):
 	while True: # voting in numbers, the more sequences in the starting alignment the better
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align_obj = seqobj.start()
-		print len(align_obj)
+		# print len(align_obj)
 		align,pgaps_bool,al = runAlignment(align_obj)
 		if all(pgaps_bool) and al > min_align_len:
 			break
 		else:
 			for i in range(len(align_obj)):
 				setaside = align_obj.pop(i) # drop each sequence, align again....
-				print len(align_obj)
+				# print len(align_obj)
 				align,pgaps_bool,al = runAlignment(align_obj)
 				if all(pgaps_bool) and al > min_align_len:
 					setaside[1] += 1
@@ -144,8 +144,8 @@ def incrAlign(seqobj, max_pgap):
 	while True:
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align,pgaps_bool,al = runAlignment(align_obj)
-		print len(align)
-		print align_obj[-1][0].id
+		# print len(align)
+		# print align_obj[-1][0].id
 		if all(pgaps_bool) and al > min_align_len:
 			counter = 0
 			if len(seqobj.spp_pool) == 0:

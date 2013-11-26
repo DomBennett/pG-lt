@@ -11,7 +11,7 @@ print "\n\nThis is stage 2: download\n"
 dwnload_nseqs = 100
 
 ## Packages
-import sys, os, re, csv
+import sys, os, re, csv, time
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 import phyloGenerator_adapted as pG
 
@@ -36,7 +36,7 @@ with open(os.path.join(input_dirs[0], 'taxadata.csv'), 'rb') as csvfile:
 	taxreader = csv.DictReader(csvfile)
 	for row in taxreader:
 		temp_genes = row['genes'].split("|")
-		temp_genes = [e1.split(",") for e1 in temp_genes]
+		temp_genes = [e1.split(":") for e1 in temp_genes]
 		taxadict[row['study']] = temp_genes
 print "Done. Read in taxadata for [{0}] studies.".format(len(taxadict))
 
@@ -79,66 +79,58 @@ for i in range(len(taxids_files)):
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
 		for taxid in taxids:
-			# download
-			try:
-				seqs_obj = pG.findGenes(speciesList = [taxid], geneNames =\
-					[gene], download = True, thorough = False, noSeqs =\
-					dwnload_nseqs, verbose = False, retMax = dwnload_nseqs)
-			except:
-				print "pG.findGenes called an unexpected error. Dropping taxid [{0}].".\
-					format(taxid)
-				continue
-			no_seqs = isinstance(seqs_obj[0][0][0], tuple)
-			if no_seqs:
-				try:
-					seqs_obj = pG.findGenes(speciesList = [taxid], geneNames =\
-					[gene], download = True, thorough = True, noSeqs =\
-					dwnload_nseqs, verbose = False, retMax = dwnload_nseqs)
-				except:
-					print "pG.findGenes called an unexpected error. Dropping taxid [{0}].".\
-					format(taxid)
-					continue
-				no_seqs = isinstance(seqs_obj[0][0][0], tuple)
-				if no_seqs:
-					no_seqs_gene += 1
-					print "No sequences found for taxid [{0}].".\
-					format(taxid)
-					continue
-			# unpack + write
-			seqs = seqs_obj[0][0][0]
-			if isinstance(seqs, list):
-				gene_seqs = []
-				for s in seqs:
-					if isinstance(s, list): # sometimes a list of a list is returned
-						gene_seqs.append([e.format('fasta') for e in s])
-					else:
-						gene_seqs.append(s.format('fasta'))
-			elif isinstance(seqs, pG.SeqRecord):
+                    # download
+                    time.sleep(5)
+                    seqs_obj = pG.findGenes(speciesList = [taxid], geneNames =\
+                                                [gene], download = True, thorough = False, noSeqs =\
+                                                dwnload_nseqs, verbose = False, retMax = dwnload_nseqs)
+                    no_seqs = isinstance(seqs_obj[0][0][0], tuple)
+                    if no_seqs:
+                        time.sleep(5)
+                        seqs_obj = pG.findGenes(speciesList = [taxid], geneNames =\
+                                                    [gene], download = True, thorough = True, noSeqs =\
+                                                    dwnload_nseqs, verbose = False, retMax = dwnload_nseqs)
+                    no_seqs = isinstance(seqs_obj[0][0][0], tuple)
+                    if no_seqs:
+                        no_seqs_gene += 1
+                        print "No sequences found for taxid [{0}].".\
+                            format(taxid)
+                        continue
+                    # unpack + write
+                    seqs = seqs_obj[0][0][0]
+                    if isinstance(seqs, list):
+                        gene_seqs = []
+                        for s in seqs:
+                            if isinstance(s, list): # sometimes a list of a list is returned
+                                gene_seqs.append([e.format('fasta') for e in s])
+                            else:
+                                gene_seqs.append(s.format('fasta'))
+                    elif isinstance(seqs, pG.SeqRecord):
 				gene_seqs = seqs.format('fasta')
-			else:
-				print "Error seqs is an unexpected object"
-				continue
-			with file(os.path.join(gene_dir, str(taxid) + '.fasta'), 'wb') \
-				as outfile:
-				if isinstance(gene_seqs, list):
-					for gene_seq in gene_seqs:
-						outfile.write("%s\n" % gene_seq)
-						nseqs_gene += 1
-						nbases += len(gene_seq)
-				else:
-					outfile.write(gene_seqs)
-					nseqs_gene += 1
-					nbases += len(gene_seqs)
-			nspp_gene += 1
-		if no_seqs_gene == len(taxids):
-			print "No sequences were downloaded for gene [{0}]".format(gene[0])
-			os.rmdir(gene_dir)
+                    else:
+                        print "Error seqs is an unexpected object"
+                        continue
+                    with file(os.path.join(gene_dir, str(taxid) + '.fasta'), 'wb') \
+                            as outfile:
+                        if isinstance(gene_seqs, list):
+                            for gene_seq in gene_seqs:
+                                outfile.write("%s\n" % gene_seq)
+                                nseqs_gene += 1
+                                nbases += len(gene_seq)
+                        else:
+                            outfile.write(gene_seqs)
+                            nseqs_gene += 1
+                            nbases += len(gene_seqs)
+                nspp_gene += 1
+                if no_seqs_gene == len(taxids):
+                    print "No sequences were downloaded for gene [{0}]".format(gene[0])
+                    os.rmdir(gene_dir)
 		else:
-			nseqs_study += nseqs_gene
-			nspp_study.append(nspp_gene)
-			print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
-				format(nseqs_gene,gene[0],nspp_gene)
-	print 'Done. Downloaded [{0}] sequences for study [{1}] representing [{2}] species.'.\
+                    nseqs_study += nseqs_gene
+                    nspp_study.append(nspp_gene)
+                    print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
+                        format(nseqs_gene,gene[0],nspp_gene)
+        print 'Done. Downloaded [{0}] sequences for study [{1}] representing [{2}] species.'.\
 		format(nseqs_study,current_study,max(nspp_study))
 	counter += 1
 	nseqs += nseqs_study
