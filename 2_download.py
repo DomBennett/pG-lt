@@ -13,11 +13,11 @@ dwnload_nseqs = 100
 ## Packages
 import sys, os, re, csv, time
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
-import phyloGenerator_adapted as pG
+import download_dev as dt
 
 ## Entrez email
-pG.Entrez.email = 'dominic.john.bennett@gmail.com'
-print 'Using email [{0}] for NCBI Entrez'.format(pG.Entrez.email)
+dt.Entrez.email = 'dominic.john.bennett@gmail.com'
+print 'Using email [{0}] for NCBI Entrez'.format(dt.Entrez.email)
 
 ## Dirs
 input_dirs = [os.path.join(os.getcwd(), '0_names'),\
@@ -59,7 +59,6 @@ for i in range(len(taxids_files)):
 		print 'Too few taxids. Dropping study.'
 		continue
 	print '... Found [{0}] taxids in input file ...'.format(len(taxids))
-	taxids = [int(taxid) for taxid in taxids] # cos' they're imported as strs!
 	
 	## work out genes
 	print 'Extracting genes ...'
@@ -79,49 +78,26 @@ for i in range(len(taxids_files)):
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
 		for taxid in taxids:
+                    print "taxid = [{0}]".format(taxid)
                     # download
-                    time.sleep(5)
-                    seqs_obj = pG.findGenes(speciesList = [taxid], geneNames =\
-                                                [gene], download = True, thorough = False, noSeqs =\
-                                                dwnload_nseqs, verbose = False, retMax = dwnload_nseqs)
-                    no_seqs = isinstance(seqs_obj[0][0][0], tuple)
-                    if no_seqs:
-                        time.sleep(5)
-                        seqs_obj = pG.findGenes(speciesList = [taxid], geneNames =\
-                                                    [gene], download = True, thorough = True, noSeqs =\
-                                                    dwnload_nseqs, verbose = False, retMax = dwnload_nseqs)
-                    no_seqs = isinstance(seqs_obj[0][0][0], tuple)
-                    if no_seqs:
+                    sequences = dt.sequenceDownload(taxid, gene, thorough = True)
+                    if len(sequences) < 1:
                         no_seqs_gene += 1
                         print "No sequences found for taxid [{0}].".\
                             format(taxid)
                         continue
-                    # unpack + write
-                    seqs = seqs_obj[0][0][0]
-                    if isinstance(seqs, list):
-                        gene_seqs = []
-                        for s in seqs:
-                            if isinstance(s, list): # sometimes a list of a list is returned
-                                gene_seqs.append([e.format('fasta') for e in s])
-                            else:
-                                gene_seqs.append(s.format('fasta'))
-                    elif isinstance(seqs, pG.SeqRecord):
-				gene_seqs = seqs.format('fasta')
-                    else:
-                        print "Error seqs is an unexpected object"
-                        continue
+                    # convert to fasta
+                    gene_seqs = []
+                    for seq in sequences:
+                        gene_seqs.append(seq.format('fasta'))
+                    # write out
                     with file(os.path.join(gene_dir, str(taxid) + '.fasta'), 'wb') \
                             as outfile:
-                        if isinstance(gene_seqs, list):
-                            for gene_seq in gene_seqs:
-                                outfile.write("%s\n" % gene_seq)
-                                nseqs_gene += 1
-                                nbases += len(gene_seq)
-                        else:
-                            outfile.write(gene_seqs)
+                        for gene_seq in gene_seqs:
+                            outfile.write("%s\n" % gene_seq)
                             nseqs_gene += 1
-                            nbases += len(gene_seqs)
-                nspp_gene += 1
+                            nbases += len(gene_seq)
+                    nspp_gene += 1
                 if no_seqs_gene == len(taxids):
                     print "No sequences were downloaded for gene [{0}]".format(gene[0])
                     os.rmdir(gene_dir)

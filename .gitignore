@@ -41,6 +41,7 @@ nosetests.xml
 4_phylogenies
 5_screen
 x_compare
+resolved_names
 
 # emacs temp files
 *~

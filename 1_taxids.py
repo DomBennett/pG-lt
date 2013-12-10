@@ -11,7 +11,7 @@ print "\n\nThis is stage 1: taxids\n"
 import os, re, sys, csv
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 from taxon_names_resolver import TaxonNamesResolver
-from gen_tax_tree import genTaxTree
+from taxon_names_resolver_tools import *
 
 ## Dirs
 input_dir = os.path.join(os.getcwd(), '0_names')
@@ -41,27 +41,19 @@ for taxnames_file in taxnames_files:
 	print 'Searching for taxids ...'
 	datasource = 'NCBI'
 	taxon_id = int(taxadict[current_study][0])
-	print '###### TaxonNamesResolver ######'
-	resolver = TaxonNamesResolver(taxnames_file, datasource, indir =\
-		input_dir, outdir = output_dir, taxon_id = taxon_id)
-	resolver.main()
-	taxids = resolver.extract('taxonids')
-	lineages = resolver.extract('lineages')
-	ranks = resolver.extract('rank_paths')
-	qnames = resolver.extract('qnames')
-	print '################################'
+        input_file = os.path.join(input_dir, taxnames_file)
+	resolver = TaxonNamesResolver(input_file, datasource, taxon_id)
+        resolver.main()
+        # resolver.write() # change TNR to specify output dir here
+        resolver = lineageMerge(resolver)
+	qnames,taxids = extractHighestClade(resolver, by_ids = True)
 	print '... resolved [{0}] names ...'.format(len(taxids))
 	if len(taxids) < 3:
 		print 'Too few names resovled. Dropping study.\n'
 		continue
 	print 'Done.'
 	
-	## Generate taxon trees
-	#print 'Creating taxon tree ...'
-	#taxontree, shared_lineages = genTaxTree(taxids, lineages, ranks)
-	#print 'Done.'
-	
-	## Output
+	## Output (commented out taxon tree output)
 	print 'Outputting ...'
 	taxids.append(taxadict[current_study][1])
 	qnames.append('outgroup') # add outgroup
