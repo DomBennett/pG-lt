@@ -5,7 +5,7 @@
 ## 14/08/2013
 
 ## Parameters
-max_ngenes = 3 # the maximum number genes to be used in phylogeny estimation
+max_ngenes = 4 # the maximum number genes to be used in phylogeny estimation
 min_ngenes = 1 # the minimum ...
 
 ## Print stage

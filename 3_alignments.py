@@ -5,10 +5,10 @@
 ## 14/08/2013
 
 ## Parameters
-minfails = 10 # the minimum sequence quality
+minfails = 20 # the minimum sequence quality
 max_pgap = 0.5 # the proportion of gaps in a sequence for a good alignment
 #min_align_len = 200 # minimum alignment length
-iterations = 10 # number of iterations to perform
+iterations = 100 # number of iterations to perform
 #max_attempts = 10 # the maximum number of failed in a row alignments
 
 

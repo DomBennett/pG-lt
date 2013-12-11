@@ -70,6 +70,10 @@ def eFetchSeqID(seq_id):
 				results = results[0]
 			handle.close()
 			finished = maxCheck + 1
+		except ValueError: # if parsing fails, value error raised
+			handle.close()
+			results = ()
+			finished = maxCheck + 1
 		except:
 			if finished == 0:
 				print "!!!Server error - retrying..."
@@ -78,6 +82,7 @@ def eFetchSeqID(seq_id):
 			if finished == maxCheck:
 				print "!!!!!!Unreachable. Returning nothing."
 				return(tuple())
+	
 	return results
 
 def findGeneInSeq(record, gene_names):
@@ -172,11 +177,13 @@ def sequenceDownload(txid, gene_names, nseqs = 100, minlen = 400, maxlen = 2000,
 		return False
 	pattern = re.compile("[ACTGactg]")
 	seq_store = search(gene_names)
+	print "seq_store len: {0}".format(len(seq_store))
 	records = []
 	i = 1
 	while i <= nseqs and len(seq_store) > 0:
 		randi = random.randint(0, len(seq_store)-1)
 		seq = seq_store.pop(randi)
+		print seq
 		record = eFetchSeqID(seq)
 		record = parse(record)
 		if record:
