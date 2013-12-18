@@ -43,6 +43,9 @@ nosetests.xml
 x_compare
 resolved_names
 
+# MPE specific
+blacklist.csv
+
 # emacs temp files
 *~
 

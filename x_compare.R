@@ -30,14 +30,21 @@ for (i in 1:length(phylo.studies)) {
   phylos <- read.tree(file.path(input.dirs[1], phylo.studies.files[i]))
   refi <- match(phylo.studies[i], phylo.refs)
   ref <- read.tree(file.path(input.dirs[2], phylo.refs.files[refi]))
+  if (class(ref) == "multiPhylo") {
+    ref <- ref[[1]]
+  }
   score.dist <- topo.dist <- tree.sizes <- rep(NA, length(phylos))
   for (j in 1:length(phylos)) {
-    temp.ref <- drop.tip(ref, ref$tip.label[!ref$tip.label %in% phylos[[i]]$tip.label])
-    topo.dist[j] <- dist.topo(phylos[[i]], temp.ref, method="PH85")
-    score.dist[j] <- dist.topo(phylos[[i]], temp.ref, method="score")
-    tree.sizes[j] <- length(phylos[[i]]$tip.label)
+    if (length(phylos[[j]]$tip.label) > 10) {
+      temp.ref <- drop.tip(ref, ref$tip.label[!ref$tip.label %in% phylos[[j]]$tip.label])
+      plot(temp.ref)
+      plot(phylos[[j]])
+      topo.dist[j] <- dist.topo(phylos[[j]], temp.ref, method="PH85")
+      score.dist[j] <- dist.topo(phylos[[j]], temp.ref, method="score")
+      tree.sizes[j] <- length(phylos[[j]]$tip.label)
+    }
   }
-  cat(paste0("\nMean tree size: ", mean(tree.sizes)))
-  cat(paste0("\nMean topo. dist: ", mean(topo.dist)))
-  cat(paste0("\nMean score dist: ", mean(score.dist)))
+  cat(paste0("\nMean tree size: ", mean(tree.sizes, na.rm = TRUE)))
+  cat(paste0("\nMean topo. dist: ", mean(topo.dist, na.rm = TRUE)))
+  cat(paste0("\nMean score dist: ", mean(score.dist, na.rm = TRUE)))
 }

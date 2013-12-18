@@ -17,6 +17,43 @@ import numpy as np
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 import phyloGenerator_adapted as pG
 
+def getRTTDists(phylo):
+    names = []
+    for terminal in phylo.get_terminals():
+        names.append(terminal.name)
+    rtt_dists = []
+    for name in names:
+        rtt_dists.append(phylo.distance(name))
+    return rtt_dists
+
+def getTBP(phylo):
+    term_lens = []
+    for terminal in phylo.get_terminals():
+        term_lens.append(terminal.branch_length)
+    total_len = phylo.total_branch_length()
+    tbps = []
+    for term_len in term_lens:
+        tbps.append(term_len/total_len)
+    return tbps
+
+def getBranchLengths(phylo):
+    lens = []
+    depths =  phylo.depths(unit_branch_lengths = True)
+    for branch in depths.keys():
+        if branch.branch_length:
+            lens.append(branch.branch_length)
+    return lens
+    
+
+def phyloTest(phylo, max_branch):
+    lens = getBranchLengths(phylo)
+    total_len = sum(lens)
+    lens_bool = [e/total_len > max_branch for e in lens]
+    if any(lens_bool):
+        return False
+    else:
+        return True
+
 ## dirs
 input_dir = os.path.join(os.getcwd(), '3_alignments')
 output_dir = os.path.join(os.getcwd(), '4_phylogenies')
@@ -58,41 +95,24 @@ for i in range(len(studies)):
 	#	niterations = 100
 	#if niterations > 100: # limit to 100
 	#	niterations = 100
-	niterations = 100
+	niterations = 10
 	
 	## run phylogenies
 	print "Generating [{0}] phylogenies ...".format(niterations)
-	# reset min and max ngenes if too many or too few
-	temp_max_ngenes = max_ngenes
-	temp_min_ngenes = min_ngenes
-	if len(align_obj) < max_ngenes:
-		temp_max_ngenes = len(align_obj)
-
-	if len(align_obj) < min_ngenes:
-		temp_min_ngenes = len(align_obj)
-
-	ngenes_range = range(temp_min_ngenes, temp_max_ngenes+1)
 	nphylos = 0
-	for j in range(niterations):
-		ngenes = random.sample(ngenes_range, 1)[0]
-		genes = random.sample(align_obj.keys(), ngenes)
-		alignment = [random.sample(align_obj[e], 1)[0] for e in genes]
-		try:
-			phylo = pG.RAxML(alignment, method = "raxmlHPC")
-			#pG.Phylo.draw_ascii(phylo) # what does it look like?
-			# TODO: phylo.depths()
-		except:
-			print '... Unexpected error: RAxML ...'
-			raxml_files = os.listdir(os.getcwd())
-			raxml_files = [f for f in raxml_files if \
-				re.search("(^RAxML.*$|^.*\.phylip$|^.*\.fasta$)", f)]
-			for f in raxml_files:
-				os.remove(f)
-			continue
-		gene_str = "|".join(genes)
-		pG.Phylo.write(phylo, os.path.join(output_dir, studies[i] + "_gene_" +\
-			gene_str + "_" + str(j) + '.tre'), 'newick')
-		nphylos += 1
+        counter = 0
+        while nphylos < niterations:
+            counter += 1
+            print counter
+            alignment = [random.sample(align_obj[e], 1)[0] for e in align_obj.keys()]
+            phylo = pG.RAxML(alignment, method = "raxmlHPC")
+            phylo.root_with_outgroup("outgroup")
+            if phyloTest(phylo, 0.5):
+                pG.Phylo.draw_ascii(phylo) # what does it look like?
+                gene_str = "|".join(genes)
+                pG.Phylo.write(phylo, os.path.join(output_dir, studies[i] + "_gene_" +\
+                                                       gene_str + "_" + str(counter) + '.tre'), 'newick')
+                nphylos += 1
 	print 'Done. [{0}] phylogenies for [{1}].'.format(nphylos, studies[i])
 	counter += 1
 	nphylos_all += nphylos
