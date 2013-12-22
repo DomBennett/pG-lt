@@ -157,7 +157,7 @@ def incrAlign(seqobj, max_pgap):
 			if len(seqobj.spp_pool) == 0: # here a species has been dropped and now all species are
 				return align
 			counter += 1
-		if counter > 100:
+		if counter > 200:
 			raise RuntimeError("Failed to align")
 				#alignment_store.append(align)
 			#if seqobj.attempts > max_ats:
