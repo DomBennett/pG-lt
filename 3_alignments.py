@@ -89,32 +89,33 @@ for i in range(len(studies)):
 		print "Aligning gene [{0}] for [{1}] species ...".\
 			format(gene, len(seq_obj))
 		gene_alignments = []
-		try:
-                    # Generate alignments
-                    for j in range(iterations):
-			print "iteration [{0}]".format(j)
-			t0 = time.clock()
-			alignment = incrAlign(seq_obj, max_pgap)
-			t1 = time.clock() - t0
-			print "... aligned [{0}] species in [{1}]".format(len(alignment), t1)
-			gene_alignments.append(alignment)
-                    # Write out alignments
-                    print "... writing out alignments for [{0}] alignments".format(len(gene_alignments))
-                    for j,alignment in enumerate(gene_alignments):
-			gene_dir = os.path.join(study_dir, gene)
-			if not os.path.isdir(gene_dir):
-				os.mkdir(gene_dir)
-			alength = alignment.get_alignment_length()
-			ngap = sum([e.seq.count("-") for e in alignment])
-			output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
-			output_path = os.path.join(gene_dir, output_file)
-			with open(output_path, "w") as outfile:
-				count = pG.SeqIO.write(alignment, outfile, "fasta")
-			naligns_all += 1
-                except OutgroupError:
-			print "Outgroup dropped!"
-		except RuntimeError:
-			print "Alignment hit counter max"     
+                # Generate alignments
+                for j in range(iterations):
+                    print "iteration [{0}]".format(j)
+                    t0 = time.clock()
+                    alignment = incrAlign(seq_obj, max_pgap)
+                    t1 = time.clock() - t0
+                    if alignment is None:
+                        next
+                    print "... aligned [{0}] species in [{1}]".format(len(alignment), t1)
+                    gene_alignments.append(alignment)
+                # Write out alignments
+                if len(gene_alignments) < 1:
+                    print "... no alignments generated"
+                    next
+                print "... writing out alignments for [{0}] alignments".\
+                    format(len(gene_alignments))
+                for j,alignment in enumerate(gene_alignments):
+                    gene_dir = os.path.join(study_dir, gene)
+                    if not os.path.isdir(gene_dir):
+                        os.mkdir(gene_dir)
+                    alength = alignment.get_alignment_length()
+                    ngap = sum([e.seq.count("-") for e in alignment])
+                    output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
+                    output_path = os.path.join(gene_dir, output_file)
+                    with open(output_path, "w") as outfile:
+                        count = pG.SeqIO.write(alignment, outfile, "fasta")
+                    naligns_all += 1   
         counter += 1
 
 ## Remove mafft files
@@ -122,4 +123,5 @@ mafft_files = os.listdir(os.getcwd())
 mafft_files = [f for f in mafft_files if re.search("\.fasta$", f)]
 for f in mafft_files:
 	os.remove(f)
-print 'Stage finished. Generated [{0}] alignments across [{1}] studies.'.format(naligns_all, counter)
+print 'Stage finished. Generated [{0}] alignments across [{1}] studies.'.\
+    format(naligns_all, counter)

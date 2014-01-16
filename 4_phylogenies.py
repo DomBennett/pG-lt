@@ -95,7 +95,7 @@ for i in range(len(studies)):
 	#	niterations = 100
 	#if niterations > 100: # limit to 100
 	#	niterations = 100
-	niterations = 10
+	niterations = 100
 	
 	## run phylogenies
 	print "Generating [{0}] phylogenies ...".format(niterations)

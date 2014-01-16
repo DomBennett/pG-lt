@@ -131,6 +131,8 @@ def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=No
 					
 def incrAlign(seqobj, max_pgap):
 	"""Incrementally build an alignment from outgroup sequence"""
+	# parameters
+	max_trys = 100 # prevents loops continuing forever
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
 		align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
@@ -143,63 +145,73 @@ def incrAlign(seqobj, max_pgap):
 			pgaps = [float(e)/al for e in ngaps]
 			pgaps_bool = [e < max_pgap for e in pgaps]
 			return align,pgaps_bool,al
+	def returnBestAlign(alignments):
+		# test if there are any alignments
+		if len(alignments) < 1:
+			return None
+		# keep only alignments with lots of records
+		nrecords = [len(e._records) for e in alignments]
+		alignments = [alignments[i] for i,e in enumerate(nrecords)\
+				      if e == max(nrecords)]
+		# return longest alignment
+		alignments_lens = [len(e) for e in alignments]
+		max_i = alignments_lens.index(max(alignments_lens))
+		print "Returning alignment of length: [{0}]".\
+		    format(alignments[max_i].get_alignment_length())
+		return alignments[max_i]
 	# run alignments until alignment for all species made
-	counter = 0 # prevents loops continuing forever
-	# print [seqobj[e][1] for e in seqobj.keys()]
+	trys = 0
 	min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
-	print "Min length: [{0}]".format(min_align_len)
-	while True: # voting in numbers, the more sequences in the starting alignment the better
+	# voting in numbers, the more sequences in the starting alignment the better
+	while True:
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align_obj = seqobj.start()
-		# print len(align_obj)
 		align,pgaps_bool,al = runAlignment(align_obj)
 		if all(pgaps_bool) and al > min_align_len:
 			break
 		else:
 			for i in range(len(align_obj)):
-				setaside = align_obj.pop(i) # drop each sequence, align again....
-				# print len(align_obj)
+				setaside = align_obj.pop(i)
+				# drop each sequence, align again....
 				align,pgaps_bool,al = runAlignment(align_obj)
 				if all(pgaps_bool) and al > min_align_len:
 					setaside[1] += 1
 					seqobj._check()
-					if len(seqobj.keys()) < 4: # 4 for now.... random issue if 3 otherwise
-						raise RuntimeError("Failed to align at start")
+					if len(seqobj.keys()) < 4:
+						# TODO: research what this section does (16/01/2014)
+						# 4 for now.... random issue if 3 otherwise
+						print "Fewer than 4 species"
+						return None
 					break
-				align_obj.insert(i,setaside) # add the setside where it was before
-			counter += 1
-		if counter > 100:
-			raise RuntimeError("Failed to align at start")
-	counter = 0
+				# add the setside where it was before
+				align_obj.insert(i,setaside)
+			trys += 1
+		if max_trys < trys:
+			print "Max trys hit"
+			return None
+	trys = 0
+	align_store = [] # stores successful aligns generated
 	while True:
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align,pgaps_bool,al = runAlignment(align_obj)
-		# print len(align)
-		# print align_obj[-1][0].id
 		if all(pgaps_bool) and al > min_align_len:
 			counter = 0
 			if len(seqobj.spp_pool) == 0:
 				return align
 			else:
+				align_store.append(align)
 				align_obj = seqobj.next(align)
+		elif trys < max_trys:
+			try:
+				align_obj = seqobj.back(align)
+			except OutgroupError:
+				print "Outgroup error"
+				return returnBestAlign(align_store)
+			if len(seqobj.spp_pool) == 0:
+				# here a species has been dropped and now all species are present
+				return returnBestAlign(align_store)
+			trys += 1
 		else:
-			align_obj = seqobj.back(align)
-			if len(seqobj.spp_pool) == 0: # here a species has been dropped and now all species are
-				return align
-			counter += 1
-		if counter > 200:
-			raise RuntimeError("Failed to align")
-				#alignment_store.append(align)
-			#if seqobj.attempts > max_ats:
-			#	align_obj = seqobj.restart()
-			#	alignment_store.append(previous_align)
-			#	counter += 1
-			#	print "Counter is now [{0}]".format(counter)
-		#previous_align = align
-	# when the maximum number of species is not reached...
-	# ... return the best alignment in the alignment store
-	#alignment_store_lens = [len(e) for e in alignment_store]
-	#max_i = alignment_store_lens.index(max(alignment_store_lens))
-	#print "#"
-	#print "Returning alignment of length: [{0}]".format(alignment_store[max_i].get_alignment_length())
-	#return alignment_store[max_i]
+			# when the maximum number of species is not reached...
+			# ... return the best alignment in the alignment store
+			return returnBestAlign(align_store)
