@@ -25,20 +25,25 @@ phylo.refs <- unique(sub("\\.tre$", "", phylo.refs.files))
 cat(paste0('\nDone. Found [', length(phylo.refs), '] studies with phylogenies.'))
 
 ## Compare
+pdf("consensus_phylogeneies.pdf", w = 14)
 for (i in 1:length(phylo.studies)) {
   cat(paste0("\nWorking on ", phylo.studies[i], "... "))
   phylos <- read.tree(file.path(input.dirs[1], phylo.studies.files[i]))
+  phylo.consensus <- consensus(phylos, p = 0.5)
+  plot(phylo.consensus, main = paste0(phylo.studies[i], " Consensus p = 0.5"))
   refi <- match(phylo.studies[i], phylo.refs)
   ref <- read.tree(file.path(input.dirs[2], phylo.refs.files[refi]))
   if (class(ref) == "multiPhylo") {
     ref <- ref[[1]]
   }
+  ref <- drop.tip(ref, ref$tip.label[!ref$tip.label %in% phylo.consensus$tip.label])
+  plot(ref, main = paste0(phylo.studies[i], " Reference"))
   score.dist <- topo.dist <- tree.sizes <- rep(NA, length(phylos))
   for (j in 1:length(phylos)) {
     if (length(phylos[[j]]$tip.label) > 10) {
       temp.ref <- drop.tip(ref, ref$tip.label[!ref$tip.label %in% phylos[[j]]$tip.label])
-      plot(temp.ref)
-      plot(phylos[[j]])
+      #plot(temp.ref)
+      #plot(phylos[[j]])
       topo.dist[j] <- dist.topo(phylos[[j]], temp.ref, method="PH85")
       score.dist[j] <- dist.topo(phylos[[j]], temp.ref, method="score")
       tree.sizes[j] <- length(phylos[[j]]$tip.label)
@@ -48,3 +53,4 @@ for (i in 1:length(phylo.studies)) {
   cat(paste0("\nMean topo. dist: ", mean(topo.dist, na.rm = TRUE)))
   cat(paste0("\nMean score dist: ", mean(score.dist, na.rm = TRUE)))
 }
+dev.off()
