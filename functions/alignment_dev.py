@@ -98,13 +98,43 @@ class SeqObj(dict):
 		next_seq = random.sample(self[self.next_sp][0], 1)[0]
 		self.align_obj.append(next_seq)
 
+def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=None):
+	if 'trimAl' in method:
+		options = ""
+		if 'automated' in method:
+			options += " -automated1"
+		output = []
+		for i,gene in enumerate(align):
+			geneOutput = []
+			for j,method in enumerate(gene):
+				pG.AlignIO.write(method, tempStem+"Input.fasta", "fasta")
+				fileLine = " -in " + tempStem + "Input.fasta -out " + tempStem + "Output.fasta -fasta"
+				trimalVersion = "trimal"
+				commandLine = trimalVersion + fileLine + options
+				if timeout:
+                                        pipe = pG.TerminationPipe(commandLine, timeout)
+                                        if 'darwin' == sys.platform: # so that I can run it on mac
+                                                pipe.run(changeDir = True)
+                                        else:
+                                                pipe.run()
+					if not pipe.failure:
+						geneOutput.append(pG.AlignIO.read(tempStem + "Output.fasta", "fasta"))
+						os.remove(tempStem + "Output.fasta")
+						os.remove(tempStem + "Input.fasta")
+					else:
+						raise RuntimeError("Either trimAl failed, or it ran out of time")
+			output.append(geneOutput)
+		return output
+	else:
+		raise RuntimeError("Only automated trimAl methods supported at this time.")
+
 					
 def incrAlign(seqobj, max_pgap):
 	"""Incrementally build an alignment from outgroup sequence"""
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
 		align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
-		align = pG.cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
+		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
 		al = align.get_alignment_length()
 		if al == 0:
 			return align,[False],0

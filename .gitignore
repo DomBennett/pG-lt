@@ -42,12 +42,14 @@ nosetests.xml
 5_screen
 x_compare
 resolved_names
+requires
 
 # MPE specific
 blacklist.csv
 
 # emacs temp files
 *~
+\#*#
 
 # Rstudio files
 .Rproj.user
