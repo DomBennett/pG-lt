@@ -12,7 +12,6 @@ class SeqObj(dict):
 	"""Store species' gene sequences with functions for pulling sequences for alignments and adding penalties for sequences that did not align"""
 	def __init__(self, genedir, seqfiles, outgroup, minfails):
 		self.minfails = minfails # minimum number of fails in a row
-		self.attempts = 0 # number of attempts
 		self.dspp = [] # species dropped
 		self.nseqs = 0 # counter for seqs
 		for i, seqfile in enumerate(seqfiles):
@@ -35,26 +34,23 @@ class SeqObj(dict):
 			if len(seqs) > 0:
 				self[name] = (seqs, np.median(lengths))
 			
-	def start(self):
-		"""Return starting random sp sequences, update spp_pool"""
-		self.attempts = 1
+	def start(self, n):
+		"""Return n starting random sp sequences, update spp_pool"""
 		self.spp_pool = self.keys()
-		self.spp_pool = [e for e in self.spp_pool if e != "outgroup"]
 		self.align_obj = []
-		for i in range(3):
+		for i in range(n):
 			self._add()
-		self.spp_pool.append("outgroup")
 		return self.align_obj
-		
-	#def restart(self, index):
-	#	""""""
-	#	self.align_obj[0][1] += 1
-	#	self._check()
-	#	return self.start()
+
+	def _add(self):
+		"""Add new random species' sequence"""
+		rand_int = random.randint(0, (len(self.spp_pool)-1))
+		self.next_sp = self.spp_pool.pop(rand_int)
+		next_seq = random.sample(self[self.next_sp][0], 1)[0]
+		self.align_obj.append(next_seq)
 		
 	def back(self, align):
 		"""Add to nfails for random species, return new random species"""
-		self.attempts += 1
 		self.align_obj[-1][1] += 1
 		del self.align_obj[-1]
 		self.spp_pool.append(self.next_sp)
@@ -68,7 +64,6 @@ class SeqObj(dict):
 		for i in range(len(self.align_obj)):
 			self.align_obj[i][1] = 0
 		self._add()
-		self.attempts = 1
 		return self.align_obj
 		
 	def _check(self):
@@ -90,13 +85,6 @@ class SeqObj(dict):
 					self.dspp.append(sp)
 					self.spp_pool = [e for e in self.spp_pool if e != sp]
 					del self[sp]
-					
-	def _add(self):
-		"""Add new random species' sequence"""
-		rand_int = random.randint(0, (len(self.spp_pool)-1))
-		self.next_sp = self.spp_pool.pop(rand_int)
-		next_seq = random.sample(self[self.next_sp][0], 1)[0]
-		self.align_obj.append(next_seq)
 
 def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=None):
 	if 'trimAl' in method:
@@ -129,9 +117,11 @@ def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=No
 		raise RuntimeError("Only automated trimAl methods supported at this time.")
 
 					
-def incrAlign(seqobj, max_pgap):
+def incrAlign(seqobj, max_pgap, nstart):
 	"""Incrementally build an alignment from outgroup sequence"""
 	# parameters
+	# nstart the number of sequences to use in start
+	max_nstart_trys = 10 #  the number of trys before n_start -= 1
 	max_trys = 100 # prevents loops continuing forever
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
@@ -147,7 +137,12 @@ def incrAlign(seqobj, max_pgap):
 			return align,pgaps_bool,al
 	def returnBestAlign(alignments):
 		# test if there are any alignments
-		if len(alignments) < 1:
+		if len(alignments) == 0:
+			return None
+		# keep alignments with outgroups
+		alignments = [al for al in alignments if "outgroup" in\
+				      [e.id for e in al._records]]
+		if len(alignments) == 0:
 			return None
 		# keep only alignments with lots of records
 		nrecords = [len(e._records) for e in alignments]
@@ -156,48 +151,38 @@ def incrAlign(seqobj, max_pgap):
 		# return longest alignment
 		alignments_lens = [len(e) for e in alignments]
 		max_i = alignments_lens.index(max(alignments_lens))
-		print "Returning alignment of length: [{0}]".\
-		    format(alignments[max_i].get_alignment_length())
 		return alignments[max_i]
-	# run alignments until alignment for all species made
+
+	## run alignments until alignment for all species made
 	trys = 0
-	min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
-	# voting in numbers, the more sequences in the starting alignment the better
-	while True:
-		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
-		align_obj = seqobj.start()
-		align,pgaps_bool,al = runAlignment(align_obj)
-		if all(pgaps_bool) and al > min_align_len:
-			break
-		else:
-			for i in range(len(align_obj)):
-				setaside = align_obj.pop(i)
-				# drop each sequence, align again....
-				align,pgaps_bool,al = runAlignment(align_obj)
-				if all(pgaps_bool) and al > min_align_len:
-					setaside[1] += 1
-					seqobj._check()
-					if len(seqobj.keys()) < 4:
-						# TODO: research what this section does (16/01/2014)
-						# 4 for now.... random issue if 3 otherwise
-						print "Fewer than 4 species"
-						return None
-					break
-				# add the setside where it was before
-				align_obj.insert(i,setaside)
-			trys += 1
-		if max_trys < trys:
-			print "Max trys hit"
-			return None
-	trys = 0
+	nstart_trys = 0
 	align_store = [] # stores successful aligns generated
+	# start with as many sequences at start as possible
+	while True:
+		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
+		align_obj = seqobj.start(nstart)
+		align,pgaps_bool,al = runAlignment(align_obj)
+		if all(pgaps_bool) and al > min_align_len:
+			if len(seqobj.spp_pool) == 0:
+				return align, nstart
+			else:
+				align_store.append(align)
+				align_obj = seqobj.next(align)
+			break
+		trys += 1
+		nstart_trys += 1
+		if max_nstart_trys <  nstart_trys:
+			nstart -= 1
+		if max_trys < trys or nstart < 2:
+			return None, nstart
+	trys = 0
 	while True:
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align,pgaps_bool,al = runAlignment(align_obj)
 		if all(pgaps_bool) and al > min_align_len:
-			counter = 0
+			trys = 0
 			if len(seqobj.spp_pool) == 0:
-				return align
+				return align, nstart
 			else:
 				align_store.append(align)
 				align_obj = seqobj.next(align)
@@ -206,12 +191,12 @@ def incrAlign(seqobj, max_pgap):
 				align_obj = seqobj.back(align)
 			except OutgroupError:
 				print "Outgroup error"
-				return returnBestAlign(align_store)
+				return returnBestAlign(align_store), nstart
 			if len(seqobj.spp_pool) == 0:
 				# here a species has been dropped and now all species are present
-				return returnBestAlign(align_store)
+				return returnBestAlign(align_store), nstart
 			trys += 1
 		else:
 			# when the maximum number of species is not reached...
 			# ... return the best alignment in the alignment store
-			return returnBestAlign(align_store)
+			return returnBestAlign(align_store), nstart
