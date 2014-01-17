@@ -8,7 +8,7 @@
 minfails = 20 # the minimum sequence quality
 max_pgap = 0.5 # the proportion of gaps in a sequence for a good alignment
 #min_align_len = 200 # minimum alignment length
-iterations = 100 # number of iterations to perform
+iterations = 10 # number of iterations to perform
 #max_attempts = 10 # the maximum number of failed in a row alignments
 
 
@@ -89,20 +89,22 @@ for i in range(len(studies)):
 		print "Aligning gene [{0}] for [{1}] species ...".\
 			format(gene, len(seq_obj))
 		gene_alignments = []
+                nstart = len(seq_obj)
                 # Generate alignments
                 for j in range(iterations):
                     print "iteration [{0}]".format(j)
                     t0 = time.clock()
-                    alignment = incrAlign(seq_obj, max_pgap)
+                    alignment, nstart = incrAlign(seq_obj, max_pgap, nstart)
                     t1 = time.clock() - t0
                     if alignment is None:
-                        next
-                    print "... aligned [{0}] species in [{1}]".format(len(alignment), t1)
+                        continue
+                    print "... alignment length [{0}] for [{1}] species in [t{2}]".\
+                        format(alignment.get_alignment_length(), len(alignment), t1)
                     gene_alignments.append(alignment)
                 # Write out alignments
                 if len(gene_alignments) < 1:
                     print "... no alignments generated"
-                    next
+                    continue
                 print "... writing out alignments for [{0}] alignments".\
                     format(len(gene_alignments))
                 for j,alignment in enumerate(gene_alignments):
