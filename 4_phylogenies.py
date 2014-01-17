@@ -5,19 +5,31 @@
 ## 14/08/2013
 
 ## Parameters
-max_ngenes = 4 # the maximum number genes to be used in phylogeny estimation
-min_ngenes = 1 # the minimum ...
+#max_ngenes = 4 # the maximum number genes to be used in phylogeny estimation
+#min_ngenes = 1 # the minimum ...
+niterations = 10
+max_branch = 0.5 # the maximum proportion of a tree a single branch can represent
 
 ## Print stage
 print "\n\nThis is stage 4: phylogenies\n"
 
 ## Packages
 import sys, os, re, random
+import dendropy
 import numpy as np
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 import phyloGenerator_adapted as pG
 
+def renameTips(phylo, names):
+    for each in phylo.get_terminals():
+        try:
+            each.name = names[each.name]
+        except KeyError:
+            pass
+    return phylo
+
 def getRTTDists(phylo):
+    """Calcualte root to tips distance"""
     names = []
     for terminal in phylo.get_terminals():
         names.append(terminal.name)
@@ -46,6 +58,7 @@ def getBranchLengths(phylo):
     
 
 def phyloTest(phylo, max_branch):
+    """True if a single branch does not represent max_branch of the tree"""
     lens = getBranchLengths(phylo)
     total_len = sum(lens)
     lens_bool = [e/total_len > max_branch for e in lens]
@@ -55,10 +68,15 @@ def phyloTest(phylo, max_branch):
         return True
 
 ## dirs
+names_dir = os.path.join(os.getcwd(), '1_taxids')
+names_files = os.listdir(names_dir)
 input_dir = os.path.join(os.getcwd(), '3_alignments')
 output_dir = os.path.join(os.getcwd(), '4_phylogenies')
 if not os.path.isdir(output_dir):
     os.mkdir(output_dir)
+
+## Create name dictionary
+
 
 
 ## Loop through studies
@@ -67,14 +85,25 @@ studies = [st for st in studies if not re.search("^log\.txt$", st)]
 counter = 0
 print 'Looping through studies ...'
 nphylos_all = 0
-for i in range(len(studies)):
-
-	## what study?
+for i in range(1,len(studies)):
 	print '\n\nWorking on: [{0}]'.format(studies[i])
-	study_dir = os.path.join(os.getcwd(), input_dir, studies[i])
-	genes = sorted(os.listdir(study_dir))
+        ## reading in names
+        study_names_files = [e for e in names_files if\
+                                 re.search("^{0}".format(studies[i]), e)]
+        taxids_file = [e for e in study_names_files if\
+                           re.search("taxids", e)][0]
+        qnames_file = [e for e in study_names_files if\
+                           re.search("qnames", e)][0]
+        names = {}
+        with file(os.path.join(names_dir, taxids_file), 'rb') as taxfile:
+                    with file(os.path.join(names_dir, qnames_file), 'rb')\
+                            as qfile:
+                        for txid,qname in zip(taxfile, qfile):        
+                            txid = "tx" + txid.strip()
+                            names[txid] = qname.strip()
 
-	## reading in alignments
+	study_dir = os.path.join(input_dir, studies[i])
+	genes = sorted(os.listdir(study_dir))
 	print "Reading in alignments ..."
 	align_obj = {}
 	for gene in genes:
@@ -87,31 +116,26 @@ for i in range(len(studies)):
 			align_obj[gene].append(align)
 	naligns = [len(align_obj[e]) for e in align_obj.keys()]
 	print "Done. Read in [{0}] alignments for [{1}]".format(naligns,align_obj.keys())
-	
-	## working out combinations
-	#try:
-	#	niterations = int(np.prod(naligns)) # N.B. this is not the true number of combinations (depends on min and max genes)
-	#except OverflowError:
-	#	niterations = 100
-	#if niterations > 100: # limit to 100
-	#	niterations = 100
-	niterations = 100
-	
 	## run phylogenies
 	print "Generating [{0}] phylogenies ...".format(niterations)
 	nphylos = 0
         counter = 0
+        phylos = []
         while nphylos < niterations:
             counter += 1
             print counter
             alignment = [random.sample(align_obj[e], 1)[0] for e in align_obj.keys()]
-            phylo = pG.RAxML(alignment, method = "raxmlHPC")
-            phylo.root_with_outgroup("outgroup")
-            if phyloTest(phylo, 0.5):
+            phylo = pG.RAxML(alignment, method = "raxmlHPC") # need to change this for mac
+            if phyloTest(phylo, max_branch):
+                phylo.root_with_outgroup("outgroup")
+                phylo.prune("outgroup")
+                phylo = renameTips(phylo, names)
                 pG.Phylo.draw_ascii(phylo) # what does it look like?
-                gene_str = "|".join(genes)
-                pG.Phylo.write(phylo, os.path.join(output_dir, studies[i] + "_gene_" +\
-                                                       gene_str + "_" + str(counter) + '.tre'), 'newick')
+                # TODO:
+                # write out a consensus tree as well
+                #gene_str = "|".join(genes)
+                #pG.Phylo.write(phylo, os.path.join(output_dir, studies[i] + "_gene_" +\
+                #                                       gene_str + "_" + str(counter) + '.tre'), 'newick')
                 nphylos += 1
 	print 'Done. [{0}] phylogenies for [{1}].'.format(nphylos, studies[i])
 	counter += 1

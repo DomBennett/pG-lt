@@ -7,7 +7,7 @@
 source(file.path('functions','EcoDataTools.R'))
 
 ## Dirs
-input.dirs <- c("5_screen", "x_referencephylogenies")
+input.dirs <- c("4_phylogenies", "x_referencephylogenies")
 
 ## Print stage
 cat("\n\nComparing phylogenies to references\n")
@@ -15,7 +15,7 @@ cat("\n\nComparing phylogenies to references\n")
 ## Produced phylogenies
 cat('\nIdentifying studies with phylogenies ...')
 phylo.studies.files <- list.files(path = input.dirs[1], pattern = "^.*\\.tre$")
-phylo.studies <- unique(sub("_phylo\\.tre$", "", phylo.studies.files))
+phylo.studies <- unique(sub("_gene_.*\\.tre$", "", phylo.studies.files))
 cat(paste0('\nDone. Found [', length(phylo.studies), '] studies with phylogenies.'))
 
 ## Reference phylogenies
@@ -28,9 +28,15 @@ cat(paste0('\nDone. Found [', length(phylo.refs), '] studies with phylogenies.')
 pdf("consensus_phylogeneies.pdf", w = 14)
 for (i in 1:length(phylo.studies)) {
   cat(paste0("\nWorking on ", phylo.studies[i], "... "))
-  phylos <- read.tree(file.path(input.dirs[1], phylo.studies.files[i]))
-  phylo.consensus <- consensus(phylos, p = 0.5)
-  plot(phylo.consensus, main = paste0(phylo.studies[i], " Consensus p = 0.5"))
+  phylos <- list()
+  for (each in phylo.studies.files) {
+    if (grepl(paste0("^", phylo.studies[i]), each)) {
+      phylos <- c(phylos, list(read.tree(file.path(input.dirs[1], each))))
+    }
+  }
+  class(phylos) <- 'multiPhylo'
+  #phylo.consensus <- consensus(phylos, p = 0.5)
+  #plot(phylo.consensus, main = paste0(phylo.studies[i], " Consensus p = 0.5"))
   refi <- match(phylo.studies[i], phylo.refs)
   ref <- read.tree(file.path(input.dirs[2], phylo.refs.files[refi]))
   if (class(ref) == "multiPhylo") {
