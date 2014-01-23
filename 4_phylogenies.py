@@ -7,7 +7,7 @@
 ## Parameters
 #max_ngenes = 4 # the maximum number genes to be used in phylogeny estimation
 #min_ngenes = 1 # the minimum ...
-niterations = 10
+niterations = 100
 max_branch = 0.5 # the maximum proportion of a tree a single branch can represent
 
 ## Print stage
@@ -15,7 +15,7 @@ print "\n\nThis is stage 4: phylogenies\n"
 
 ## Packages
 import sys, os, re, random
-import dendropy
+import dendropy as dp
 import numpy as np
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 import phyloGenerator_adapted as pG
@@ -75,10 +75,6 @@ output_dir = os.path.join(os.getcwd(), '4_phylogenies')
 if not os.path.isdir(output_dir):
     os.mkdir(output_dir)
 
-## Create name dictionary
-
-
-
 ## Loop through studies
 studies = sorted(os.listdir(input_dir))
 studies = [st for st in studies if not re.search("^log\.txt$", st)]
@@ -100,7 +96,8 @@ for i in range(1,len(studies)):
                             as qfile:
                         for txid,qname in zip(taxfile, qfile):        
                             txid = "tx" + txid.strip()
-                            names[txid] = qname.strip()
+                            # spaces need to be repalced with _
+                            names[txid] = re.sub("\\s", "_", qname.strip())
 
 	study_dir = os.path.join(input_dir, studies[i])
 	genes = sorted(os.listdir(study_dir))
@@ -131,13 +128,17 @@ for i in range(1,len(studies)):
                 phylo.prune("outgroup")
                 phylo = renameTips(phylo, names)
                 pG.Phylo.draw_ascii(phylo) # what does it look like?
-                # TODO:
-                # write out a consensus tree as well
-                #gene_str = "|".join(genes)
-                #pG.Phylo.write(phylo, os.path.join(output_dir, studies[i] + "_gene_" +\
-                #                                       gene_str + "_" + str(counter) + '.tre'), 'newick')
+                phylos.append(phylo)
                 nphylos += 1
 	print 'Done. [{0}] phylogenies for [{1}].'.format(nphylos, studies[i])
+        print 'Writing out phylogenies and generating consensus.'
+        filepath = os.path.join(output_dir, studies[i] + "_phylos" + '.tre')
+        pG.Phylo.write(phylos, filepath, 'newick')
+        phylos = dp.TreeList()
+        phylos.read(open(filepath, "rU"), "newick")
+        consensus = phylos.consensus(min_freq = 0.5)
+        consensus.write_to_path(os.path.join(output_dir, studies[i] + "_consensus" + '.tre'),\
+                                "newick", suppress_edge_lengths = True)
 	counter += 1
 	nphylos_all += nphylos
 print '\n\nStage finished. Generated [{0}] phylogenies across [{1}] studies.'.format(nphylos_all, counter)
