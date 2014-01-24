@@ -117,7 +117,7 @@ def findGeneInSeq(record, gene_names):
 		return ()
 
 def sequenceDownload(txid, gene_names, nseqs = 100, minlen = 400, maxlen = 2000,\
-			     maxpn = 0.1, thorough = True):
+			     maxpn = 0.1, thoroughness = 1):
 	"""Download all sequences for gene of interest for given taxon id.
 
 	Arguments:
@@ -127,41 +127,47 @@ def sequenceDownload(txid, gene_names, nseqs = 100, minlen = 400, maxlen = 2000,
 	 minlen = min sequence length (default 400)
 	 maxlen = max sequence length (default 2000)
 	 maxpn = max proportion of ambiguous nucleotides (default 0.1)
-	 thorough = logical, wider search if tight search pulls no results
-	  (default True)
+	 thoroughness = a number between 1 and 3 determining how thorough
+	  a search should be
 
 	Return:
 	 List of SeqRecord objects"""
-	def buildSearchTerm(gene_names, tight = True):
+	def buildSearchTerm(gene_names, phase):
 		# for field see: http://www.ncbi.nlm.nih.gov/books/NBK49540/
-		if tight: # use gene field
+		if phase == 1: # use gene field and ignore: predicted, genome
 			gene_term = ("{0}[GENE]".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}[GENE]".\
 						     format(gene_term, gene_name))
-			search_term = ("txid{0}[PORGN] AND ({1})".\
+			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI]".\
 					       format(txid, gene_term))
-		else: # use all fields for gene name
+		elif phase == 2: # use title for gene name and ignore: predicted, genome
+			gene_term = ("{0}[TI]".format(gene_names[0]))
+			for gene_name in gene_names[1:]:
+				gene_term = ("({0}) OR {1}[TI]".\
+						     format(gene_term, gene_name))
+			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI]".\
+					       format(txid, gene_term))
+		else: # search all fields, ignore nothing
 			gene_term = ("{0}".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}".\
 						     format(gene_term, gene_name))
 			search_term = ("txid{0}[PORGN] AND ({1})".\
 					       format(txid, gene_term))
+		print search_term
 		return search_term
 		
 	def search(gene_names):
 		seq_ids = []
-		search_term = buildSearchTerm(gene_names, tight = True)
-		count = eSearch(search_term)['Count']
-		if int(count) < 1:
-			if thorough:
-				search_term = buildSearchTerm(gene_names, tight = False)
-				count = eSearch(search_term)['Count']
-				if int(count) < 1:
-					return ()
-			else:
+		count = 0
+		phase = 1
+		while int(count) < 1:
+			if phase > thoroughness:
 				return ()
+			search_term = buildSearchTerm(gene_names, phase = phase)
+			count = eSearch(search_term)['Count']
+			phase += 1
 		seq_ids.extend(eSearch(search_term, retMax = count)['IdList'])
 		return list(set(seq_ids))
 	def parse(record):
