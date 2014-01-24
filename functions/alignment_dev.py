@@ -121,7 +121,8 @@ def incrAlign(seqobj, max_pgap, nstart):
 	"""Incrementally build an alignment from outgroup sequence"""
 	# parameters
 	# nstart the number of sequences to use in start
-	max_nstart_trys = 10 #  the number of trys before n_start -= 1
+	max_nstart_trys = 20 #  the number of trys before n_start -= 1
+	min_nstart = 2 # the minimum nstart
 	max_trys = 100 # prevents loops continuing forever
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
@@ -170,10 +171,12 @@ def incrAlign(seqobj, max_pgap, nstart):
 				align_obj = seqobj.next(align)
 			break
 		trys += 1
-		nstart_trys += 1
-		if max_nstart_trys <  nstart_trys:
-			nstart -= 1
-		if max_trys < trys or nstart < 2:
+		# drop nstart by 1 if max_nstart_trys
+		if nstart > min_nstart:
+			nstart_trys += 1
+			if max_nstart_trys < nstart_trys:
+				nstart -= 1
+		if max_trys < trys:
 			return None, nstart
 	trys = 0
 	while True:
