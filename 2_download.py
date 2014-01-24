@@ -9,6 +9,7 @@ print "\n\nThis is stage 2: download\n"
 
 ## Parameters
 dwnload_nseqs = 100
+thoroughness = 3
 
 ## Packages
 import sys, os, re, csv, time
@@ -80,7 +81,7 @@ for i in range(len(taxids_files)):
 		for taxid in taxids:
                     print "taxid = [{0}]".format(taxid)
                     # download
-                    sequences = dt.sequenceDownload(taxid, gene, thorough = True)
+                    sequences = dt.sequenceDownload(taxid, gene, thoroughness = thoroughness)
                     if len(sequences) < 1:
                         no_seqs_gene += 1
                         print "No sequences found for taxid [{0}].".\
