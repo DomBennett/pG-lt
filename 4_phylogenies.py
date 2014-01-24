@@ -5,10 +5,12 @@
 ## 14/08/2013
 
 ## Parameters
-#max_ngenes = 4 # the maximum number genes to be used in phylogeny estimation
-#min_ngenes = 1 # the minimum ...
-niterations = 100
+rand_ngenes = False
+min_ngenes = 2
+niterations = 10
 max_branch = 0.5 # the maximum proportion of a tree a single branch can represent
+max_nsplits = False
+max_trys = 1000
 
 ## Print stage
 print "\n\nThis is stage 4: phylogenies\n"
@@ -19,53 +21,7 @@ import dendropy as dp
 import numpy as np
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 import phyloGenerator_adapted as pG
-
-def renameTips(phylo, names):
-    for each in phylo.get_terminals():
-        try:
-            each.name = names[each.name]
-        except KeyError:
-            pass
-    return phylo
-
-def getRTTDists(phylo):
-    """Calcualte root to tips distance"""
-    names = []
-    for terminal in phylo.get_terminals():
-        names.append(terminal.name)
-    rtt_dists = []
-    for name in names:
-        rtt_dists.append(phylo.distance(name))
-    return rtt_dists
-
-def getTBP(phylo):
-    term_lens = []
-    for terminal in phylo.get_terminals():
-        term_lens.append(terminal.branch_length)
-    total_len = phylo.total_branch_length()
-    tbps = []
-    for term_len in term_lens:
-        tbps.append(term_len/total_len)
-    return tbps
-
-def getBranchLengths(phylo):
-    lens = []
-    depths =  phylo.depths(unit_branch_lengths = True)
-    for branch in depths.keys():
-        if branch.branch_length:
-            lens.append(branch.branch_length)
-    return lens
-    
-
-def phyloTest(phylo, max_branch):
-    """True if a single branch does not represent max_branch of the tree"""
-    lens = getBranchLengths(phylo)
-    total_len = sum(lens)
-    lens_bool = [e/total_len > max_branch for e in lens]
-    if any(lens_bool):
-        return False
-    else:
-        return True
+from phylogeny_gen_tools import *
 
 ## dirs
 names_dir = os.path.join(os.getcwd(), '1_taxids')
@@ -78,12 +34,13 @@ if not os.path.isdir(output_dir):
 ## Loop through studies
 studies = sorted(os.listdir(input_dir))
 studies = [st for st in studies if not re.search("^log\.txt$", st)]
-counter = 0
+study_counter = 0
 print 'Looping through studies ...'
 nphylos_all = 0
-for i in range(1,len(studies)):
+for i in range(len(studies)):
 	print '\n\nWorking on: [{0}]'.format(studies[i])
-        ## reading in names
+        taxontree_file = os.path.join(names_dir, "{0}_taxontree.txt".\
+                                          format(studies[i]))
         study_names_files = [e for e in names_files if\
                                  re.search("^{0}".format(studies[i]), e)]
         taxids_file = [e for e in study_names_files if\
@@ -119,26 +76,42 @@ for i in range(1,len(studies)):
         counter = 0
         phylos = []
         while nphylos < niterations:
+            if counter > max_trys:
+                break
             counter += 1
             print counter
-            alignment = [random.sample(align_obj[e], 1)[0] for e in align_obj.keys()]
+            if rand_ngenes:
+                ngenes = random.sample(range(min_ngenes, len(align_obj.keys()) + 1), 1)[0]
+                genes = random.sample(align_obj.keys(), ngenes)
+            else:
+                genes = align_obj.keys()
+            print genes
+            alignment = [random.sample(align_obj[e], 1)[0] for e in genes]
             phylo = pG.RAxML(alignment, method = "raxmlHPC") # need to change this for mac
-            if phyloTest(phylo, max_branch):
+            pG.Phylo.draw_ascii(phylo)
+            try:
                 phylo.root_with_outgroup("outgroup")
-                phylo.prune("outgroup")
-                phylo = renameTips(phylo, names)
-                pG.Phylo.draw_ascii(phylo) # what does it look like?
+            except ValueError:
+                continue
+            phylo.prune("outgroup")
+            phylo = renameTips(phylo, names)
+            pG.Phylo.draw_ascii(phylo)
+            if phyloTest(phylo, taxontree_file, max_nsplits, max_branch):
+                print "A good tree!"
                 phylos.append(phylo)
                 nphylos += 1
-	print 'Done. [{0}] phylogenies for [{1}].'.format(nphylos, studies[i])
-        print 'Writing out phylogenies and generating consensus.'
-        filepath = os.path.join(output_dir, studies[i] + "_phylos" + '.tre')
-        pG.Phylo.write(phylos, filepath, 'newick')
-        phylos = dp.TreeList()
-        phylos.read(open(filepath, "rU"), "newick")
-        consensus = phylos.consensus(min_freq = 0.5)
-        consensus.write_to_path(os.path.join(output_dir, studies[i] + "_consensus" + '.tre'),\
-                                "newick", suppress_edge_lengths = True)
-	counter += 1
-	nphylos_all += nphylos
-print '\n\nStage finished. Generated [{0}] phylogenies across [{1}] studies.'.format(nphylos_all, counter)
+            else:
+                print "A bad tree..."
+        if len(phylos) > 1:
+            print 'Done. [{0}] phylogenies for [{1}].'.format(nphylos, studies[i])
+            print 'Writing out phylogenies and generating consensus.'
+            filepath = os.path.join(output_dir, studies[i] + "_phylos" + '.tre')
+            pG.Phylo.write(phylos, filepath, 'newick')
+            phylos = dp.TreeList()
+            phylos.read(open(filepath, "rU"), "newick")
+            consensus = phylos.consensus(min_freq = 0.5)
+            consensus.write_to_path(os.path.join(output_dir, studies[i] + "_consensus" + '.tre'),\
+                                        "newick", suppress_edge_lengths = True)
+            study_counter += 1
+            nphylos_all += nphylos
+print '\n\nStage finished. Generated [{0}] phylogenies across [{1}] studies.'.format(nphylos_all, study_counter)
