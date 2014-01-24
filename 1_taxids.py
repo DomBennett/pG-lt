@@ -9,6 +9,7 @@ print "\n\nThis is stage 1: taxids\n"
 
 ## Packages + Functions
 import os, re, sys, csv
+from Bio import Phylo
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 from taxon_names_resolver import TaxonNamesResolver
 from taxon_names_resolver_tools import *
@@ -44,31 +45,29 @@ for taxnames_file in taxnames_files:
         input_file = os.path.join(input_dir, taxnames_file)
 	resolver = TaxonNamesResolver(input_file, datasource, taxon_id)
         resolver.main()
-        # resolver.write() # change TNR to specify output dir here
-        resolver = lineageMerge(resolver)
+        resolver = lineageMerge(resolver) # prevent duplicates
 	qnames,taxids = extractHighestClade(resolver, by_ids = True)
 	print '... resolved [{0}] names ...'.format(len(taxids))
 	if len(taxids) < 3:
 		print 'Too few names resovled. Dropping study.\n'
 		continue
+        print '... generating taxonomic tree ...'
+        taxontree,shared_lineages = genTaxTree(resolver, by = 'qnames', draw = True)        
 	print 'Done.'
-	
-	## Output (commented out taxon tree output)
 	print 'Outputting ...'
 	taxids.append(taxadict[current_study][1])
 	qnames.append('outgroup') # add outgroup
-	#taxontree_file = re.sub('taxnames', 'taxontree', taxnames_file)
+	taxontree_file = re.sub('taxnames', 'taxontree', taxnames_file)
 	taxids_file = re.sub('taxnames', 'taxids', taxnames_file)
-	#shared_file = re.sub('taxnames', 'shared', taxnames_file)
+	shared_file = re.sub('taxnames', 'shared', taxnames_file)
 	qnames_file = re.sub('taxnames', 'qnames', taxnames_file)
 	with file(os.path.join(output_dir, taxids_file), 'wb') as outfile:
 		for taxid in taxids:
 		  outfile.write("%s\n" % taxid)
-	#with file(os.path.join(output_dir, taxontree_file), 'wb') as outfile:
-	#	outfile.write(taxontree)
-	#with file(os.path.join(output_dir, shared_file), 'wb') as outfile:
-	#	for each in shared_lineages:
-	#	  outfile.write("%s\n" % each)
+	Phylo.write(taxontree, os.path.join(output_dir, taxontree_file), "newick")
+	with file(os.path.join(output_dir, shared_file), 'wb') as outfile:
+		for each in shared_lineages:
+		  outfile.write("%s\n" % each)
 	with file(os.path.join(output_dir, qnames_file), 'wb') as outfile:
 		for each in qnames:
 		  outfile.write("%s\n" % each)
