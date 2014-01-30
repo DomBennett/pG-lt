@@ -7,7 +7,7 @@
 ## Parameters
 rand_ngenes = False
 min_ngenes = 2
-niterations = 10
+niterations = 100
 max_branch = 0.5 # the maximum proportion of a tree a single branch can represent
 max_nsplits = False
 max_trys = 1000

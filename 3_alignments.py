@@ -6,7 +6,7 @@
 
 ## Parameters
 minfails = 20 # the minimum sequence quality
-max_pgap = 0.5 # the proportion of gaps in a sequence for a good alignment
+max_pgap = 0.1 # the proportion of gaps in a sequence for a good alignment
 #min_align_len = 200 # minimum alignment length
 iterations = 100 # number of iterations to perform
 #max_attempts = 10 # the maximum number of failed in a row alignments
@@ -91,20 +91,27 @@ for i in range(len(studies)):
 		gene_alignments = []
                 nstart = len(seq_obj)
                 # Generate alignments
-                for j in range(iterations):
-                    print "iteration [{0}]".format(j)
-                    t0 = time.clock()
-                    alignment, nstart = incrAlign(seq_obj, max_pgap, nstart)
-                    t1 = time.clock() - t0
-                    if alignment is None:
-                        continue
-                    print "... alignment length [{0}] for [{1}] species in [t{2}]".\
-                        format(alignment.get_alignment_length(), len(alignment), t1)
-                    gene_alignments.append(alignment)
-                # Write out alignments
+                try:
+                    for j in range(iterations):
+                        print "iteration [{0}]".format(j)
+                        t0 = time.clock()
+                        alignment, nstart = incrAlign(seq_obj, max_pgap, nstart)
+                        t1 = time.clock() - t0
+                        if alignment is None:
+                            continue
+                        print "... alignment length [{0}] for [{1}] species in [t{2}]".\
+                            format(alignment.get_alignment_length(), len(alignment), t1)
+                        gene_alignments.append(alignment)
+                except OutgroupError:
+                    print "... outgroup dropped"
+                    continue
+                except MinSpeciesError:
+                    print "... too few species left in sequence pool"
+                    continue
                 if len(gene_alignments) < 1:
                     print "... no alignments generated"
                     continue
+                # Write out alignments
                 print "... writing out alignments for [{0}] alignments".\
                     format(len(gene_alignments))
                 for j,alignment in enumerate(gene_alignments):

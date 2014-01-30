@@ -8,6 +8,10 @@ class OutgroupError(Exception):
 	"""Raised whenever an outgroup is dropped"""
 	pass
 
+class MinSpeciesError(Exception):
+	"""Raised whenever there are too few species for phylogeny generation"""
+	pass
+
 class SeqObj(dict):
 	"""Store species' gene sequences with functions for pulling sequences for alignments and adding penalties for sequences that did not align"""
 	def __init__(self, genedir, seqfiles, outgroup, minfails):
@@ -73,7 +77,8 @@ class SeqObj(dict):
 			to_drop = []
 			for i in range(len(self[sp][0])):
 				if self[sp][0][i][1] > self.minfails:
-					print "Dropping [{0}] for [{1}] as nfails is [{2}]".format(i,sp, self[sp][0][i][1])
+					print "Dropping [{0}] for [{1}] as nfails is [{2}]".\
+					    format(i,sp, self[sp][0][i][1])
 					to_drop.append(i)
 			for i in to_drop:
 				del self[sp][0][i]
@@ -85,6 +90,8 @@ class SeqObj(dict):
 					self.dspp.append(sp)
 					self.spp_pool = [e for e in self.spp_pool if e != sp]
 					del self[sp]
+		if len(self.keys()) < 5: # Raise error if fewer than 5 species left in spp pool
+			raise MinSpeciesError
 
 def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=None):
 	if 'trimAl' in method:
@@ -137,12 +144,11 @@ def incrAlign(seqobj, max_pgap, nstart):
 			pgaps_bool = [e < max_pgap for e in pgaps]
 			return align,pgaps_bool,al
 	def returnBestAlign(alignments):
-		# test if there are any alignments
-		if len(alignments) == 0:
-			return None
 		# keep alignments with outgroups
+		# keep alignments with more than 5 species
 		alignments = [al for al in alignments if "outgroup" in\
 				      [e.id for e in al._records]]
+		alignments = [al for al in alignments if len(al) >= 5]
 		if len(alignments) == 0:
 			return None
 		# keep only alignments with lots of records
@@ -190,11 +196,7 @@ def incrAlign(seqobj, max_pgap, nstart):
 				align_store.append(align)
 				align_obj = seqobj.next(align)
 		elif trys < max_trys:
-			try:
-				align_obj = seqobj.back(align)
-			except OutgroupError:
-				print "Outgroup error"
-				return returnBestAlign(align_store), nstart
+			align_obj = seqobj.back(align)
 			if len(seqobj.spp_pool) == 0:
 				# here a species has been dropped and now all species are present
 				return returnBestAlign(align_store), nstart
