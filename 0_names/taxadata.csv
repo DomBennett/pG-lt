@@ -3,4 +3,4 @@ bee,34735,Apoidea,34725,Vespoidea,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|
 plant,3193,Embryophyta,3208,Bryophyta,rbcl|matk,
 bird,8782,Aves,1294634,Crocodylia,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
 reptile,8457,Sauropsida,40674,Mammalia,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
-mammal,40674,Mammalia,8782,Aves,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
+mammal,40674,Mammalia,8457,Sauropsida,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
