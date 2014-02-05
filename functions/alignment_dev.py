@@ -133,8 +133,13 @@ def incrAlign(seqobj, max_pgap, nstart):
 	max_trys = 100 # prevents loops continuing forever
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
+		seq_names = [e[0].name for e in align_obj]
 		align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
 		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
+		# ensure sequence names used are in description
+		for i,e in enumerate(seq_names):
+			align._records[i].description = align._records[i].description + \
+			    " -- " + e
 		al = align.get_alignment_length()
 		if al == 0:
 			return align,[False],0
