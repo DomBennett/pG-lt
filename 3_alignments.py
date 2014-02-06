@@ -6,7 +6,7 @@
 
 ## Parameters
 minfails = 20 # the minimum sequence quality
-max_pgap = 0.1 # the proportion of gaps in a sequence for a good alignment
+max_pgap = 0.5 # the proportion of gaps in a sequence for a good alignment
 #min_align_len = 200 # minimum alignment length
 iterations = 100 # number of iterations to perform
 #max_attempts = 10 # the maximum number of failed in a row alignments
@@ -89,6 +89,8 @@ for i in range(len(studies)):
 		print "Aligning gene [{0}] for [{1}] species ...".\
 			format(gene, len(seq_obj))
 		gene_alignments = []
+                print "Running self-alignment ..."
+                seq_obj.selfAlign(max_pgap = max_pgap, trim = True)
                 nstart = len(seq_obj)
                 # Generate alignments
                 try:
