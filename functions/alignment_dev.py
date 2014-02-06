@@ -36,7 +36,40 @@ class SeqObj(dict):
 							seqs.append([record, 0]) # seqrecord + nfails
 							self.nseqs += 1
 			if len(seqs) > 0:
-				self[name] = (seqs, np.median(lengths))
+				self[name] = [seqs, np.median(lengths)]
+
+	def selfAlign(self, max_pgap, trim = False):
+		"""Align species' sequences to themselves to ensure overlap"""
+		for species in self.keys():
+			align_struct = [[e[0]] for e in self[species][0]]
+			if len(align_struct) < 2: # can't align a single sequence
+				continue
+			align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
+			if trim:
+				# Identify sequences that have too many gaps, remove and re-run alignment
+				seq_descriptions = [e[0].description for e in self[species][0]]
+				align = cleanAlignment(align, timeout = 99999)[0][0]
+				al = align.get_alignment_length()
+				ngaps = [e.seq.count('-') for e in align]
+				pgaps = [float(e)/al for e in ngaps]
+				pgaps_bool = [e < max_pgap for e in pgaps]
+				if not all(pgaps_bool):
+					# delete the sequence from the sequence pool
+					self[species][0] = [self[species][0][i] for i,e in \
+								    enumerate(pgaps_bool) if e == True]
+					align_struct = [align_struct[i] for i,e in \
+								    enumerate(pgaps_bool) if e == True]
+					seq_descriptions = [seq_descriptions[i] for i,e in \
+								    enumerate(pgaps_bool) if e == True]
+					align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
+					align = cleanAlignment(align, timeout = 99999)[0][0]
+				for i,e in enumerate(seq_descriptions):
+					align._records[i].description = e
+			else:
+				align = align[0][0] # 'de-list' alignment as returned from cleanAlignment
+			# replace each sequence with the aligned sequence
+			for i in range(len(self[species][0])):
+				self[species][0][i][0] = align._records[i]
 			
 	def start(self, n):
 		"""Return n starting random sp sequences, update spp_pool"""
@@ -133,13 +166,12 @@ def incrAlign(seqobj, max_pgap, nstart):
 	max_trys = 100 # prevents loops continuing forever
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
-		seq_names = [e[0].name for e in align_obj]
+		seq_descriptions = [e[0].description for e in align_obj]
 		align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
 		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
 		# ensure sequence names used are in description
-		for i,e in enumerate(seq_names):
-			align._records[i].description = align._records[i].description + \
-			    " -- " + e
+		for i,e in enumerate(seq_descriptions):
+			align._records[i].description = e
 		al = align.get_alignment_length()
 		if al == 0:
 			return align,[False],0
