@@ -65,6 +65,7 @@ for i in range(len(studies)):
 		align_obj[gene] = []
 		gene_dir = os.path.join(study_dir, gene)
 		a_files = os.listdir(gene_dir)
+                a_files = [e for e in a_files if not re.search("^\.", e)]
 		for a_file in a_files:
 			a_file_path = os.path.join(gene_dir, a_file)
 			align = pG.AlignIO.read(a_file_path, "fasta")
