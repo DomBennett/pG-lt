@@ -41,7 +41,7 @@ print "Done. Read in taxadata for [{0}] studies.".format(len(taxadict))
 
 ## Loop through studies
 studies = sorted(os.listdir(input_dirs[0]))
-studies = [st for st in studies if not re.search("^log\.txt$", st)]
+studies = [st for st in studies if not re.search("^\.|^log\.txt$", st)]
 counter = 0
 print '\nLooping through studies ...'
 naligns_all = 0

@@ -902,7 +902,10 @@ def RAxML(alignment, method='localVersion', tempStem='temp', outgroup=None, time
 	if not runNow:
 		return commandLine
 	pipe = TerminationPipe(commandLine, timeout)
-	pipe.run()
+        if 'localVersion' in method:
+                pipe.run(changeDir = True)
+        else:
+                pipe.run()
 	if not pipe.failure:
 		if 'startingOnly' in method:
 			tree = Phylo.read('RAxML_parsimonyTree.' + outputFile, "newick")

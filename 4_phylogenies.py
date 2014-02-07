@@ -33,7 +33,7 @@ if not os.path.isdir(output_dir):
 
 ## Loop through studies
 studies = sorted(os.listdir(input_dir))
-studies = [st for st in studies if not re.search("^log\.txt$", st)]
+studies = [st for st in studies if not re.search("^\.|^log\.txt$", st)]
 study_counter = 0
 print 'Looping through studies ...'
 nphylos_all = 0
@@ -58,6 +58,7 @@ for i in range(len(studies)):
 
 	study_dir = os.path.join(input_dir, studies[i])
 	genes = sorted(os.listdir(study_dir))
+        genes = [e for e in genes if not re.search("^\.", e)]
 	print "Reading in alignments ..."
 	align_obj = {}
 	for gene in genes:
@@ -87,7 +88,10 @@ for i in range(len(studies)):
                 genes = align_obj.keys()
             print genes
             alignment = [random.sample(align_obj[e], 1)[0] for e in genes]
-            phylo = pG.RAxML(alignment, method = "raxmlHPC") # need to change this for mac
+            if "darwin" == sys.platform:
+                phylo = pG.RAxML(alignment, method = 'localVersion')
+            else:
+                phylo = pG.RAxML(alignment, method = "raxmlHPC")
             pG.Phylo.draw_ascii(phylo)
             try:
                 phylo.root_with_outgroup("outgroup")
