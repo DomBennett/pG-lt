@@ -61,8 +61,9 @@ class SeqObj(dict):
 								    enumerate(pgaps_bool) if e == True]
 					seq_descriptions = [seq_descriptions[i] for i,e in \
 								    enumerate(pgaps_bool) if e == True]
-					align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
-					align = cleanAlignment(align, timeout = 99999)[0][0]
+                                        if len(align_struct) > 1:
+                                                align = pG.alignSequences(align_struct, method = 'mafft', nGenes = 1)
+                                                align = cleanAlignment(align, timeout = 99999)[0][0]
 				for i,e in enumerate(seq_descriptions):
 					align._records[i].description = e
 			else:
