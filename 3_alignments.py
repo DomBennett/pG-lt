@@ -9,9 +9,7 @@ minfails = 20 # the minimum sequence quality
 max_pgap = 0.25 # the proportion of gaps in a sequence for a good alignment
 #min_align_len = 200 # minimum alignment length
 iterations = 100 # number of iterations to perform
-#max_attempts = 10 # the maximum number of failed in a row alignments
-
-
+max_trys = 10 # the maximum number of failed in a row alignments
 
 ## Print stage
 print "\n\nThis is stage 3: alignment\n"
@@ -54,6 +52,7 @@ for i in range(len(studies)):
 	print 'Working out how many genes to use ...'
 	study_dir = os.path.join(os.getcwd(), input_dirs[0], studies[i])
 	genes = sorted(os.listdir(study_dir))
+        genes = [e for e in genes if not re.search("^\.", e)]
 	print 'Done. Working with [{0}] ...'.format(genes)
 
 	## read in seqs
@@ -93,6 +92,7 @@ for i in range(len(studies)):
                 seq_obj.selfAlign(max_pgap = max_pgap, trim = True)
                 nstart = len(seq_obj)
                 # Generate alignments
+                iterations_trys = 0
                 try:
                     for j in range(iterations):
                         print "iteration [{0}]".format(j)
@@ -100,10 +100,15 @@ for i in range(len(studies)):
                         alignment, nstart = incrAlign(seq_obj, max_pgap, nstart)
                         t1 = time.clock() - t0
                         if alignment is None:
+                            iteration_trys += 1
+                            if iteration_trys > max_trys:
+                                print "Max iterations with no alignments hit!"
+                                break
                             continue
                         print "... alignment length [{0}] for [{1}] species in [t{2}]".\
                             format(alignment.get_alignment_length(), len(alignment), t1)
                         gene_alignments.append(alignment)
+                        iteration_trys = 0
                 except OutgroupError:
                     print "... outgroup dropped"
                     continue
