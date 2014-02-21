@@ -232,6 +232,7 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 						     format(gene_term, gene_name))
 			search_term = ("txid{0}[PORGN] AND ({1})".\
 					       format(txid, gene_term))
+		print search_term
 		return search_term
 		
 	def search(gene_names):

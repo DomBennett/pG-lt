@@ -98,7 +98,7 @@ for i in range(len(taxids_files)):
 	                    		maxpn, thoroughness))
 	                    	deja_vues.extend([e.id for e in downloaded])
 	                    	deja_vues = list(set(deja_vues))
-	                    	if len(downloaded) < filter_seed and len(sequences) > 0:
+	                    	if len(downloaded) < filter_seed and len(sequences) == 0:
 	                    		sequences.extend(downloaded)
 	                    		break
 	                    	else:
