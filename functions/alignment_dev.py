@@ -38,40 +38,6 @@ class SeqObj(dict):
 			if len(seqs) > 0:
 				self[name] = [seqs, np.median(lengths)]
 
-	def selfAlign(self, max_pgap, trim = False):
-		"""Align species' sequences to themselves to ensure overlap"""
-		for species in self.keys():
-			align_struct = [[e[0]] for e in self[species][0]]
-			if len(align_struct) < 2: # can't align a single sequence
-				continue
-			align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
-			if trim:
-				# Identify sequences that have too many gaps, remove and re-run alignment
-				seq_descriptions = [e[0].description for e in self[species][0]]
-				align = cleanAlignment(align, timeout = 99999)[0][0]
-				al = align.get_alignment_length()
-				ngaps = [e.seq.count('-') for e in align]
-				pgaps = [float(e)/al for e in ngaps]
-				pgaps_bool = [e < max_pgap for e in pgaps]
-				if not all(pgaps_bool):
-					# delete the sequence from the sequence pool
-					self[species][0] = [self[species][0][i] for i,e in \
-								    enumerate(pgaps_bool) if e == True]
-					align_struct = [align_struct[i] for i,e in \
-								    enumerate(pgaps_bool) if e == True]
-					seq_descriptions = [seq_descriptions[i] for i,e in \
-								    enumerate(pgaps_bool) if e == True]
-                                        if len(align_struct) > 1:
-                                                align = pG.alignSequences(align_struct, method = 'mafft', nGenes = 1)
-                                                align = cleanAlignment(align, timeout = 99999)[0][0]
-				for i,e in enumerate(seq_descriptions):
-					align._records[i].description = e
-			else:
-				align = align[0][0] # 'de-list' alignment as returned from cleanAlignment
-			# replace each sequence with the aligned sequence
-			for i in range(len(self[species][0])):
-				self[species][0][i][0] = align._records[i]
-			
 	def start(self, n):
 		"""Return n starting random sp sequences, update spp_pool"""
 		self.spp_pool = self.keys()
@@ -156,31 +122,44 @@ def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=No
 		return output
 	else:
 		raise RuntimeError("Only automated trimAl methods supported at this time.")
-
 					
-def incrAlign(seqobj, max_pgap, nstart):
+def incrAlign(seqobj, pintgapmax, pextgapmax, method, nstart):
 	"""Incrementally build an alignment from outgroup sequence"""
 	# parameters
 	# nstart the number of sequences to use in start
-	max_nstart_trys = 20 #  the number of trys before n_start -= 1
-	min_nstart = 2 # the minimum nstart
+	max_nstart_trys = 20 #  the number of trys before nstart -= 1
+	min_nstart = 5 # the minimum nstart
 	max_trys = 100 # prevents loops continuing forever
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
 		seq_descriptions = [e[0].description for e in align_obj]
-		align = pG.alignSequences(align_struct, method= 'mafft', nGenes = 1)
+		align = pG.alignSequences(align_struct, method = method, nGenes = 1)
 		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
 		# ensure sequence names used are in description
 		for i,e in enumerate(seq_descriptions):
 			align._records[i].description = e
-		al = align.get_alignment_length()
-		if al == 0:
-			return align,[False],0
-		else:
-			ngaps = [e.seq.count('-') for e in align]
-			pgaps = [float(e)/al for e in ngaps]
-			pgaps_bool = [e < max_pgap for e in pgaps]
-			return align,pgaps_bool,al
+		return align
+	def alignCheck(align):
+		if align.get_alignment_length() < min_align_len:
+			return False
+		for each in align:
+			sequence = each.seq.tostring()
+			totgaps = sequence.count('-')
+			totnucs = len(sequence) - totgaps
+			extgaps = 0
+			start_extgaps = re.search("^-+", sequence)
+			end_extgaps = re.search("-+$", sequence)
+			if not start_extgaps is None:
+				extgaps += start_extgaps.end()
+			if not end_extgaps is None:
+				extgaps += len(sequence) - end_extgaps.start()
+			intgaps = totgaps - extgaps
+			overlap = intgaps + totnucs
+			if float(intgaps)/overlap > pintgapmax:
+				return False
+			if float(extgaps)/len(sequence) > pextgapmax:
+				return False
+		return True
 	def returnBestAlign(alignments):
 		# keep alignments with outgroups
 		# keep alignments with more than 5 species
@@ -197,7 +176,6 @@ def incrAlign(seqobj, max_pgap, nstart):
 		alignments_lens = [len(e) for e in alignments]
 		max_i = alignments_lens.index(max(alignments_lens))
 		return alignments[max_i]
-
 	## run alignments until alignment for all species made
 	trys = 0
 	nstart_trys = 0
@@ -206,8 +184,8 @@ def incrAlign(seqobj, max_pgap, nstart):
 	while True:
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align_obj = seqobj.start(nstart)
-		align,pgaps_bool,al = runAlignment(align_obj)
-		if all(pgaps_bool) and al > min_align_len:
+		align = runAlignment(align_obj)
+		if alignCheck(align):
 			if len(seqobj.spp_pool) == 0:
 				return align, nstart
 			else:
@@ -225,8 +203,8 @@ def incrAlign(seqobj, max_pgap, nstart):
 	trys = 0
 	while True:
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
-		align,pgaps_bool,al = runAlignment(align_obj)
-		if all(pgaps_bool) and al > min_align_len:
+		align = runAlignment(align_obj)
+		if alignCheck(align):
 			trys = 0
 			if len(seqobj.spp_pool) == 0:
 				return align, nstart

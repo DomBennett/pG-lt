@@ -5,17 +5,17 @@
 ## 14/08/2013
 
 ## Parameters
-minfails = 20 # the minimum sequence quality
-max_pgap = 0.25 # the proportion of gaps in a sequence for a good alignment
-#min_align_len = 200 # minimum alignment length
-iterations = 100 # number of iterations to perform
+minfails = 10 # the minimum sequence quality
+pextgapmax = 0.5 # the proportion of external gaps in a sequence for a good alignment
+pintgapmax = 0.05 # # the proportion of internal gaps in a sequence for a good alignment
+iterations = 10 # number of iterations to perform
 max_trys = 10 # the maximum number of failed in a row alignments
 
 ## Print stage
 print "\n\nThis is stage 3: alignment\n"
 
 ## Packages
-import sys, os, re, random, csv
+import sys, os, re, random, csv, copy
 import time # let's see if the iterations get faster
 import numpy as np
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
@@ -88,50 +88,57 @@ for i in range(len(studies)):
 		print "Aligning gene [{0}] for [{1}] species ...".\
 			format(gene, len(seq_obj))
 		gene_alignments = []
-                print "Running self-alignment ..."
-                seq_obj.selfAlign(max_pgap = max_pgap, trim = True)
-                nstart = len(seq_obj)
-                # Generate alignments
-                iterations_trys = 0
-                try:
-                    for j in range(iterations):
-                        print "iteration [{0}]".format(j)
-                        t0 = time.clock()
-                        alignment, nstart = incrAlign(seq_obj, max_pgap, nstart)
-                        t1 = time.clock() - t0
-                        if alignment is None:
-                            iteration_trys += 1
-                            if iteration_trys > max_trys:
-                                print "Max iterations with no alignments hit!"
-                                break
+        temp_seqobj = copy.deepcopy(seq_obj)
+        method = 'mafft'
+        iteration_trys = 0
+        j = 1
+        try:
+            while j <= iterations:
+                print "iteration [{0}]".format(j)
+                t0 = time.clock()
+                alignment, nstart = incrAlign(temp_seqobj, pintgapmax, pextgapmax, method, nstart)
+                t1 = time.clock() - t0
+                if alignment is None:
+                    iteration_trys += 1
+                    if iteration_trys > max_trys:
+                        if method is 'mafft':
+                            print "Too many failed alignments with MAFFT. Switching to Clustal-O"
+                            method = 'clustalo'
+                            iteration_trys = 0
                             continue
-                        print "... alignment length [{0}] for [{1}] species in [t{2}]".\
-                            format(alignment.get_alignment_length(), len(alignment), t1)
-                        gene_alignments.append(alignment)
-                        iteration_trys = 0
-                except OutgroupError:
-                    print "... outgroup dropped"
-                    continue
-                except MinSpeciesError:
-                    print "... too few species left in sequence pool"
-                    continue
-                if len(gene_alignments) < 1:
-                    print "... no alignments generated"
-                    continue
-                # Write out alignments
-                print "... writing out alignments for [{0}] alignments".\
-                    format(len(gene_alignments))
-                for j,alignment in enumerate(gene_alignments):
-                    gene_dir = os.path.join(study_dir, gene)
-                    if not os.path.isdir(gene_dir):
-                        os.mkdir(gene_dir)
-                    alength = alignment.get_alignment_length()
-                    ngap = sum([e.seq.count("-") for e in alignment])
-                    output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
-                    output_path = os.path.join(gene_dir, output_file)
-                    with open(output_path, "w") as outfile:
-                        count = pG.SeqIO.write(alignment, outfile, "fasta")
-                    naligns_all += 1   
+                        else:
+                            print "Max iterations with no alignments hit!"
+                            break
+                    else:
+                        continue
+                print "... alignment length [{0}] for [{1}] species in [t{2}]".\
+                    format(alignment.get_alignment_length(), len(alignment), t1)
+                gene_alignments.append(alignment)
+                iteration_trys = 0
+                j += 1
+        except OutgroupError:
+            print "... outgroup dropped"
+            continue
+        except MinSpeciesError:
+            print "... too few species left in sequence pool"
+            continue
+        if len(gene_alignments) < 1:
+            print "... no alignments generated"
+            continue
+        # Write out alignments
+        print "... writing out alignments for [{0}] alignments".\
+            format(len(gene_alignments))
+        for j,alignment in enumerate(gene_alignments):
+            gene_dir = os.path.join(study_dir, gene)
+            if not os.path.isdir(gene_dir):
+                os.mkdir(gene_dir)
+            alength = alignment.get_alignment_length()
+            ngap = sum([e.seq.count("-") for e in alignment])
+            output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
+            output_path = os.path.join(gene_dir, output_file)
+            with open(output_path, "w") as outfile:
+                count = pG.SeqIO.write(alignment, outfile, "fasta")
+            naligns_all += 1   
         counter += 1
 
 ## Remove mafft files
