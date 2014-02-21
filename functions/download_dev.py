@@ -15,11 +15,88 @@ from Bio import SeqIO #Sequence manipulation
 import random #Randomly select from multiple matches when downloading sequences
 import re #Search for files to delete
 import time #For waiting between sequence downloads
+import phyloGenerator_adapted as pG
+import sys, os
 
 ## Globals
 maxCheck = 4
 
 ## Functions
+def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=None):
+	if 'trimAl' in method:
+		options = ""
+		if 'automated' in method:
+			options += " -automated1"
+		output = []
+		for i,gene in enumerate(align):
+			geneOutput = []
+			for j,method in enumerate(gene):
+				pG.AlignIO.write(method, tempStem+"Input.fasta", "fasta")
+				fileLine = " -in " + tempStem + "Input.fasta -out " + tempStem + "Output.fasta -fasta"
+				trimalVersion = "trimal"
+				commandLine = trimalVersion + fileLine + options
+				if timeout:
+                                        pipe = pG.TerminationPipe(commandLine, timeout)
+                                        if 'darwin' == sys.platform: # so that I can run it on mac
+                                                pipe.run(changeDir = True)
+                                        else:
+                                                pipe.run()
+					if not pipe.failure:
+						geneOutput.append(pG.AlignIO.read(tempStem + "Output.fasta", "fasta"))
+						os.remove(tempStem + "Output.fasta")
+						os.remove(tempStem + "Input.fasta")
+					else:
+						raise RuntimeError("Either trimAl failed, or it ran out of time")
+			output.append(geneOutput)
+		return output
+	else:
+		raise RuntimeError("Only automated trimAl methods supported at this time.")
+
+def filterSequences(sequences, filter_seed, pintgapmax, pextgapmax, max_trys, min_align_len):
+	if len(sequences) < filter_seed:
+		return [], sequences
+	def filterByAlignment(sequences):
+		sequences = [[e] for e in sequences]
+		align = pG.alignSequences(sequences, method = "mafft", nGenes = 1)
+		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
+		if align.get_alignment_length() < min_align_len:
+				return False
+		for each in align:
+			sequence = each.seq.tostring()
+			totgaps = sequence.count('-')
+			totnucs = len(sequence) - totgaps
+			extgaps = 0
+			start_extgaps = re.search("^-+", sequence)
+			end_extgaps = re.search("-+$", sequence)
+			if not start_extgaps is None:
+				extgaps += start_extgaps.end()
+			if not end_extgaps is None:
+				extgaps += len(sequence) - end_extgaps.start()
+			intgaps = totgaps - extgaps
+			overlap = intgaps + totnucs
+			if float(intgaps)/overlap > pintgapmax:
+				return False
+			if float(extgaps)/len(sequence) > pextgapmax:
+				return False
+		return True
+	filtered = []
+	trys = 0
+	while filter_seed > 2 and trys < max_trys:
+		temp = []
+		for i in range(filter_seed):
+			randn = random.randint(0, len(sequences)-1)
+			temp.append(sequences.pop(randn))
+		if filterByAlignment(temp):
+			filtered.extend(temp)
+		else:
+			sequences.extend(temp)
+			trys += 1
+		if len(sequences) < filter_seed*2:
+			filter_seed -= 1
+		if len(sequences) < filter_seed:
+			filter_seed = len(sequences) - 1
+	return filtered,sequences
+
 def eSearch(term, retStart=0, retMax=1, usehistory="n"):
 	"""Use Entrez.esearch to check for results in the nucleotide database given term.
 
@@ -116,8 +193,8 @@ def findGeneInSeq(record, gene_names):
 			    format(record.id)
 		return ()
 
-def sequenceDownload(txid, gene_names, nseqs = 100, minlen = 400, maxlen = 2000,\
-			     maxpn = 0.1, thoroughness = 1):
+def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
+			     maxpn, thoroughness, nseqs = 100):
 	"""Download all sequences for gene of interest for given taxon id.
 
 	Arguments:
@@ -155,7 +232,6 @@ def sequenceDownload(txid, gene_names, nseqs = 100, minlen = 400, maxlen = 2000,
 						     format(gene_term, gene_name))
 			search_term = ("txid{0}[PORGN] AND ({1})".\
 					       format(txid, gene_term))
-		print search_term
 		return search_term
 		
 	def search(gene_names):
@@ -183,13 +259,12 @@ def sequenceDownload(txid, gene_names, nseqs = 100, minlen = 400, maxlen = 2000,
 		return False
 	pattern = re.compile("[ACTGactg]")
 	seq_store = search(gene_names)
-	print "seq_store len: {0}".format(len(seq_store))
+	seq_store = [e for e in seq_store if not e in deja_vues]
 	records = []
 	i = 1
 	while i <= nseqs and len(seq_store) > 0:
 		randi = random.randint(0, len(seq_store)-1)
 		seq = seq_store.pop(randi)
-		print seq
 		record = eFetchSeqID(seq)
 		record = parse(record)
 		if record:

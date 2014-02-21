@@ -8,8 +8,16 @@
 print "\n\nThis is stage 2: download\n"
 
 ## Parameters
-dwnload_nseqs = 100
+seqcount = 50
+filter_seed = 5
 thoroughness = 3
+pintgapmax = 0.0
+pextgapmax = 0.5
+max_trys = 10
+filtering = True
+minlen = 400
+maxlen = 2000
+maxpn = 0.1 # Max proportion of ambiguous nucleotides
 
 ## Packages
 import sys, os, re, csv, time
@@ -79,12 +87,33 @@ for i in range(len(taxids_files)):
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
 		for taxid in taxids:
-                    print "taxid = [{0}]".format(taxid)
+                    print "..... taxid[{0}]".format(taxid)
                     # download
-                    sequences = dt.sequenceDownload(taxid, gene, thoroughness = thoroughness)
+                    if filtering:
+                    	sequences = []
+                    	downloaded = []
+                    	deja_vues = []
+                    	while len(sequences) < seqcount:
+	                    	downloaded.extend(dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
+	                    		maxpn, thoroughness))
+	                    	deja_vues.extend([e.id for e in downloaded])
+	                    	deja_vues = list(set(deja_vues))
+	                    	if len(downloaded) < filter_seed and len(sequences) > 0:
+	                    		sequences.extend(downloaded)
+	                    		break
+	                    	else:
+	                    		filtered,downloaded = dt.filterSequences(sequences = downloaded, filter_seed = filter_seed,\
+	                    			pintgapmax = pintgapmax, pextgapmax = pextgapmax, max_trys = max_trys, min_align_len = minlen)
+	                    	if len(filtered) > 0:
+	                    		sequences.extend(filtered)
+	                    	else:
+	                    		break
+	                else:
+	                	sequences = dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
+	                    		maxpn, thoroughness, nseqs = seqcount)
                     if len(sequences) < 1:
                         no_seqs_gene += 1
-                        print "No sequences found for taxid [{0}].".\
+                        print "No sequences found for taxid[{0}].".\
                             format(taxid)
                         continue
                     # convert to fasta
