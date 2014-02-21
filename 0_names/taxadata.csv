@@ -1,6 +1,6 @@
 study,parentID,parent,sisterID,sister,genes,Notes
-bee,34735,Apoidea,34725,Vespoidea,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
+bee,34735,Apoidea,34725,Vespoidea,COI:CO1:COX1:COXI|cytb|COII:COXII|16S|NADH subunit 1: ND1: NAD1|NADH subunit 2: ND2: NAD2|NADH subunit 3: ND3: NAD3|NADH subunit 4: ND4: NAD4|NADH subunit 5: ND5: NAD5,
 plant,3193,Embryophyta,3208,Bryophyta,rbcl|matk,
-bird,8782,Aves,1294634,Crocodylia,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
-reptile,8457,Sauropsida,40674,Mammalia,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
-mammal,40674,Mammalia,8457,Sauropsida,COI:CO1:COX1:COXI|cytb|COII:COXII|28S|18S|16S|NADH,
+bird,8782,Aves,1294634,Crocodylia,COI:CO1:COX1:COXI|cytb|COII:COXII|16S|NADH subunit 1: ND1: NAD1|NADH subunit 2: ND2: NAD2|NADH subunit 3: ND3: NAD3|NADH subunit 4: ND4: NAD4|NADH subunit 5: ND5: NAD5,
+reptile,8457,Sauropsida,40674,Mammalia,COI:CO1:COX1:COXI|cytb|COII:COXII|16S|NADH subunit 1: ND1: NAD1|NADH subunit 2: ND2: NAD2|NADH subunit 3: ND3: NAD3|NADH subunit 4: ND4: NAD4|NADH subunit 5: ND5: NAD5,
+mammal,40674,Mammalia,8457,Sauropsida,COI:CO1:COX1:COXI|cytb|COII:COXII|16S|NADH subunit 1: ND1: NAD1|NADH subunit 2: ND2: NAD2|NADH subunit 3: ND3: NAD3|NADH subunit 4: ND4: NAD4|NADH subunit 5: ND5: NAD5,
