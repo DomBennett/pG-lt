@@ -201,9 +201,9 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 	 txid = taxon id
 	 gene_names = list of synonyms for gene of interest
 	 nseqs = max number of sequences to download (default 100)
-	 minlen = min sequence length (default 400)
-	 maxlen = max sequence length (default 2000)
-	 maxpn = max proportion of ambiguous nucleotides (default 0.1)
+	 minlen = min sequence length
+	 maxlen = max sequence length
+	 maxpn = max proportion of ambiguous nucleotides
 	 thoroughness = a number between 1 and 3 determining how thorough
 	  a search should be
 
@@ -235,18 +235,17 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 		print search_term
 		return search_term
 		
-	def search(gene_names):
+	def search(gene_names, phase):
 		seq_ids = []
 		count = 0
-		phase = 1
 		while int(count) < 1:
 			if phase > thoroughness:
-				return ()
+				return (), phase
 			search_term = buildSearchTerm(gene_names, phase = phase)
 			count = eSearch(search_term)['Count']
 			phase += 1
 		seq_ids.extend(eSearch(search_term, retMax = count)['IdList'])
-		return list(set(seq_ids))
+		return list(set(seq_ids)),phase
 	def parse(record):
 		if len(record) > maxlen:
 			record = findGeneInSeq(record, gene_names)
@@ -259,18 +258,22 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 				return record
 		return False
 	pattern = re.compile("[ACTGactg]")
-	seq_store = search(gene_names)
-	seq_store = [e for e in seq_store if not e in deja_vues]
-	records = []
-	i = 1
-	while i <= nseqs and len(seq_store) > 0:
-		randi = random.randint(0, len(seq_store)-1)
-		seq = seq_store.pop(randi)
-		record = eFetchSeqID(seq)
-		record = parse(record)
-		if record:
-			records.append(record)
-			i += 1
+	phase = 1
+	while phase <= thoroughness:
+		seq_store,phase = search(gene_names, phase)
+		seq_store = [e for e in seq_store if not e in deja_vues]
+		records = []
+		i = 1
+		while i <= nseqs and len(seq_store) > 0:
+			randi = random.randint(0, len(seq_store)-1)
+			seq = seq_store.pop(randi)
+			record = eFetchSeqID(seq)
+			record = parse(record)
+			if record:
+				records.append(record)
+				i += 1
+		if len(records) == 0: # Search again at next phase if no suitable records
+			phase += 1
 	return records
 
 if __name__ == "__main__":

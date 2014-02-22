@@ -15,7 +15,7 @@ pintgapmax = 0.0
 pextgapmax = 0.5
 max_trys = 10
 filtering = True
-minlen = 400
+minlen = 350
 maxlen = 2000
 maxpn = 0.1 # Max proportion of ambiguous nucleotides
 
