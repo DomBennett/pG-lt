@@ -36,7 +36,7 @@ class SeqObj(dict):
 							seqs.append([record, 0]) # seqrecord + nfails
 							self.nseqs += 1
 			if len(seqs) > 0:
-				self[name] = [seqs, np.median(lengths)]
+				self[name] = [seqs, np.min(lengths)]
 
 	def start(self, n):
 		"""Return n starting random sp sequences, update spp_pool"""
@@ -146,6 +146,8 @@ def incrAlign(seqobj, pintgapmax, pextgapmax, method, nstart):
 			sequence = each.seq.tostring()
 			totgaps = sequence.count('-')
 			totnucs = len(sequence) - totgaps
+			if totnucs < min_align_len:
+				return False
 			extgaps = 0
 			start_extgaps = re.search("^-+", sequence)
 			end_extgaps = re.search("-+$", sequence)

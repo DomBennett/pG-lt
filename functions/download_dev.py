@@ -52,19 +52,21 @@ def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=No
 	else:
 		raise RuntimeError("Only automated trimAl methods supported at this time.")
 
-def filterSequences(sequences, filter_seed, pintgapmax, pextgapmax, max_trys, min_align_len):
+def filterSequences(sequences, filter_seed, pintgapmax, pextgapmax, max_trys, minlen):
 	if len(sequences) < filter_seed:
 		return [], sequences
 	def filterByAlignment(sequences):
 		sequences = [[e] for e in sequences]
 		align = pG.alignSequences(sequences, method = "mafft", nGenes = 1)
 		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
-		if align.get_alignment_length() < min_align_len:
+		if align.get_alignment_length() < minlen:
 				return False
 		for each in align:
 			sequence = each.seq.tostring()
 			totgaps = sequence.count('-')
 			totnucs = len(sequence) - totgaps
+			if totnucs < minlen:
+				return False
 			extgaps = 0
 			start_extgaps = re.search("^-+", sequence)
 			end_extgaps = re.search("-+$", sequence)
