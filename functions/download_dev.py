@@ -20,6 +20,7 @@ import sys, os
 
 ## Globals
 maxCheck = 4
+download_counter = 0 # Limit the number of requests to NCBI for a given time period
 
 ## Functions
 def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=None):
@@ -134,12 +135,18 @@ def eFetchSeqID(seq_id):
 	"""Download sequence using sequence ID number.
 
 	Arguments:
-	 seqID = sequence identifier
+	 seq_id = sequence identifier
 
 	Return:
 	 SeqRecord object"""
 	finished = 0
+	global download_counter
+	print seq_id
 	while finished <= maxCheck:
+		if download_counter > 1000:
+			print "Download counter hit. Waiting for 60 seconds ..."
+			download_counter = 0
+			time.sleep(60)
 		try:
 			handle = Entrez.efetch(db = "nucleotide", rettype = 'gb',\
 						       retmode="text", id = seq_id)
@@ -148,6 +155,7 @@ def eFetchSeqID(seq_id):
 			if len(results) == 1:
 				results = results[0]
 			handle.close()
+			download_counter += 1
 			finished = maxCheck + 1
 		except ValueError: # if parsing fails, value error raised
 			handle.close()
@@ -173,26 +181,31 @@ def findGeneInSeq(record, gene_names):
 
 	Return:
 	 SeqRecord object or False (if feature not found)"""
-	if record.features:
-		for feature in record.features:
-			feature_names = []
-			if 'gene' in feature.qualifiers.keys():
-				feature_names.extend(feature.qualifiers['gene'])
-			if 'gene_synonym' in feature.qualifiers.keys():
-				feature_names.extend(feature.qualifiers['gene_synonym'])
-			gene_names = [e.lower() for e in gene_names]
-			feature_names = [e.lower() for e in feature_names]
-			if set(gene_names) & set(feature_names):
-				extractor = SeqFeature(feature.location)
-				found_seq = extractor.extract(record)
-				return found_seq # dropped TrimSeq (as I didn't know what it did...)
+	try:
+		if record.features:
+			for feature in record.features:
+				feature_names = []
+				if 'gene' in feature.qualifiers.keys():
+					feature_names.extend(feature.qualifiers['gene'])
+				if 'gene_synonym' in feature.qualifiers.keys():
+					feature_names.extend(feature.qualifiers['gene_synonym'])
+				if 'product' in feature.qualifiers.keys():
+					feature_names.extend(feature.qualifiers['product'])
+				gene_names = [e.lower() for e in gene_names]
+				feature_names = [e.lower() for e in feature_names]
+				if set(gene_names) & set(feature_names):
+					extractor = SeqFeature(feature.location)
+					found_seq = extractor.extract(record)
+					return found_seq # dropped TrimSeq (as I didn't know what it did...)
+			else:
+				print "... findGeneInSeq: can't find gene [{0}] in sequence [{1}]".\
+					format(gene_names[0], record.id)
+				return ()
 		else:
-			print "... findGeneInSeq: can't find gene [{0}] in sequence [{1}]".\
-			    format(gene_names[0], record.id)
+			print "... findGeneInSeq: can't find features in in sequence [{1}]".\
+				format(record.id)
 			return ()
-	else:
-		print "... findGeneInSeq: can't find features in in sequence [{1}]".\
-			    format(record.id)
+	except ValueError: # catch value errors raised for sequences with "fuzzy" positions
 		return ()
 
 def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
@@ -213,30 +226,30 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 	 List of SeqRecord objects"""
 	def buildSearchTerm(gene_names, phase):
 		# for field see: http://www.ncbi.nlm.nih.gov/books/NBK49540/
+		gene_names = ["\"{0}\"".format(e) for e in gene_names]
 		if phase == 1: # use gene field and ignore: predicted, genome
 			gene_term = ("{0}[GENE]".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}[GENE]".\
 						     format(gene_term, gene_name))
-			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI]".\
+			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI] NOT unverified[TI]".\
 					       format(txid, gene_term))
 		elif phase == 2: # use title for gene name and ignore: predicted, genome
 			gene_term = ("{0}[TI]".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}[TI]".\
 						     format(gene_term, gene_name))
-			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI]".\
+			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI] NOT unverified[TI]".\
 					       format(txid, gene_term))
-		else: # search all fields, ignore nothing
+		else: # all fields, ignore whole genome shotguns scaffolds and genome assemblies
 			gene_term = ("{0}".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}".\
 						     format(gene_term, gene_name))
-			search_term = ("txid{0}[PORGN] AND ({1})".\
+			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT shotgun[TI] NOT scaffold[TI] NOT assembly[TI] NOT unverified[TI]".\
 					       format(txid, gene_term))
 		print search_term
 		return search_term
-		
 	def search(gene_names, phase):
 		seq_ids = []
 		count = 0
@@ -249,6 +262,15 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 		seq_ids.extend(eSearch(search_term, retMax = count)['IdList'])
 		return list(set(seq_ids)),phase
 	def parse(record):
+		if isinstance(record, list):
+			# find which sequence in the list has the gene
+			for each in record:
+				for gene in gene_names:
+					if gene in each.description.lower():
+						record = each
+						break
+			else:
+				return False
 		if len(record) > maxlen:
 			record = findGeneInSeq(record, gene_names)
 		if maxlen > len(record) > minlen:
@@ -276,7 +298,9 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 				i += 1
 		if len(records) == 0: # Search again at next phase if no suitable records
 			phase += 1
-	return records
+		else:
+			break
+	return records,seq_store
 
 if __name__ == "__main__":
 	#doctest to come

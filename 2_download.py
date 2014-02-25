@@ -8,19 +8,19 @@
 print "\n\nThis is stage 2: download\n"
 
 ## Parameters
-seqcount = 50
+seqcount = 10
 filter_seed = 5
 thoroughness = 3
 pintgapmax = 0.0
-pextgapmax = 0.5
+pextgapmax = 0.1
 max_trys = 10
 filtering = True
 minlen = 350
-maxlen = 2000
+maxlen = 1000
 maxpn = 0.1 # Max proportion of ambiguous nucleotides
 
 ## Packages
-import sys, os, re, csv, time
+import sys, os, re, csv, time, random
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 import download_dev as dt
 
@@ -53,7 +53,6 @@ print "Done. Read in taxadata for [{0}] studies.".format(len(taxadict))
 print '\nLooping through studies ...'
 counter = nseqs = nbases = nspp = 0
 for i in range(len(taxids_files)):
-
 	## What study?
 	current_study = re.sub("_taxids.txt$", "", taxids_files[i])
 	print '\n\nWorking on: [{0}]'.format(current_study)
@@ -87,56 +86,60 @@ for i in range(len(taxids_files)):
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
 		for taxid in taxids:
-                    print "..... taxid[{0}]".format(taxid)
-                    # download
-                    if filtering:
-                    	sequences = []
-                    	downloaded = []
-                    	deja_vues = []
-                    	while len(sequences) < seqcount:
-	                    	downloaded.extend(dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
-	                    		maxpn, thoroughness))
-	                    	deja_vues.extend([e.id for e in downloaded])
-	                    	deja_vues = list(set(deja_vues))
-	                    	if len(downloaded) < filter_seed and len(sequences) == 0:
-	                    		sequences.extend(downloaded)
-	                    		break
-	                    	else:
-	                    		filtered,downloaded = dt.filterSequences(sequences = downloaded, filter_seed = filter_seed,\
-	                    			pintgapmax = pintgapmax, pextgapmax = pextgapmax, max_trys = max_trys, min_align_len = minlen)
-	                    	if len(filtered) > 0:
-	                    		sequences.extend(filtered)
-	                    	else:
-	                    		break
-	                else:
-	                	sequences = dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
-	                    		maxpn, thoroughness, nseqs = seqcount)
-                    if len(sequences) < 1:
-                        no_seqs_gene += 1
-                        print "No sequences found for taxid[{0}].".\
-                            format(taxid)
-                        continue
-                    # convert to fasta
-                    gene_seqs = []
-                    for seq in sequences:
-                        gene_seqs.append(seq.format('fasta'))
-                    # write out
-                    with file(os.path.join(gene_dir, str(taxid) + '.fasta'), 'wb') \
-                            as outfile:
-                        for gene_seq in gene_seqs:
-                            outfile.write("%s\n" % gene_seq)
-                            nseqs_gene += 1
-                            nbases += len(gene_seq)
-                    nspp_gene += 1
-                if no_seqs_gene == len(taxids):
-                    print "No sequences were downloaded for gene [{0}]".format(gene[0])
-                    os.rmdir(gene_dir)
+			print "..... taxid[{0}]".format(taxid)
+			# download
+			if filtering:
+				sequences = []
+				downloaded = []
+				deja_vues = []
+				search_count = 1
+				while len(sequences) < seqcount:
+					temp_downloaded,temp_deja_vues = dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
+						maxpn, thoroughness)
+					if len(temp_downloaded) == 0: # keeps looping until no more new sequences are being downloaded
+						break
+					downloaded.extend(temp_downloaded)
+					deja_vues.extend(temp_deja_vues)
+					deja_vues = list(set(deja_vues))
+					if len(downloaded) < filter_seed and search_count == 1: # only skip the filtering stage if its the first search
+						sequences.extend(downloaded)
+						break
+					else:
+						filtered,downloaded = dt.filterSequences(sequences = downloaded, filter_seed = filter_seed,\
+							pintgapmax = pintgapmax, pextgapmax = pextgapmax, max_trys = max_trys, minlen = minlen)
+					if len(filtered) > 0:
+						sequences.extend(filtered)
+					search_count += 1
+			else:
+				sequences = dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
+					maxpn, thoroughness, nseqs = seqcount)
+			if len(sequences) < 1:
+				no_seqs_gene += 1
+				print "No sequences found for taxid[{0}].".format(taxid)
+				continue
+			if len(sequences) > seqcount:
+				sequences = random.sample(sequences, seqcount)
+			# convert to fasta
+			gene_seqs = []
+			for seq in sequences:
+				gene_seqs.append(seq.format('fasta'))
+			# write out
+			with file(os.path.join(gene_dir, str(taxid) + '.fasta'), 'wb') \
+			as outfile:
+				for gene_seq in gene_seqs:
+					outfile.write("%s\n" % gene_seq)
+					nseqs_gene += 1
+					nbases += len(gene_seq)
+			nspp_gene += 1
+		if no_seqs_gene == len(taxids):
+			print "No sequences were downloaded for gene [{0}]".format(gene[0])
+			os.rmdir(gene_dir)
 		else:
-                    nseqs_study += nseqs_gene
-                    nspp_study.append(nspp_gene)
-                    print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
-                        format(nseqs_gene,gene[0],nspp_gene)
-        print 'Done. Downloaded [{0}] sequences for study [{1}] representing [{2}] species.'.\
+			nseqs_study += nseqs_gene
+			nspp_study.append(nspp_gene)
+			print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
+				format(nseqs_gene,gene[0],nspp_gene)
+	print 'Done. Downloaded [{0}] sequences for study [{1}] representing [{2}] species.'.\
 		format(nseqs_study,current_study,max(nspp_study))
 	counter += 1
 	nseqs += nseqs_study
