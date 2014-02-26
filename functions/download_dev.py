@@ -100,24 +100,40 @@ def filterSequences(sequences, filter_seed, pintgapmax, pextgapmax, max_trys, mi
 			filter_seed = len(sequences) - 1
 	return filtered,sequences
 
-def eSearch(term, retStart=0, retMax=1, usehistory="n"):
-	"""Use Entrez.esearch to check for results in the nucleotide database given term.
+def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
+	"""Use Entrez.esearch to search a term in an NCBI database.
 
 	Arguments:
 	 term = string of term used in search
 	 retStart = minimum returned ID of matching sequences IDs
 	 retMax = maximum returned ID of matching sequences IDs
 	 usehistory = record search in NCBI database ("y" or "n")
+	 db = NCBI database
 	 
 	Return:
 	 dictionary"""
 	finished = 0
+	global download_counter
 	while finished <= maxCheck:
+		if download_counter > 1000:
+			print "Download counter hit. Waiting for 60 seconds ..."
+			download_counter = 0
+			time.sleep(60)
 		try:
-			handle = Entrez.esearch(db="nucleotide",term=term, usehistory=usehistory,\
-							retStart=retStart, retMax=retMax, retmode="text")
-			results = Entrez.read(handle)
-			handle.close()
+			if db is "nucleotide":
+				handle = Entrez.esearch(db="nucleotide",term=term, usehistory=usehistory,\
+								retStart=retStart, retMax=retMax, retmode="text")
+				results = Entrez.read(handle)
+				handle.close()
+			elif db is "taxonomy":
+				handle = Entrez.esearch(db = "taxonomy", retStart = retStart, retmax = retMax,\
+					term = term)
+				results = Entrez.read(handle)
+				handle.close()
+			else:
+				print "Invalid db argument!"
+				break
+			download_counter += 1
 			finished = maxCheck + 1
 		except:
 			if finished == 0:
@@ -131,30 +147,38 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n"):
 				time.sleep(10)
 	return results
 
-def eFetchSeqID(seq_id):
-	"""Download sequence using sequence ID number.
+def eFetch(ncbi_id, db = "nucleotide"):
+	"""Download NCBI record using ID number.
 
 	Arguments:
-	 seq_id = sequence identifier
+	 ncbi_id = sequence identifier
 
 	Return:
 	 SeqRecord object"""
 	finished = 0
 	global download_counter
-	print seq_id
 	while finished <= maxCheck:
 		if download_counter > 1000:
 			print "Download counter hit. Waiting for 60 seconds ..."
 			download_counter = 0
 			time.sleep(60)
 		try:
-			handle = Entrez.efetch(db = "nucleotide", rettype = 'gb',\
-						       retmode="text", id = seq_id)
-			results_iter = SeqIO.parse(handle, 'gb')
-			results = [x for x in results_iter]
-			if len(results) == 1:
-				results = results[0]
-			handle.close()
+			if db is "nucleotide":
+				print ncbi_id
+				handle = Entrez.efetch(db = "nucleotide", rettype = 'gb',\
+						       retmode="text", id = ncbi_id)
+				results_iter = SeqIO.parse(handle, 'gb')
+				results = [x for x in results_iter]
+				if len(results) == 1:
+					results = results[0]
+				handle.close()
+			elif db is "taxonomy":
+				handle = Entrez.efetch(db = "taxonomy", id = ncbi_id, retmode = "xml")
+				results = Entrez.read(handle)
+				handle.close()
+			else:
+				print "Invalid db argument!"
+				break
 			download_counter += 1
 			finished = maxCheck + 1
 		except ValueError: # if parsing fails, value error raised
@@ -168,9 +192,30 @@ def eFetchSeqID(seq_id):
 				time.sleep(10)
 			if finished == maxCheck:
 				print "!!!!!!Unreachable. Returning nothing."
-				return(tuple())
-	
+				return ()
 	return results
+
+def randomChild(taxid):
+	"""
+	Return a random decendant of the taxonmic ID. Only returns genera or below.
+
+	Args:
+	 taxid = taxonomic ID (str)
+
+	Returns:
+	 taxid
+	"""
+	counter = 0
+	while True:
+		if counter > 40: # No lineage is longer than 40 (I think ...)
+			return False
+		frecord = eFetch(taxid, db = "taxonomy")
+		if frecord[0]['Rank'] in ["genus", "species", "subspecies"]:
+			return taxid
+		term = "{0}[Next Level]".format(frecord[0]['ScientificName'])
+		count = eSearch(term, db = "taxonomy")["Count"]
+		srecord = eSearch(term, db = "taxonomy", retMax = count)
+		taxid = random.sample(srecord['IdList'], 1)[0]
 
 def findGeneInSeq(record, gene_names):
 	"""Extract gene sequence from larger sequence by searching sequence features.
@@ -208,7 +253,7 @@ def findGeneInSeq(record, gene_names):
 	except ValueError: # catch value errors raised for sequences with "fuzzy" positions
 		return ()
 
-def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
+def sequenceDownload(taxid, gene_names, deja_vues, minlen, maxlen,\
 			     maxpn, thoroughness, nseqs = 100):
 	"""Download all sequences for gene of interest for given taxon id.
 
@@ -224,7 +269,7 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 
 	Return:
 	 List of SeqRecord objects"""
-	def buildSearchTerm(gene_names, phase):
+	def buildSearchTerm(taxid, gene_names, phase):
 		# for field see: http://www.ncbi.nlm.nih.gov/books/NBK49540/
 		gene_names = ["\"{0}\"".format(e) for e in gene_names]
 		if phase == 1: # use gene field and ignore: predicted, genome
@@ -233,34 +278,37 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 				gene_term = ("({0}) OR {1}[GENE]".\
 						     format(gene_term, gene_name))
 			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI] NOT unverified[TI]".\
-					       format(txid, gene_term))
+					       format(taxid, gene_term))
 		elif phase == 2: # use title for gene name and ignore: predicted, genome
 			gene_term = ("{0}[TI]".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}[TI]".\
 						     format(gene_term, gene_name))
 			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT genome[TI] NOT unverified[TI]".\
-					       format(txid, gene_term))
+					       format(taxid, gene_term))
 		else: # all fields, ignore whole genome shotguns scaffolds and genome assemblies
 			gene_term = ("{0}".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}".\
 						     format(gene_term, gene_name))
 			search_term = ("txid{0}[PORGN] AND ({1}) NOT predicted[TI] NOT shotgun[TI] NOT scaffold[TI] NOT assembly[TI] NOT unverified[TI]".\
-					       format(txid, gene_term))
+					       format(taxid, gene_term))
 		print search_term
 		return search_term
-	def search(gene_names, phase):
+	def search(taxid, gene_names):
 		seq_ids = []
 		count = 0
-		while int(count) < 1:
+		phase = 1
+		while len(seq_ids) == 0:
 			if phase > thoroughness:
 				return (), phase
-			search_term = buildSearchTerm(gene_names, phase = phase)
+			search_term = buildSearchTerm(taxid, gene_names, phase = phase)
 			count = eSearch(search_term)['Count']
+			if int(count) < 1:
+				seq_ids.extend(eSearch(search_term, retMax = count)['IdList'])
+				seq_ids = [e for e in seq_ids if not e in deja_vues]
 			phase += 1
-		seq_ids.extend(eSearch(search_term, retMax = count)['IdList'])
-		return list(set(seq_ids)),phase
+		return list(set(seq_ids))
 	def parse(record):
 		if isinstance(record, list):
 			# find which sequence in the list has the gene
@@ -282,25 +330,19 @@ def sequenceDownload(txid, gene_names, deja_vues, minlen, maxlen,\
 				return record
 		return False
 	pattern = re.compile("[ACTGactg]")
-	phase = 1
-	while phase <= thoroughness:
-		seq_store,phase = search(gene_names, phase)
-		seq_store = [e for e in seq_store if not e in deja_vues]
-		records = []
-		i = 1
-		while i <= nseqs and len(seq_store) > 0:
-			randi = random.randint(0, len(seq_store)-1)
-			seq = seq_store.pop(randi)
-			record = eFetchSeqID(seq)
-			record = parse(record)
-			if record:
-				records.append(record)
-				i += 1
-		if len(records) == 0: # Search again at next phase if no suitable records
-			phase += 1
-		else:
-			break
-	return records,seq_store
+	seq_store = search(taxid, gene_names)
+	deja_vues = seq_store[:]
+	records = []
+	i = 1
+	while i <= nseqs and len(seq_store) > 0:
+		randi = random.randint(0, len(seq_store)-1)
+		seq = seq_store.pop(randi)
+		record = eFetch(seq)
+		record = parse(record)
+		if record:
+			records.append(record)
+			i += 1
+	return records,deja_vues
 
 if __name__ == "__main__":
 	#doctest to come
