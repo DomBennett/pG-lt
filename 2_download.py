@@ -88,20 +88,19 @@ for i in range(len(taxids_files)):
 		for taxid in taxids:
 			print "..... taxid[{0}]".format(taxid)
 			# download
-			if filtering:
-				sequences = []
+			sequences = []
+			temp_taxids = dt.findChildren(taxid)
+			for temp_taxid in temp_taxids:
 				downloaded = []
 				deja_vues = []
-				search_count = 1
 				while len(sequences) < seqcount:
-					temp_downloaded,temp_deja_vues = dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
+					downloaded,temp_deja_vues = dt.sequenceDownload(temp_taxid, gene, deja_vues, minlen, maxlen,\
 						maxpn, thoroughness)
-					if len(temp_downloaded) == 0: # keeps looping until no more new sequences are being downloaded
+					if len(downloaded) == 0: # keeps looping until no more new sequences are being downloaded
 						break
-					downloaded.extend(temp_downloaded)
 					deja_vues.extend(temp_deja_vues)
 					deja_vues = list(set(deja_vues))
-					if len(downloaded) < filter_seed and search_count == 1: # only skip the filtering stage if its the first search
+					if len(downloaded) < filter_seed and len(temp_taxids) < 1: # only skip the filtering stage if few temp_taxids
 						sequences.extend(downloaded)
 						break
 					else:
@@ -109,10 +108,6 @@ for i in range(len(taxids_files)):
 							pintgapmax = pintgapmax, pextgapmax = pextgapmax, max_trys = max_trys, minlen = minlen)
 					if len(filtered) > 0:
 						sequences.extend(filtered)
-					search_count += 1
-			else:
-				sequences = dt.sequenceDownload(taxid, gene, deja_vues, minlen, maxlen,\
-					maxpn, thoroughness, nseqs = seqcount)
 			if len(sequences) < 1:
 				no_seqs_gene += 1
 				print "No sequences found for taxid[{0}].".format(taxid)
