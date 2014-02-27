@@ -195,27 +195,35 @@ def eFetch(ncbi_id, db = "nucleotide"):
 				return ()
 	return results
 
-def randomChild(taxid):
+def findChildren(taxid, target = 100):
 	"""
-	Return a random decendant of the taxonmic ID. Only returns genera or below.
+	Return all decendant genera of a taxonmic ID.
 
 	Args:
 	 taxid = taxonomic ID (str)
+	 target = the target number of children returned (default 100)
+	 rank = children's rank (not yet implemented)
 
 	Returns:
 	 taxid
 	"""
-	counter = 0
-	while True:
-		if counter > 40: # No lineage is longer than 40 (I think ...)
-			return False
-		frecord = eFetch(taxid, db = "taxonomy")
-		if frecord[0]['Rank'] in ["genus", "species", "subspecies"]:
-			return taxid
-		term = "{0}[Next Level]".format(frecord[0]['ScientificName'])
-		count = eSearch(term, db = "taxonomy")["Count"]
-		srecord = eSearch(term, db = "taxonomy", retMax = count)
-		taxid = random.sample(srecord['IdList'], 1)[0]
+	def findNext(taxids):
+		res = []
+		taxids = random.sample(taxids, len(taxids))
+		while len(taxids) > 0:
+			if len(res) > target:
+				break
+			taxid = taxids.pop()
+			frecord = eFetch(taxid, db = "taxonomy")
+			if frecord[0]['Rank'] in ["genus", "species", "subspecies"]:
+				res.append(taxid)
+			else:	
+				term = "{0}[Next Level]".format(frecord[0]['ScientificName'])
+				count = eSearch(term, db = "taxonomy")["Count"]
+				srecord = eSearch(term, db = "taxonomy", retMax = count)
+				res.extend(findNext(srecord['IdList']))
+		return res
+	return findNext([taxid])
 
 def findGeneInSeq(record, gene_names):
 	"""Extract gene sequence from larger sequence by searching sequence features.
@@ -301,10 +309,10 @@ def sequenceDownload(taxid, gene_names, deja_vues, minlen, maxlen,\
 		phase = 1
 		while len(seq_ids) == 0:
 			if phase > thoroughness:
-				return (), phase
+				return []
 			search_term = buildSearchTerm(taxid, gene_names, phase = phase)
 			count = eSearch(search_term)['Count']
-			if int(count) < 1:
+			if int(count) > 1:
 				seq_ids.extend(eSearch(search_term, retMax = count)['IdList'])
 				seq_ids = [e for e in seq_ids if not e in deja_vues]
 			phase += 1
