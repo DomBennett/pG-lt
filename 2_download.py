@@ -8,12 +8,12 @@
 print "\n\nThis is stage 2: download\n"
 
 ## Parameters
-seqcount = 10
+seqcount = 100
 filter_seed = 5
 thoroughness = 3
 pintgapmax = 0.0
 pextgapmax = 0.1
-max_trys = 10
+max_trys = 100
 filtering = True
 minlen = 350
 maxlen = 1000

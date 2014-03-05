@@ -5,11 +5,12 @@
 ## 14/08/2013
 
 ## Parameters
-minfails = 10 # the minimum sequence quality
+minfails = 50 # the minimum sequence quality
 pextgapmax = 0.5 # the proportion of external gaps in a sequence for a good alignment
 pintgapmax = 0.05 # # the proportion of internal gaps in a sequence for a good alignment
-iterations = 10 # number of iterations to perform
-max_trys = 10 # the maximum number of failed in a row alignments
+iterations = 100 # number of iterations to perform
+max_trys = 100 # the maximum number of failed in a row alignments
+nstart = 5
 
 ## Print stage
 print "\n\nThis is stage 3: alignment\n"
@@ -26,7 +27,7 @@ from alignment_dev import *
 input_dirs = [os.path.join(os.getcwd(), '2_download'), os.path.join(os.getcwd(), '0_names')]
 output_dir = os.path.join(os.getcwd(), '3_alignments')
 if not os.path.isdir(output_dir):
-    os.mkdir(output_dir)
+	os.mkdir(output_dir)
 
 ## Taxadata for identifying outgroup
 print "Reading in taxadata.csv ..."
@@ -52,7 +53,7 @@ for i in range(len(studies)):
 	print 'Working out how many genes to use ...'
 	study_dir = os.path.join(os.getcwd(), input_dirs[0], studies[i])
 	genes = sorted(os.listdir(study_dir))
-        genes = [e for e in genes if not re.search("^\.", e)]
+	genes = [e for e in genes if not re.search("^\.", e)]
 	print 'Done. Working with [{0}] ...'.format(genes)
 
 	## read in seqs
@@ -81,65 +82,67 @@ for i in range(len(studies)):
 	## alignment
 	print "\nRunning alignments ..."
 	all_alignments = []
-        study_dir = os.path.join(output_dir, studies[i])
+	study_dir = os.path.join(output_dir, studies[i])
+
 	if not os.path.isdir(study_dir):
 		os.mkdir(study_dir)
 	for gene,seq_obj in seqs_obj:
-		print "Aligning gene [{0}] for [{1}] species ...".\
-			format(gene, len(seq_obj))
+		print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seq_obj))
 		gene_alignments = []
-        temp_seqobj = copy.deepcopy(seq_obj)
-        method = 'mafft'
-        iteration_trys = 0
-        j = 1
-        try:
-            while j <= iterations:
-                print "iteration [{0}]".format(j)
-                t0 = time.clock()
-                alignment, nstart = incrAlign(temp_seqobj, pintgapmax, pextgapmax, method, nstart)
-                t1 = time.clock() - t0
-                if alignment is None:
-                    iteration_trys += 1
-                    if iteration_trys > max_trys:
-                        if method is 'mafft':
-                            print "Too many failed alignments with MAFFT. Switching to Clustal-O"
-                            method = 'clustalo'
-                            iteration_trys = 0
-                            continue
-                        else:
-                            print "Max iterations with no alignments hit!"
-                            break
-                    else:
-                        continue
-                print "... alignment length [{0}] for [{1}] species in [t{2}]".\
-                    format(alignment.get_alignment_length(), len(alignment), t1)
-                gene_alignments.append(alignment)
-                iteration_trys = 0
-                j += 1
-        except OutgroupError:
-            print "... outgroup dropped"
-            continue
-        except MinSpeciesError:
-            print "... too few species left in sequence pool"
-            continue
-        if len(gene_alignments) < 1:
-            print "... no alignments generated"
-            continue
-        # Write out alignments
-        print "... writing out alignments for [{0}] alignments".\
-            format(len(gene_alignments))
-        for j,alignment in enumerate(gene_alignments):
-            gene_dir = os.path.join(study_dir, gene)
-            if not os.path.isdir(gene_dir):
-                os.mkdir(gene_dir)
-            alength = alignment.get_alignment_length()
-            ngap = sum([e.seq.count("-") for e in alignment])
-            output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
-            output_path = os.path.join(gene_dir, output_file)
-            with open(output_path, "w") as outfile:
-                count = pG.SeqIO.write(alignment, outfile, "fasta")
-            naligns_all += 1   
-        counter += 1
+		temp_seqobj = copy.deepcopy(seq_obj)
+		method = 'mafft'
+		iteration_trys = 0
+		j = 1
+		try:
+			while j <= iterations:
+				print "iteration [{0}]".format(j)
+				t0 = time.clock()
+				alignment, nstart = incrAlign(temp_seqobj, pintgapmax, pextgapmax, method, nstart)
+				t1 = time.clock() - t0
+				if alignment is None:
+					iteration_trys += 1
+					if iteration_trys > max_trys:
+						if method is 'mafft':
+							print "Too many failed alignments with MAFFT. Switching to Clustal-O"
+							method = 'clustalo'
+							iteration_trys = 0
+							continue
+						else:
+							print "Max iterations with no alignments hit!"
+							break
+					else:
+						continue
+				print "... alignment length [{0}] for [{1}] species in [t{2}]".\
+					format(alignment.get_alignment_length(), len(alignment), t1)
+				for each in alignment:
+					print each.description
+				gene_alignments.append(alignment)
+				iteration_trys = 0
+				j += 1
+		except OutgroupError:
+			print "... outgroup dropped"
+			continue
+		except MinSpeciesError:
+			print "... too few species left in sequence pool"
+			continue
+		if len(gene_alignments) < 1:
+			print "... no alignments generated"
+			continue
+		# Write out alignments
+		print "... writing out alignments for [{0}] alignments".\
+			format(len(gene_alignments))
+		for j,alignment in enumerate(gene_alignments):
+			gene_dir = os.path.join(study_dir, gene)
+			if not os.path.isdir(gene_dir):
+				os.mkdir(gene_dir)
+			alength = alignment.get_alignment_length()
+			ngap = sum([e.seq.count("-") for e in alignment])
+			output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
+			output_path = os.path.join(gene_dir, output_file)
+			with open(output_path, "w") as outfile:
+				count = pG.SeqIO.write(alignment, outfile, "fasta")
+			naligns_all += 1   
+		counter += 1
 
 ## Remove mafft files
 mafft_files = os.listdir(os.getcwd())
@@ -147,4 +150,4 @@ mafft_files = [f for f in mafft_files if re.search("\.fasta$", f)]
 for f in mafft_files:
 	os.remove(f)
 print 'Stage finished. Generated [{0}] alignments across [{1}] studies.'.\
-    format(naligns_all, counter)
+	format(naligns_all, counter)

@@ -547,13 +547,13 @@ def alignSequences(seqList, method='muscle', tempStem='temp', timeout=99999999, 
 				raise RuntimeError("Mafft alignment not complete in time allowed")
 		
 		if 'clustalo' in method:
-			print "......with Clustal-Omega"
+			#print "......with Clustal-Omega"
 			inputFile = tempStem + '.fasta'
 			outputFile = tempStem + 'Out.fasta'
 			commandLine = 'clustalo -i ' + inputFile + " -o " + outputFile + " -v"
 			SeqIO.write(seqs, inputFile, "fasta")
 			pipe = TerminationPipe(commandLine, timeout)
-			pipe.run(silent=silent)
+			pipe.run(silent=silent, changeDir = True)
 			os.remove(inputFile)
 			if not pipe.failure:
 				try:
