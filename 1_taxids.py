@@ -8,7 +8,7 @@
 print "\n\nThis is stage 1: taxids\n"
 
 ## Packages + Functions
-import os, re, sys, csv
+import os, re, sys, csv, pickle
 from Bio import Phylo
 sys.path.append(os.path.join(os.getcwd(), 'functions'))
 from taxon_names_resolver import TaxonNamesResolver
@@ -45,32 +45,10 @@ for taxnames_file in taxnames_files:
 	input_file = os.path.join(input_dir, taxnames_file)
 	resolver = TaxonNamesResolver(input_file, datasource, taxon_id)
 	resolver.main()
-	#resolver = lineageMerge(resolver) # prevent duplicates
-	qnames,taxids = extractHighestClade(resolver, by_ids = True)
-	print '... resolved [{0}] names ...'.format(len(taxids))
-	if len(taxids) < 3:
-		print 'Too few names resovled. Dropping study.\n'
-		continue
+	namesdict = genNamesDict(resolver)
+	print '... resolved [{0}] names ...'.format(len(namesdict.keys()))
 	print '... generating taxonomic tree ...'
-	taxontree,shared_lineages = genTaxTree(resolver, by = 'taxids', draw = True)        
-	print 'Done.'
-	print 'Outputting ...'
-	taxids.append(taxadict[current_study][1])
-	qnames.append('outgroup') # add outgroup
-	taxontree_file = re.sub('taxnames', 'taxontree', taxnames_file)
-	taxids_file = re.sub('taxnames', 'taxids', taxnames_file)
-	shared_file = re.sub('taxnames', 'shared', taxnames_file)
-	qnames_file = re.sub('taxnames', 'qnames', taxnames_file)
-	with file(os.path.join(output_dir, taxids_file), 'wb') as outfile:
-		for taxid in taxids:
-		  outfile.write("%s\n" % taxid)
-	Phylo.write(taxontree, os.path.join(output_dir, taxontree_file), "newick")
-	with file(os.path.join(output_dir, shared_file), 'wb') as outfile:
-		for each in shared_lineages:
-		  outfile.write("%s\n" % each)
-	with file(os.path.join(output_dir, qnames_file), 'wb') as outfile:
-		for each in qnames:
-		  outfile.write("%s\n" % each)
+	taxontree,shared_lineages = genTaxTree(resolver, namesdict, draw = True)
 	print 'Done.'
 	counter += 1
 print 'Stage finished. [{0}] studies with data.'.format(counter)
