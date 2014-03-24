@@ -5,12 +5,11 @@
 ## 14/08/2013
 
 ## Parameters
-minfails = 50 # the minimum sequence quality
-pextgapmax = 0.5 # the proportion of external gaps in a sequence for a good alignment
-pintgapmax = 0.05 # # the proportion of internal gaps in a sequence for a good alignment
-iterations = 100 # number of iterations to perform
+minfails = 10 # the minimum sequence quality
+minoverlap = 200 # the minimum number of overlapping nucleotides for each seq in an alignment
+pintgapmax = 0.01 # # the proportion of internal gaps in a sequence for a good alignment
+iterations = 20 # number of iterations to perform
 max_trys = 100 # the maximum number of failed in a row alignments
-nstart = 5
 
 ## Print stage
 print "\n\nThis is stage 3: alignment\n"
@@ -44,7 +43,7 @@ studies = [st for st in studies if not re.search("^\.|^log\.txt$", st)]
 counter = 0
 print '\nLooping through studies ...'
 naligns_all = 0
-for i in range(len(studies)):
+for i in range(2,len(studies)):
 
 	## what study?
 	print '\n\nWorking on: [{0}]\n'.format(studies[i])
@@ -54,6 +53,7 @@ for i in range(len(studies)):
 	study_dir = os.path.join(os.getcwd(), input_dirs[0], studies[i])
 	genes = sorted(os.listdir(study_dir))
 	genes = [e for e in genes if not re.search("^\.", e)]
+	genes = [e for e in genes if e == "cytb"]
 	print 'Done. Working with [{0}] ...'.format(genes)
 
 	## read in seqs
@@ -91,25 +91,20 @@ for i in range(len(studies)):
 		gene_alignments = []
 		temp_seqobj = copy.deepcopy(seq_obj)
 		method = 'mafft'
+		nstart = len(seq_obj)
 		iteration_trys = 0
 		j = 1
 		try:
 			while j <= iterations:
 				print "iteration [{0}]".format(j)
 				t0 = time.clock()
-				alignment, nstart = incrAlign(temp_seqobj, pintgapmax, pextgapmax, method, nstart)
+				alignment, nstart = incrAlign(temp_seqobj, pintgapmax, minoverlap, method, nstart)
 				t1 = time.clock() - t0
 				if alignment is None:
 					iteration_trys += 1
 					if iteration_trys > max_trys:
-						if method is 'mafft':
-							print "Too many failed alignments with MAFFT. Switching to Clustal-O"
-							method = 'clustalo'
-							iteration_trys = 0
-							continue
-						else:
-							print "Max iterations with no alignments hit!"
-							break
+						print "Max iterations with no alignments hit!"
+						break
 					else:
 						continue
 				print "... alignment length [{0}] for [{1}] species in [t{2}]".\

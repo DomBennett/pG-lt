@@ -30,7 +30,7 @@ class SeqObj(dict):
 			with open(seqdir, "rU") as infile:
 				for record in pG.SeqIO.parse(infile, "fasta"):
 					if record.seq.count('N') == 0 and record.seq.count('n') == 0: # removing sequences w/ Ns TODO: move this to download
-						if 200 < len(record) < 1000:
+						if 200 < len(record) < 1500:
 							record.id = name
 							lengths.append(len(record))
 							seqs.append([record, 0]) # seqrecord + nfails
@@ -53,9 +53,10 @@ class SeqObj(dict):
 		next_seq = random.sample(self[self.next_sp][0], 1)[0]
 		self.align_obj.append(next_seq)
 		
-	def back(self, align):
+	def back(self):
 		"""Add to nfails for random species, return new random species"""
 		self.align_obj[-1][1] += 1
+		print [e[1] for e in self.align_obj]
 		del self.align_obj[-1]
 		self.spp_pool.append(self.next_sp)
 		self._check()
@@ -123,34 +124,42 @@ def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=No
 	else:
 		raise RuntimeError("Only automated trimAl methods supported at this time.")
 					
-def incrAlign(seqobj, pintgapmax, pextgapmax, method, nstart):
+def incrAlign(seqobj, pintgapmax, minoverlap, method, nstart):
 	"""Incrementally build an alignment from outgroup sequence"""
 	# parameters
 	# nstart the number of sequences to use in start
-	max_nstart_trys = 20 #  the number of trys before nstart -= 1
+	max_nstart_trys = 5 #  the number of trys before nstart -= 1
 	min_nstart = 5 # the minimum nstart
 	max_trys = 10 # prevents loops continuing forever
 	def runAlignment(align_obj):
 		align_struct = [[e[0]] for e in align_obj]
-		seq_descriptions = [e[0].description for e in align_obj]
+		#seq_descriptions = [e[0].description for e in align_obj]
 		align = pG.alignSequences(align_struct, method = method, nGenes = 1)
-		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
+		#align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
 		# ensure sequence names used are in description
-		for i,e in enumerate(seq_descriptions):
-			align._records[i].description = e
-		return align
+		#for i,e in enumerate(seq_descriptions):
+		#	align._records[i].description = e
+		return align[0][0]
 	def alignCheck(align):
-		if align.get_alignment_length() < min_align_len:
+		def calcOverlap(columns):
+			pcolgaps = []
+			for i in columns:
+				ith =  float(align[:,i].count("-"))/(len(align) - 1)
+				pcolgaps.append(ith)
+			overlap = len(columns) - (len(columns) * np.mean(pcolgaps))
+			return overlap
+		align_len = align.get_alignment_length()
+		if align_len < min_align_len:
 			return False
 		pintgaps = []
 		for each in align:
 			sequence = each.seq.tostring()
-			totgaps = sequence.count('-')
-			totnucs = len(sequence) - totgaps
-			if totnucs < min_align_len:
-				print totnucs
-				print min_align_len
-				print "Too small ... "
+			columns = [ei for ei,e in enumerate(sequence) if e != "-"]
+			totnucs = len(columns)
+			totgaps = align_len - totnucs
+			overlap = calcOverlap(columns)
+			if overlap < minoverlap:
+				print "Not enough overlap"
 				return False
 			extgaps = 0
 			start_extgaps = re.search("^-+", sequence)
@@ -167,17 +176,14 @@ def incrAlign(seqobj, pintgapmax, pextgapmax, method, nstart):
 			else:
 				pintgaps.append(pintgap)
 			if pintgap > pintgapmax:
-				print "More than 0.05 gaps ..."
+				print "Too many gaps ..."
 				return False
-			if float(extgaps)/len(sequence) > pextgapmax:
-				print "Not enough overlap ..."
-				return False
-		try:
-			if any([e > pintgap_outgroup for e in pintgaps]):
-				print "Outgroup has fewer gaps than rest ..."
-				return False # if any seqs have more gaps than outgroup, false
-		except UnboundLocalError:
-			pass
+		#try:
+		#	if any([e > pintgap_outgroup for e in pintgaps]):
+		#		print "Outgroup has fewer gaps than rest ..."
+		#		return False # if any seqs have more gaps than outgroup, false
+		#except UnboundLocalError:
+		#	pass
 		return True
 	def returnBestAlign(alignments):
 		# keep alignments with outgroups
@@ -201,6 +207,8 @@ def incrAlign(seqobj, pintgapmax, pextgapmax, method, nstart):
 	align_store = [] # stores successful aligns generated
 	# start with as many sequences at start as possible
 	while True:
+		print "Seed phase: [{0}] nstart".format(nstart)
+		print nstart_trys
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align_obj = seqobj.start(nstart)
 		align = runAlignment(align_obj)
@@ -216,13 +224,12 @@ def incrAlign(seqobj, pintgapmax, pextgapmax, method, nstart):
 		if nstart > min_nstart:
 			nstart_trys += 1
 			if max_nstart_trys < nstart_trys:
+				nstart_trys = 0
 				nstart -= 1
 		if max_trys < trys:
 			return None, nstart
 	trys = 0
 	while True:
-		print trys
-		print max_trys
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align = runAlignment(align_obj)
 		if alignCheck(align):
@@ -235,7 +242,7 @@ def incrAlign(seqobj, pintgapmax, pextgapmax, method, nstart):
 				align_obj = seqobj.next(align)
 		elif trys < max_trys:
 			print "fail"
-			align_obj = seqobj.back(align)
+			align_obj = seqobj.back()
 			if len(seqobj.spp_pool) == 0:
 				# here a species has been dropped and now all species are present
 				return returnBestAlign(align_store), nstart
