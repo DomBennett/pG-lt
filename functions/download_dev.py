@@ -192,19 +192,25 @@ def eFetch(ncbi_id, db = "nucleotide"):
 				return ()
 	return results
 
-def findChildren(taxid, target = 100):
+def findChildren(taxid, target = 100, target_rank = "genus", next = False):
 	"""
 	Return all decendant genera of a taxonmic ID.
 
 	Args:
 	 taxid = taxonomic ID (str)
 	 target = the target number of children returned (default 100)
-	 rank = children's rank (not yet implemented)
+	 rank = children's rank
+	 next = stop at all children in the rank below given id's rank
 
 	Returns:
 	 taxid
 	"""
-	def findNext(taxids):
+	def findNext(frecord):
+		term = "{0}[Next Level]".format(frecord[0]['ScientificName'])
+		count = eSearch(term, db = "taxonomy")["Count"]
+		srecord = eSearch(term, db = "taxonomy", retMax = count)
+		return srecord['IdList']
+	def findTillTarget(taxids, next):
 		res = []
 		taxids = random.sample(taxids, len(taxids))
 		while len(taxids) > 0:
@@ -212,15 +218,16 @@ def findChildren(taxid, target = 100):
 				break
 			taxid = taxids.pop()
 			frecord = eFetch(taxid, db = "taxonomy")
-			if frecord[0]['Rank'] in ["genus", "species", "subspecies"]:
+			if target_rank in frecord[0]['Rank']:
 				res.append(taxid)
-			else:	
-				term = "{0}[Next Level]".format(frecord[0]['ScientificName'])
-				count = eSearch(term, db = "taxonomy")["Count"]
-				srecord = eSearch(term, db = "taxonomy", retMax = count)
-				res.extend(findNext(srecord['IdList']))
+			else:
+				res.extend(findNext(frecord))
 		return res
-	return findNext([taxid])
+	if next:
+		frecord = eFetch(taxid, db = "taxonomy")
+		return findNext(frecord)
+	else:
+		return findTillTarget([taxid])
 
 def findGeneInSeq(record, gene_names):
 	"""Extract gene sequence from larger sequence by searching sequence features.
