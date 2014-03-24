@@ -5,8 +5,6 @@
 ## 14/08/2013
 
 ## Parameters
-rand_ngenes = False
-min_ngenes = 2
 niterations = 100
 max_branch = 0.5 # the maximum proportion of a tree a single branch can represent
 max_nsplits = False
@@ -34,11 +32,10 @@ if not os.path.isdir(output_dir):
 ## Loop through studies
 studies = sorted(os.listdir(input_dir))
 studies = [st for st in studies if not re.search("^\.|^log\.txt$", st)]
-studies = [e for e in studies if e == "reptile"]
 study_counter = 0
 print 'Looping through studies ...'
 nphylos_all = 0
-for i in range(len(studies)):
+for i in range(2,len(studies)):
 	print '\n\nWorking on: [{0}]'.format(studies[i])
 	taxontree_file = os.path.join(names_dir, "{0}_taxontree.txt".\
 		format(studies[i]))
@@ -82,17 +79,12 @@ for i in range(len(studies)):
 			break
 		counter += 1
 		print counter
-		if rand_ngenes:
-			ngenes = random.sample(range(min_ngenes, len(align_obj.keys()) + 1), 1)[0]
-			genes = random.sample(align_obj.keys(), ngenes)
-		else:
-			genes = align_obj.keys()
-		print genes
-		alignment = [random.sample(align_obj[e], 1)[0] for e in genes]
-		# order alignments by biggest -- resultant phylogeny is based on first alignment
-		alignment.sort(key = len, reverse = True)
+		alignments = [random.sample(align_obj[e], 1)[0] for e in genes]
+		print taxontree_file
+		alignment,partitions = concatenateAlignments(alignments)
+		#constraint = genConstraintTree(alignment, taxontree_file)
 		if "darwin" == sys.platform:
-			phylo = pG.RAxML(alignment, method = 'localVersion')
+			phylo = RAxML(alignment, method = 'localVersion', constraint = False, outgroup = "outgroup", partitions = partitions)
 		else:
 			phylo = pG.RAxML(alignment, method = "raxmlHPC")
 		pG.Phylo.draw_ascii(phylo)
