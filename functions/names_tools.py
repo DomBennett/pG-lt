@@ -23,9 +23,10 @@ def genTaxTree(resolver, namesdict, draw = False):
 	ranks = resolver.retrieve('classification_path_ranks')
 	qnames = resolver.retrieve('query_name')
 	idents = []
-	for each in namesdict.keys():
+	namesdicts_ids = [e for e in namesdict.keys() if e != "outgroup"]
+	for each in namesdicts_ids:
 		idents.append(qnames.index(namesdict[each]["name"]))
-	idents = [namesdict.keys()[e] for e in idents]
+	idents = [namesdicts_ids[e] for e in idents]
 	lineages = resolver.retrieve('classification_path_ids')
 	for i, lineage in enumerate(lineages):
 		lineage.reverse()
@@ -116,6 +117,14 @@ def genNamesDict(resolver):
 				namesdict["id{0}".format(len(namesdict.keys()) + 1)] = {"name" : non_unique_qnames[i],\
 					 "ids" : temp_children, "unique_name" : "Non-unique resolution", "rank" : non_unique_ranks[i]}
 				i += 1
+		# get outgroup
+		above_id = eFetch(str(resolver.taxon_id), db = "taxonomy")[0]['ParentTaxId']
+		temp_children = findChildren(above_id, next = True)
+		temp_children = [int(e) for e in temp_children]
+		# if none are in all_ids, must be unique
+		temp_children = [e for e in temp_children if e != resolver.taxon_id]
+		namesdict["outgroup"] = {"name" : "outgroup", "ids" : temp_children, "unique_name" : "outgroup",\
+			"rank" : "outgroup"}
 	return namesdict
 
 if __name__ == '__main__':
