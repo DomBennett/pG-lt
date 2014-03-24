@@ -2,8 +2,6 @@
 ## Dominic John Bennett
 ## 10/12/2013
 ## Sequence download functions, main credit phyloGenerator (W.D. Pearse)
-## TODO: look into using pG 'thorough' search
-## TODO: instead of my thorough search, perhaps find the RNA field?
 ## TODO: Add doctest
 
 ## Packages
@@ -59,7 +57,7 @@ def filterSequences(sequences, filter_seed, pintgapmax, pextgapmax, max_trys, mi
 	def filterByAlignment(sequences):
 		sequences = [[e] for e in sequences]
 		align = pG.alignSequences(sequences, method = "mafft", nGenes = 1)
-		align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
+		align = align[0][0]
 		if align.get_alignment_length() < minlen:
 				return False
 		for each in align:
@@ -164,7 +162,6 @@ def eFetch(ncbi_id, db = "nucleotide"):
 			time.sleep(60)
 		try:
 			if db is "nucleotide":
-				print ncbi_id
 				handle = Entrez.efetch(db = "nucleotide", rettype = 'gb',\
 						       retmode="text", id = ncbi_id)
 				results_iter = SeqIO.parse(handle, 'gb')
@@ -179,7 +176,7 @@ def eFetch(ncbi_id, db = "nucleotide"):
 			else:
 				print "Invalid db argument!"
 				break
-			download_counter += 1
+			download_counter += len(ncbi_id)
 			finished = maxCheck + 1
 		except ValueError: # if parsing fails, value error raised
 			handle.close()
@@ -261,23 +258,18 @@ def findGeneInSeq(record, gene_names):
 	except ValueError: # catch value errors raised for sequences with "fuzzy" positions
 		return ()
 
-def sequenceDownload(taxid, gene_names, deja_vues, minlen, maxlen,\
-			     maxpn, thoroughness, nseqs = 100):
-	"""Download all sequences for gene of interest for given taxon id.
+def sequenceSearch(taxid, gene_names, thoroughness, deja_vues = []):
+	"""Search for sequences given a taxid and gene names.
 
 	Arguments:
 	 txid = taxon id
 	 gene_names = list of synonyms for gene of interest
-	 nseqs = max number of sequences to download (default 100)
-	 minlen = min sequence length
-	 maxlen = max sequence length
-	 maxpn = max proportion of ambiguous nucleotides
 	 thoroughness = a number between 1 and 3 determining how thorough
 	  a search should be
 
-	Return:
-	 List of SeqRecord objects"""
-	def buildSearchTerm(taxid, gene_names, phase):
+	 Return:
+	  List of Sequence IDs"""
+	def buildSearchTerm(gene_names, phase):
 		# for field see: http://www.ncbi.nlm.nih.gov/books/NBK49540/
 		gene_names = ["\"{0}\"".format(e) for e in gene_names]
 		if phase == 1: # use gene field and ignore: predicted, genome
@@ -303,20 +295,37 @@ def sequenceDownload(taxid, gene_names, deja_vues, minlen, maxlen,\
 					       format(taxid, gene_term))
 		print search_term
 		return search_term
-	def search(taxid, gene_names):
-		seq_ids = []
-		count = 0
-		phase = 1
-		while len(seq_ids) == 0:
-			if phase > thoroughness:
-				return []
-			search_term = buildSearchTerm(taxid, gene_names, phase = phase)
-			count = eSearch(search_term)['Count']
-			if int(count) > 1:
-				seq_ids.extend(eSearch(search_term, retMax = count)['IdList'])
-				seq_ids = [e for e in seq_ids if not e in deja_vues]
-			phase += 1
-		return list(set(seq_ids))
+	seq_ids = []
+	count = 0
+	phase = 1
+	while len(seq_ids) == 0:
+		if phase > thoroughness:
+			return []
+		search_term = buildSearchTerm(gene_names, phase = phase)
+		seqcount = eSearch(search_term)['Count']
+		if int(seqcount) > 1:
+			seq_ids.extend(eSearch(search_term, retMax = seqcount)['IdList'])
+			seq_ids = [e for e in seq_ids if not e in deja_vues]
+		phase += 1
+	return list(set(seq_ids))
+
+def sequenceDownload(taxid, gene_names, deja_vues, minlen, maxlen,\
+			     maxpn, thoroughness, nseqs = 100, seq_ids = None):
+	"""Download and parse sequences given a taxid and gene names or list of sequence IDs.
+
+	Arguments:
+	 txid = taxon id
+	 gene_names = list of synonyms for gene of interest
+	 minlen = min sequence length
+	 maxlen = max sequence length
+	 maxpn = max proportion of ambiguous nucleotides
+	 thoroughness = a number between 1 and 3 determining how thorough
+	  a search should be
+	 nseqs = max number of sequences to download (default 100)
+	 seq_ids = list of pre-specified sequence IDs
+
+	Return:
+	 List of SeqRecord objects"""
 	def parse(record):
 		if isinstance(record, list):
 			# find which sequence in the list has the gene
@@ -337,19 +346,29 @@ def sequenceDownload(taxid, gene_names, deja_vues, minlen, maxlen,\
 			if pn < maxpn:
 				return record
 		return False
+	if seq_ids is None:
+		seq_store = sequenceSearch(taxid, gene_names, thoroughness, deja_vues)
+		deja_vues = seq_store[:]
+	else:
+		seq_store = seq_ids
 	pattern = re.compile("[ACTGactg]")
-	seq_store = search(taxid, gene_names)
-	deja_vues = seq_store[:]
 	records = []
 	i = 1
 	while i <= nseqs and len(seq_store) > 0:
-		randi = random.randint(0, len(seq_store)-1)
-		seq = seq_store.pop(randi)
-		record = eFetch(seq)
-		record = parse(record)
-		if record:
-			records.append(record)
-			i += 1
+		if len(seq_store) > 100:
+			n = 100
+		else:
+			n = len(seq_store)
+		seqs = []
+		for _ in range(n):
+			randi = random.randint(0, len(seq_store)-1)
+			seqs.append(seq_store.pop(randi))
+		for record in eFetch(seqs):
+			print record.id
+			record = parse(record)
+			if record:
+				records.append(record)
+				i += 1
 	return records,deja_vues
 
 if __name__ == "__main__":

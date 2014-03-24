@@ -11,12 +11,12 @@ print "\n\nThis is stage 2: download\n"
 seqcount = 100
 filter_seed = 5
 thoroughness = 3
-pintgapmax = 0.0
-pextgapmax = 0.1
+pintgapmax = 0.01
+pextgapmax = 0.5
 max_trys = 100
 filtering = True
 minlen = 350
-maxlen = 1000
+maxlen = 1500
 maxpn = 0.1 # Max proportion of ambiguous nucleotides
 
 ## Packages
@@ -89,25 +89,30 @@ for i in range(len(taxids_files)):
 			print "..... taxid[{0}]".format(taxid)
 			# download
 			sequences = []
-			temp_taxids = dt.findChildren(taxid)
-			for temp_taxid in temp_taxids:
-				downloaded = []
-				deja_vues = []
-				while len(sequences) < seqcount:
-					downloaded,temp_deja_vues = dt.sequenceDownload(temp_taxid, gene, deja_vues, minlen, maxlen,\
-						maxpn, thoroughness)
-					if len(downloaded) == 0: # keeps looping until no more new sequences are being downloaded
-						break
-					deja_vues.extend(temp_deja_vues)
-					deja_vues = list(set(deja_vues))
-					if len(downloaded) < filter_seed and len(temp_taxids) < 1: # only skip the filtering stage if few temp_taxids
-						sequences.extend(downloaded)
-						break
-					else:
-						filtered,downloaded = dt.filterSequences(sequences = downloaded, filter_seed = filter_seed,\
-							pintgapmax = pintgapmax, pextgapmax = pextgapmax, max_trys = max_trys, minlen = minlen)
-					if len(filtered) > 0:
-						sequences.extend(filtered)
+			seqids = dt.sequenceSearch(taxid, gene, thoroughness)
+			if len(seqids) >= seqcount: # Only filter if more than 100 in genbank
+				print "Lots of sequences for taxid: [{0}]. Downloading and filtering.".format(taxid)
+				temp_taxids = dt.findChildren(taxid)
+				for temp_taxid in temp_taxids:
+					downloaded = []
+					deja_vues = []
+					while len(sequences) < seqcount:
+						downloaded,temp_deja_vues = dt.sequenceDownload(temp_taxid, gene, deja_vues, minlen, maxlen,\
+							maxpn, thoroughness)
+						if len(downloaded) == 0: # keeps looping until no more new sequences are being downloaded
+							break
+						deja_vues.extend(temp_deja_vues)
+						deja_vues = list(set(deja_vues))
+						if len(downloaded) < filter_seed and len(temp_taxids) < 1: # only skip the filtering stage if few temp_taxids
+							sequences.extend(downloaded)
+							break
+						else:
+							filtered,downloaded = dt.filterSequences(sequences = downloaded, filter_seed = filter_seed,\
+								pintgapmax = pintgapmax, pextgapmax = pextgapmax, max_trys = max_trys, minlen = minlen)
+						if len(filtered) > 0:
+							sequences.extend(filtered)
+			else:
+				sequences,_ = dt.sequenceDownload(taxid, gene, [], minlen, maxlen, maxpn, thoroughness, seq_ids = seqids)
 			if len(sequences) < 1:
 				no_seqs_gene += 1
 				print "No sequences found for taxid[{0}].".format(taxid)
