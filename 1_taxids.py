@@ -18,8 +18,8 @@ from taxon_names_resolver_tools import *
 input_dir = os.path.join(os.getcwd(), '0_names')
 output_dir = os.path.join(os.getcwd(), '1_taxids')
 if not os.path.isdir(output_dir):
-    os.mkdir(output_dir)
-    
+	os.mkdir(output_dir)
+	
 ## Reading in taxadata
 print "Reading in taxadata.csv ..."
 taxadict = {}
@@ -28,7 +28,7 @@ with open(os.path.join(input_dir,'taxadata.csv'), 'rb') as csvfile:
 	for row in taxreader:
 		taxadict[row['study']] = [row['parentID'], row['sisterID']]
 print "Done. Read in taxadata for [{0}] studies.".format(len(taxadict))
-    
+	
 ## Input + get taxids + output
 print '\nLooping through studies ...'
 files = os.listdir(input_dir)
@@ -42,17 +42,17 @@ for taxnames_file in taxnames_files:
 	print 'Searching for taxids ...'
 	datasource = 'NCBI'
 	taxon_id = int(taxadict[current_study][0])
-        input_file = os.path.join(input_dir, taxnames_file)
+	input_file = os.path.join(input_dir, taxnames_file)
 	resolver = TaxonNamesResolver(input_file, datasource, taxon_id)
-        resolver.main()
-        resolver = lineageMerge(resolver) # prevent duplicates
+	resolver.main()
+	#resolver = lineageMerge(resolver) # prevent duplicates
 	qnames,taxids = extractHighestClade(resolver, by_ids = True)
 	print '... resolved [{0}] names ...'.format(len(taxids))
 	if len(taxids) < 3:
 		print 'Too few names resovled. Dropping study.\n'
 		continue
-        print '... generating taxonomic tree ...'
-        taxontree,shared_lineages = genTaxTree(resolver, by = 'qnames', draw = True)        
+	print '... generating taxonomic tree ...'
+	taxontree,shared_lineages = genTaxTree(resolver, by = 'taxids', draw = True)        
 	print 'Done.'
 	print 'Outputting ...'
 	taxids.append(taxadict[current_study][1])
