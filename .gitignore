@@ -29,33 +29,16 @@ nosetests.xml
 # Translations
 *.mo
 
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
-
 # Stage folders
-1_taxids
+0_info
+1_names
 2_download
-3_alignments
-4_phylogenies
-5_screen
-x_compare
-resolved_names
+3_alignment
+4_phylogeny
 requires
 
-# MPE specific
-blacklist.csv
-
-# emacs temp files
-*~
-\#*#
-
-# Rstudio files
-.Rproj.user
-*.Rhistory
-*.Rproj
-*.RData
+# pickle
+*p
 
 # Sublime
 *.sublime-workspace
