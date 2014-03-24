@@ -12,7 +12,8 @@ from Bio import SeqIO
 
 ## Globals
 max_check = 4
-download_counter = 0 # Limit the number of requests to NCBI for a given time period
+download_counter = 0
+Entrez.email = "dominic.john.bennett@gmail.com"
 
 ## Functions
 def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
