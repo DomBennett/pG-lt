@@ -1,8 +1,7 @@
 #!/usr/bin/python
-## MRes Project 2013
-## Stage 2: Downloading sequences
-## In: 0_names, 1_taxids | Out: 2_download
-## 07/08/2013
+## MPE Stage 2: Sequence Download
+## D.J. Bennet
+## 24/03/2014
 
 ## Print stage
 print "\n\nThis is stage 2: download\n"

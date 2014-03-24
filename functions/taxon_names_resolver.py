@@ -148,7 +148,8 @@ class GnrStore(dict):
 				print 'JSON object contains terms not in GnrStore'
 		
 class TaxonNamesResolver(object):
-	"""Taxon Names Resovler class : Automatically resolves taxon names through GNR. All output written in 'resolved_names' folder. See https://github.com/DomBennett/TaxonNamesResolver for details."""
+	"""Taxon Names Resovler class : Automatically resolves taxon names through GNR. All output written in 'resolved_names' folder.
+	See https://github.com/DomBennett/TaxonNamesResolver for details."""
 	def __init__(self, input_file = False, datasource = False, \
 	 taxon_id = False):
 		# organising dirs

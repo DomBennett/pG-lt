@@ -1,9 +1,15 @@
+#!/usr/bin/python
+## MPE Alignment tools
+## D.J. Bennet
+## 24/03/2014
+
+## Packages
 import sys, os, re, random
 import numpy as np
-sys.path.append(os.path.join(os.getcwd(), 'functions'))
-import phyloGenerator_adapted as pG
+from Bio import SeqIO
+import sys_tools
 
-
+## Objects
 class OutgroupError(Exception):
 	"""Raised whenever an outgroup is dropped"""
 	pass
@@ -28,13 +34,11 @@ class SeqObj(dict):
 			seqs = []
 			lengths = []
 			with open(seqdir, "rU") as infile:
-				for record in pG.SeqIO.parse(infile, "fasta"):
-					if record.seq.count('N') == 0 and record.seq.count('n') == 0: # removing sequences w/ Ns TODO: move this to download
-						if 200 < len(record) < 1500:
-							record.id = name
-							lengths.append(len(record))
-							seqs.append([record, 0]) # seqrecord + nfails
-							self.nseqs += 1
+				for record in SeqIO.parse(infile, "fasta"):
+					record.id = name
+					lengths.append(len(record))
+					seqs.append([record, 0]) # seqrecord + nfails
+					self.nseqs += 1
 			if len(seqs) > 0:
 				self[name] = [seqs, np.min(lengths)]
 
@@ -94,36 +98,72 @@ class SeqObj(dict):
 		if len(self.keys()) < 5: # Raise error if fewer than 5 species left in spp pool
 			raise MinSpeciesError
 
-def cleanAlignment(align, method='trimAl-automated', tempStem='temp', timeout=None):
-	if 'trimAl' in method:
-		options = ""
-		if 'automated' in method:
-			options += " -automated1"
-		output = []
-		for i,gene in enumerate(align):
-			geneOutput = []
-			for j,method in enumerate(gene):
-				pG.AlignIO.write(method, tempStem+"Input.fasta", "fasta")
-				fileLine = " -in " + tempStem + "Input.fasta -out " + tempStem + "Output.fasta -fasta"
-				trimalVersion = "trimal"
-				commandLine = trimalVersion + fileLine + options
-				if timeout:
-					pipe = pG.TerminationPipe(commandLine, timeout)
-					if 'darwin' == sys.platform: # so that I can run it on mac
-							pipe.run(changeDir = True)
-					else:
-							pipe.run()
-					if not pipe.failure:
-						geneOutput.append(pG.AlignIO.read(tempStem + "Output.fasta", "fasta"))
-						os.remove(tempStem + "Output.fasta")
-						os.remove(tempStem + "Input.fasta")
-					else:
-						raise RuntimeError("Either trimAl failed, or it ran out of time")
-			output.append(geneOutput)
-		return output
-	else:
-		raise RuntimeError("Only automated trimAl methods supported at this time.")
-					
+## Functions
+def alignCheck(align):
+	def calcOverlap(columns):
+		pcolgaps = []
+		for i in columns:
+			ith =  float(align[:,i].count("-"))/(len(align) - 1)
+			pcolgaps.append(ith)
+		overlap = len(columns) - (len(columns) * np.mean(pcolgaps))
+		return overlap
+	align_len = align.get_alignment_length()
+	if align_len < min_align_len:
+		return False
+	pintgaps = []
+	for each in align:
+		sequence = each.seq.tostring()
+		columns = [ei for ei,e in enumerate(sequence) if e != "-"]
+		totnucs = len(columns)
+		totgaps = align_len - totnucs
+		overlap = calcOverlap(columns)
+		if overlap < minoverlap:
+			print "Not enough overlap"
+			return False
+		extgaps = 0
+		start_extgaps = re.search("^-+", sequence)
+		end_extgaps = re.search("-+$", sequence)
+		if not start_extgaps is None:
+			extgaps += start_extgaps.end()
+		if not end_extgaps is None:
+			extgaps += len(sequence) - end_extgaps.start()
+		intgaps = totgaps - extgaps
+		overlap = intgaps + totnucs
+		pintgap = float(intgaps)/overlap
+		if each.id == "outgroup":
+			pintgap_outgroup = pintgap
+		else:
+			pintgaps.append(pintgap)
+		if pintgap > pintgapmax:
+			print "Too many gaps ..."
+			return False
+	#try:
+	#	if any([e > pintgap_outgroup for e in pintgaps]):
+	#		print "Outgroup has fewer gaps than rest ..."
+	#		return False # if any seqs have more gaps than outgroup, false
+	#except UnboundLocalError:
+	#	pass
+	return True
+
+def alignSequences(sequences, timeout=99999999, silent=False, verbose=True):
+	"""Adapted pG function : aligns sequences using mafft (external program)"""
+		input_file = "alignment_in" + '.fasta'
+		output_file = "alignment_out" + '.fasta'
+		command_line = 'mafft --auto ' + input_file + " > " + output_file
+		SeqIO.write(seqs, input_file, "fasta")
+		pipe = TerminationPipe(command_line, timeout)
+		pipe.run(silent=silent)
+		os.remove(input_file)
+		if not pipe.failure:
+			try:
+				res = AlignIO.read(output_file, 'fasta')
+			except:
+				raise RuntimeError("MAFFT unable to run: check your input sequences don't need trimming!")
+			os.remove(output_file)
+		else:
+			raise RuntimeError("Mafft alignment not complete in time allowed")
+	return res
+
 def incrAlign(seqobj, pintgapmax, minoverlap, method, nstart):
 	"""Incrementally build an alignment from outgroup sequence"""
 	# parameters
@@ -131,60 +171,6 @@ def incrAlign(seqobj, pintgapmax, minoverlap, method, nstart):
 	max_nstart_trys = 5 #  the number of trys before nstart -= 1
 	min_nstart = 5 # the minimum nstart
 	max_trys = 10 # prevents loops continuing forever
-	def runAlignment(align_obj):
-		align_struct = [[e[0]] for e in align_obj]
-		#seq_descriptions = [e[0].description for e in align_obj]
-		align = pG.alignSequences(align_struct, method = method, nGenes = 1)
-		#align = cleanAlignment(align, timeout = 99999)[0][0] #trim with trimal
-		# ensure sequence names used are in description
-		#for i,e in enumerate(seq_descriptions):
-		#	align._records[i].description = e
-		return align[0][0]
-	def alignCheck(align):
-		def calcOverlap(columns):
-			pcolgaps = []
-			for i in columns:
-				ith =  float(align[:,i].count("-"))/(len(align) - 1)
-				pcolgaps.append(ith)
-			overlap = len(columns) - (len(columns) * np.mean(pcolgaps))
-			return overlap
-		align_len = align.get_alignment_length()
-		if align_len < min_align_len:
-			return False
-		pintgaps = []
-		for each in align:
-			sequence = each.seq.tostring()
-			columns = [ei for ei,e in enumerate(sequence) if e != "-"]
-			totnucs = len(columns)
-			totgaps = align_len - totnucs
-			overlap = calcOverlap(columns)
-			if overlap < minoverlap:
-				print "Not enough overlap"
-				return False
-			extgaps = 0
-			start_extgaps = re.search("^-+", sequence)
-			end_extgaps = re.search("-+$", sequence)
-			if not start_extgaps is None:
-				extgaps += start_extgaps.end()
-			if not end_extgaps is None:
-				extgaps += len(sequence) - end_extgaps.start()
-			intgaps = totgaps - extgaps
-			overlap = intgaps + totnucs
-			pintgap = float(intgaps)/overlap
-			if each.id == "outgroup":
-				pintgap_outgroup = pintgap
-			else:
-				pintgaps.append(pintgap)
-			if pintgap > pintgapmax:
-				print "Too many gaps ..."
-				return False
-		#try:
-		#	if any([e > pintgap_outgroup for e in pintgaps]):
-		#		print "Outgroup has fewer gaps than rest ..."
-		#		return False # if any seqs have more gaps than outgroup, false
-		#except UnboundLocalError:
-		#	pass
-		return True
 	def returnBestAlign(alignments):
 		# keep alignments with outgroups
 		# keep alignments with more than 5 species
@@ -211,7 +197,7 @@ def incrAlign(seqobj, pintgapmax, minoverlap, method, nstart):
 		print nstart_trys
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
 		align_obj = seqobj.start(nstart)
-		align = runAlignment(align_obj)
+		align = alignSequences(align_obj)
 		if alignCheck(align):
 			if len(seqobj.spp_pool) == 0:
 				return align, nstart
@@ -231,7 +217,7 @@ def incrAlign(seqobj, pintgapmax, minoverlap, method, nstart):
 	trys = 0
 	while True:
 		min_align_len = min([seqobj[e][1] for e in seqobj.keys()])
-		align = runAlignment(align_obj)
+		align = alignSequences(align_obj)
 		if alignCheck(align):
 			print "success"
 			trys = 0
@@ -252,3 +238,6 @@ def incrAlign(seqobj, pintgapmax, minoverlap, method, nstart):
 			# when the maximum number of species is not reached...
 			# ... return the best alignment in the alignment store
 			return returnBestAlign(align_store), nstart
+
+if __name__ == '__main__':
+	pass

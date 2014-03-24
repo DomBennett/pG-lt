@@ -1,14 +1,15 @@
 #!/usr/bin/python
-## No warranty, no copyright
-## Dominic John Bennett
-## 03/12/2013
-## TODO: adapt genTaxTree to use taxonomic information outside of named ranks
+## MPE Names tools
+## D.J. Bennet
+## 24/03/2014
 
+## Packages
 import collections, re, copy
 from Bio import Phylo
 from cStringIO import StringIO
-from download_dev import *
+from entrez_tools import *
 
+## Functions
 def genTaxTree(resolver, namesdict, draw = False):
 	"""Generate Newick tree from TaxonNamesResolver class.
 		

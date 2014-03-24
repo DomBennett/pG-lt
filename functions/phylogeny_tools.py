@@ -1,13 +1,21 @@
+#!/usr/bin/python
+## MPE Phylogeny tools
+## D.J. Bennet
+## 24/03/2014
+
+## Packages
 import sys, os, re, random
 import dendropy as dp
 from Bio import Phylo
 from Bio.Seq import Seq
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
+from Bio import Phylo
+from Bio import AlignIO
 import numpy as np
-sys.path.append(os.path.join(os.getcwd(), 'functions'))
-import phyloGenerator_adapted as pG
+import sys_tools
 
+## Functions
 def renameTips(phylo, names):
 	for each in phylo.get_terminals():
 		try:
@@ -87,7 +95,7 @@ def genConstraintTree(alignment, taxontree_file):
 	tips_to_drop = [e for e in taxontree_tips if not e in tip_names]
 	for tip in tips_to_drop:
 		constrainttree.prune(tip)
-	print pG.Phylo.draw_ascii(constrainttree)
+	print Phylo.draw_ascii(constrainttree)
 	Phylo.write(constrainttree, "constraint.txt", "newick")
 	if constrainttree.is_bifurcating():
 		return " -r constraint.txt"
@@ -124,14 +132,15 @@ def concatenateAlignments(alignments):
 	return alignment,partitions
 
 def RAxML(alignment, method='localVersion', tempStem='temp', outgroup=None, timeout=999999999,\
-		partitions=None, constraint=None, cleanup=True):
+		partitions=None, constraint=None):
+	"""Adapted pG function: Generate phylogeny from alignment using RAxML (external program)."""
 	inputFile = tempStem + 'In.phylip'
 	outputFile = tempStem + 'Out'
 	fileLine = ' -s ' + inputFile + ' -n ' + outputFile
 	options = ' -p ' + str(random.randint(0,10000000))
 	if outgroup:
 		options += ' -o ' + outgroup
-	pG.AlignIO.write(alignment, inputFile, "phylip-relaxed")
+	AlignIO.write(alignment, inputFile, "phylip-relaxed")
 	if 'localVersion' in method:
 		raxmlVersion = 'raxml'
 	else:
@@ -152,27 +161,27 @@ def RAxML(alignment, method='localVersion', tempStem='temp', outgroup=None, time
 		options += constraint
 	commandLine = raxmlVersion + fileLine + DNAmodel + options
 	print commandLine
-	pipe = pG.TerminationPipe(commandLine, timeout)
+	pipe = TerminationPipe(commandLine, timeout)
 	if 'localVersion' in method:
 			pipe.run(changeDir = True)
 	else:
 			pipe.run()
 	if not pipe.failure:
 		tree = Phylo.read('RAxML_bestTree.' + outputFile, "newick")
-		if cleanup:
-			if constraint:
-				os.remove('constraint.txt')
-			if partitions:
-				os.remove(tempStem+"_partitions.txt")
-			os.remove(inputFile)
-			dirList = os.listdir(os.getcwd())
-			for each in dirList:
-				if re.search("(RAxML)", each):
-					os.remove(each)
-				if tempStem+"In.phylip.reduced"==each:
-					os.remove(each)
+		if constraint:
+			os.remove('constraint.txt')
+		if partitions:
+			os.remove(tempStem+"_partitions.txt")
+		os.remove(inputFile)
+		dirList = os.listdir(os.getcwd())
+		for each in dirList:
+			if re.search("(RAxML)", each):
+				os.remove(each)
+			if tempStem+"In.phylip.reduced"==each:
+				os.remove(each)
 		return tree
 	else:
 		raise RuntimeError("Either phylogeny building program failed, or ran out of time")
 
-
+if __name__ == '__main__':
+	pass

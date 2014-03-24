@@ -1,8 +1,7 @@
 #!/usr/bin/python
-## MRes Project 2013
-## Stage 3: Generate alignments
-## In: 0_names, 2_download | Out: 3_alignments
-## 14/08/2013
+## MPE Stage 3: Aligning sequences
+## D.J. Bennet
+## 24/03/2014
 
 ## Parameters
 minfails = 10 # the minimum sequence quality
@@ -16,11 +15,10 @@ print "\n\nThis is stage 3: alignment\n"
 
 ## Packages
 import sys, os, re, random, csv, copy
-import time # let's see if the iterations get faster
+import time
 import numpy as np
-sys.path.append(os.path.join(os.getcwd(), 'functions'))
-import phyloGenerator_adapted as pG
-from alignment_dev import *
+import alignment_tools
+from Bio import SeqIO
 
 ## Dirs
 input_dirs = [os.path.join(os.getcwd(), '2_download'), os.path.join(os.getcwd(), '0_names')]
@@ -90,7 +88,6 @@ for i in range(2,len(studies)):
 		print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seq_obj))
 		gene_alignments = []
 		temp_seqobj = copy.deepcopy(seq_obj)
-		method = 'mafft'
 		nstart = len(seq_obj)
 		iteration_trys = 0
 		j = 1
@@ -98,7 +95,7 @@ for i in range(2,len(studies)):
 			while j <= iterations:
 				print "iteration [{0}]".format(j)
 				t0 = time.clock()
-				alignment, nstart = incrAlign(temp_seqobj, pintgapmax, minoverlap, method, nstart)
+				alignment, nstart = incrAlign(temp_seqobj, pintgapmax, minoverlap, nstart)
 				t1 = time.clock() - t0
 				if alignment is None:
 					iteration_trys += 1
@@ -135,7 +132,7 @@ for i in range(2,len(studies)):
 			output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
 			output_path = os.path.join(gene_dir, output_file)
 			with open(output_path, "w") as outfile:
-				count = pG.SeqIO.write(alignment, outfile, "fasta")
+				count = SeqIO.write(alignment, outfile, "fasta")
 			naligns_all += 1   
 		counter += 1
 

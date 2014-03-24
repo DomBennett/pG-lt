@@ -1,13 +1,11 @@
 #!/usr/bin/python
-## MRes Project 2013
-## Stage 4: Generate phylogenies (YAY!!)
-## In: 3_alignments | Out: 4_phylogenies
-## 14/08/2013
+## MPE Stage 4: Phylogeny generation
+## D.J. Bennet
+## 24/03/2014
 
 ## Parameters
 niterations = 100
-max_branch = 0.5 # the maximum proportion of a tree a single branch can represent
-max_nsplits = False
+max_branch = 0.5
 max_trys = 1000
 
 ## Print stage
@@ -15,11 +13,11 @@ print "\n\nThis is stage 4: phylogenies\n"
 
 ## Packages
 import sys, os, re, random
+from Bio import AlignIO
+from Bio import Phylo
 import dendropy as dp
 import numpy as np
-sys.path.append(os.path.join(os.getcwd(), 'functions'))
-import phyloGenerator_adapted as pG
-from phylogeny_gen_tools import *
+import phylogeny_tools
 
 ## dirs
 names_dir = os.path.join(os.getcwd(), '1_taxids')
@@ -65,7 +63,7 @@ for i in range(2,len(studies)):
 		a_files = [e for e in a_files if not re.search("^\.", e)]
 		for a_file in a_files:
 			a_file_path = os.path.join(gene_dir, a_file)
-			align = pG.AlignIO.read(a_file_path, "fasta")
+			align = AlignIO.read(a_file_path, "fasta")
 			align_obj[gene].append(align)
 	naligns = [len(align_obj[e]) for e in align_obj.keys()]
 	print "Done. Read in [{0}] alignments for [{1}]".format(naligns,align_obj.keys())
@@ -86,15 +84,15 @@ for i in range(2,len(studies)):
 		if "darwin" == sys.platform:
 			phylo = RAxML(alignment, method = 'localVersion', constraint = False, outgroup = "outgroup", partitions = partitions)
 		else:
-			phylo = pG.RAxML(alignment, method = "raxmlHPC")
-		pG.Phylo.draw_ascii(phylo)
+			phylo = RAxML(alignment, method = "raxmlHPC")
+		Phylo.draw_ascii(phylo)
 		try:
 			phylo.root_with_outgroup("outgroup")
 		except ValueError:
 			continue
 		phylo.prune("outgroup")
 		phylo = renameTips(phylo, names)
-		pG.Phylo.draw_ascii(phylo)
+		Phylo.draw_ascii(phylo)
 		if phyloTest(phylo, taxontree_file, max_nsplits, max_branch):
 			print "A good tree!"
 			phylos.append(phylo)
@@ -105,7 +103,7 @@ for i in range(2,len(studies)):
 		print 'Done. [{0}] phylogenies for [{1}].'.format(nphylos, studies[i])
 		print 'Writing out phylogenies and generating consensus.'
 		filepath = os.path.join(output_dir, studies[i] + "_phylos" + '.tre')
-		pG.Phylo.write(phylos, filepath, 'newick')
+		Phylo.write(phylos, filepath, 'newick')
 		phylos = dp.TreeList()
 		phylos.read(open(filepath, "rU"), "newick")
 		consensus = phylos.consensus(min_freq = 0.5)
