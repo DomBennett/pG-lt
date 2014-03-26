@@ -120,7 +120,8 @@ def findChildren(taxid, target = 100, next = False):
 	 taxid
 	"""
 	def findNext(frecord):
-		term = "{0}[Next Level]".format(frecord[0]['ScientificName'])
+		term = "{0}[Next Level] AND {1}[Division]".\
+			format(frecord[0]['ScientificName'], frecord[0]['Division'])
 		count = eSearch(term, db = "taxonomy")["Count"]
 		srecord = eSearch(term, db = "taxonomy", retMax = count)
 		return srecord['IdList']

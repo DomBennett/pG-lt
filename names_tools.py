@@ -129,7 +129,7 @@ def genNamesDict(resolver):
 	temp_children = findChildren(above_id, next = True)
 	temp_children = [int(e) for e in temp_children]
 	# if none are in all_ids, must be unique
-	temp_children = [e for e in temp_children if e != resolver.taxon_id]
+	temp_children = [e for e in temp_children if e != parentid]
 	namesdict["outgroup"] = {"name" : "outgroup", "ids" : temp_children, "unique_name" : "outgroup",\
 		"rank" : "outgroup"}
 	return namesdict,all_ids
