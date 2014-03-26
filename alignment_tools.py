@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ## MPE Alignment tools
-## D.J. Bennet
+## D.J. Bennett
 ## 24/03/2014
 
 ## Packages

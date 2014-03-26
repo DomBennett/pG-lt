@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ## MPE Stage 2: Sequence Download
-## D.J. Bennet
+## D.J. Bennett
 ## 24/03/2014
 
 ## Print stage

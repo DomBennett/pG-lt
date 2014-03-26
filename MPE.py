@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ## MPE: Run stage
-## D.J. Bennet
+## D.J. Bennett
 ## 25/03/2014
 #TODO: Run each stage, run for multiple names files, check parameters
 

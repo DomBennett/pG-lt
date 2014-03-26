@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ## MPE System tools
-## D.J. Bennet
+## D.J. Bennett
 ## 24/03/2014
 
 ## Pacakges

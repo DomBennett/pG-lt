@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ## MPE Stage 1: Names resolution
-## D.J. Bennet
+## D.J. Bennett
 ## 24/03/2014
 
 ## Print stage
