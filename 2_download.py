@@ -4,144 +4,108 @@
 ## 24/03/2014
 
 ## Print stage
-print "\n\nThis is stage 2: download\n"
-
-## Parameters
-seqcount = 100
-filter_seed = 5
-thoroughness = 3
-pintgapmax = 0.01
-pextgapmax = 0.5
-max_trys = 100
-filtering = True
-minlen = 350
-maxlen = 1500
-maxpn = 0.1 # Max proportion of ambiguous nucleotides
+print "\n\nThis is stage 2: sequence download\n"
 
 ## Packages
-import sys, os, re, csv, time, random
-sys.path.append(os.path.join(os.getcwd(), 'functions'))
-import download_dev as dt
-
-## Entrez email
-dt.Entrez.email = 'dominic.john.bennett@gmail.com'
-print 'Using email [{0}] for NCBI Entrez'.format(dt.Entrez.email)
+import sys, os, re, random, pickle
+from download_tools import *
+from entrez_tools import *
 
 ## Dirs
-input_dirs = [os.path.join(os.getcwd(), '0_names'),\
-	os.path.join(os.getcwd(), '1_taxids')]
-output_dir = os.path.join(os.getcwd(), '2_download')
-if not os.path.isdir(output_dir):
-    os.mkdir(output_dir)
-files = os.listdir(input_dirs[1])
-taxids_files = sorted([e for e in files if re.search("^.*taxids\.txt$", e)])
-#shared_files = sorted([e for e in files if re.search("^.*shared\.txt$", e)])
+download_dir = os.path.join(os.getcwd(),'2_download')
+if not os.path.isdir(download_dir):
+	os.mkdir(download_dir)
 
-## Taxadata
-print "Reading in taxadata.csv ..."
-taxadict = {}
-with open(os.path.join(input_dirs[0], 'taxadata.csv'), 'rb') as csvfile:
-	taxreader = csv.DictReader(csvfile)
-	for row in taxreader:
-		temp_genes = row['genes'].split("|")
-		temp_genes = [e1.split(":") for e1 in temp_genes]
-		taxadict[row['study']] = temp_genes
-print "Done. Read in taxadata for [{0}] studies.".format(len(taxadict))
+## Input
+with open("genedict.p", "rb") as file:
+	genedict = pickle.load(file)
+with open("paradict.p", "rb") as file:
+	paradict = pickle.load(file)
+with open("namesdict.p", "rb") as file:
+	namesdict = pickle.load(file)
+with open("all_ids.p", "rb") as file:
+	allrankids = pickle.load(file)
 
-## Loop through studies
-print '\nLooping through studies ...'
-counter = nseqs = nbases = nspp = 0
-for i in range(len(taxids_files)):
-	## What study?
-	current_study = re.sub("_taxids.txt$", "", taxids_files[i])
-	print '\n\nWorking on: [{0}]'.format(current_study)
-	print 'Reading data and determining genes to search for ...'
-	
-	## read in taxids
-	taxids = []
-	with file(os.path.join(input_dirs[1], taxids_files[i]), 'rb') as infile:
-		for each in infile:
-			taxids.append(each.strip())
-	if len(taxids) < 2:
-		print 'Too few taxids. Dropping study.'
-		continue
-	print '... Found [{0}] taxids in input file ...'.format(len(taxids))
-	
-	## work out genes
-	print 'Extracting genes ...'
-	genes = taxadict[current_study]
-	print 'Using genes: [{0}] for sequence download.'.format(genes)
-	
-	## Sequence download
-	nseqs_study = 0
-	nspp_study = []
-	study_dir  = os.path.join(output_dir, str(current_study))
-	if not os.path.isdir(study_dir):
-			os.mkdir(study_dir)
-	for gene in genes:
-		nseqs_gene = no_seqs_gene = nspp_gene = 0
-		print 'Downloading and outputting for [{0}]...'.format(gene[0])
-		gene_dir  = os.path.join(study_dir, str(gene[0]))
-		if not os.path.isdir(gene_dir):
-			os.mkdir(gene_dir)
-		for taxid in taxids:
-			print "..... taxid[{0}]".format(taxid)
-			# download
-			sequences = []
-			seqids = dt.sequenceSearch(taxid, gene, thoroughness)
-			if len(seqids) >= seqcount: # Only filter if more than 100 in genbank
-				print "Lots of sequences for taxid: [{0}]. Downloading and filtering.".format(taxid)
-				temp_taxids = dt.findChildren(taxid)
-				for temp_taxid in temp_taxids:
-					downloaded = []
-					deja_vues = []
-					while len(sequences) < seqcount:
-						downloaded,temp_deja_vues = dt.sequenceDownload(temp_taxid, gene, deja_vues, minlen, maxlen,\
-							maxpn, thoroughness)
-						if len(downloaded) == 0: # keeps looping until no more new sequences are being downloaded
-							break
-						deja_vues.extend(temp_deja_vues)
-						deja_vues = list(set(deja_vues))
-						if len(downloaded) < filter_seed and len(temp_taxids) < 1: # only skip the filtering stage if few temp_taxids
-							sequences.extend(downloaded)
-							break
-						else:
-							filtered,downloaded = dt.filterSequences(sequences = downloaded, filter_seed = filter_seed,\
-								pintgapmax = pintgapmax, pextgapmax = pextgapmax, max_trys = max_trys, minlen = minlen)
-						if len(filtered) > 0:
-							sequences.extend(filtered)
-			else:
-				sequences,_ = dt.sequenceDownload(taxid, gene, [], minlen, maxlen, maxpn, thoroughness, seq_ids = seqids)
-			if len(sequences) < 1:
-				no_seqs_gene += 1
-				print "No sequences found for taxid[{0}].".format(taxid)
-				continue
-			if len(sequences) > seqcount:
-				sequences = random.sample(sequences, seqcount)
-			# convert to fasta
-			gene_seqs = []
-			for seq in sequences:
-				gene_seqs.append(seq.format('fasta'))
-			# write out
-			with file(os.path.join(gene_dir, str(taxid) + '.fasta'), 'wb') \
-			as outfile:
-				for gene_seq in gene_seqs:
-					outfile.write("%s\n" % gene_seq)
-					nseqs_gene += 1
-					nbases += len(gene_seq)
-			nspp_gene += 1
-		if no_seqs_gene == len(taxids):
-			print "No sequences were downloaded for gene [{0}]".format(gene[0])
-			os.rmdir(gene_dir)
+## Parameters
+Entrez.email = paradict["email"]
+nseqs = int(paradict['nseqs'])
+thoroughness = int(paradict['download_thoroughness'])
+maxlen = int(paradict['maxlen'])
+minlen = int(paradict['minlen'])
+filter_threshold = int(paradict['filter_threshold'])
+filter_seed = 5
+mingaps = 0.01
+minoverlap = 200
+maxtrys = 100
+seqcounter = basecounter = spcounter = 0
+
+## Process
+print 'Determining best genes'
+#genes = findBestGenes(namesdict, genedict, thoroughness, allrankids)
+genes = ["COI", "18S"]
+statement = 'Using genes:'
+for gene in genes:
+	statement += " " + gene
+print statement
+for gene in genes:
+	seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
+	gene_names = genedict[gene]["names"]
+	print 'Downloading and outputting for [{0}]...'.format(gene)
+	gene_dir  = os.path.join(download_dir, str(gene))
+	if not os.path.isdir(gene_dir):
+		os.mkdir(gene_dir)
+	for nameid in namesdict.keys():
+		print "..... [{0}]: [{1}]".format(nameid,namesdict[nameid]["name"])
+		taxids = namesdict[nameid]["ids"]
+		sequences = []
+		seqids = sequenceSearch(taxids, gene_names, thoroughness)
+		if len(seqids) >= nseqs: # Only filter if more than 100 in genbank
+			print "Lots of sequences for [{0}]. Downloading and filtering.".format(nameid)
+			for taxid in taxids:
+				temp_taxids = findChildren(taxid)
+				downloaded = []
+				deja_vues = []
+				while len(sequences) < nseqs:
+					downloaded,temp_deja_vues = sequenceDownload(temp_taxids, gene_names, deja_vues, minlen, maxlen,\
+						maxpn = 0.01, thoroughness = thoroughness, nseqs = nseqs, seq_ids = seqids)
+					if len(downloaded) == 0: # keeps looping until no more new sequences are being downloaded
+						break
+					deja_vues.extend(temp_deja_vues)
+					deja_vues = list(set(deja_vues))
+					if len(downloaded) < filter_seed and len(temp_taxids) < 1: # only skip the filtering stage if few temp_taxids
+						sequences.extend(downloaded)
+						break
+					else:
+						filtered,downloaded = filterSequences(sequences = downloaded, filter_seed = filter_seed,\
+							mingaps = mingaps, minoverlap = minoverlap, maxtrys = maxtrys, minlen = minlen)
+					if len(filtered) > 0:
+						sequences.extend(filtered)
 		else:
-			nseqs_study += nseqs_gene
-			nspp_study.append(nspp_gene)
-			print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
-				format(nseqs_gene,gene[0],nspp_gene)
-	print 'Done. Downloaded [{0}] sequences for study [{1}] representing [{2}] species.'.\
-		format(nseqs_study,current_study,max(nspp_study))
-	counter += 1
-	nseqs += nseqs_study
-	nspp += max(nspp_study)
-print '\n\nStage finished. Downloaded [{0}] bases for [{1}] sequences for [{2}] studies for [{3}] species.'.\
-	format(nbases, nseqs, counter, nspp)
+			sequences,_ = sequenceDownload(taxids, gene_names, [], minlen, maxlen, maxpn = 0.01,\
+				thoroughness = thoroughness, nseqs = nseqs, seq_ids = seqids)
+		if len(sequences) < 1:
+			noseqcounter_gene += 1
+			print "No sequences found for [id{0}].".format(nameid)
+			continue
+		if len(sequences) > nseqs:
+			sequences = random.sample(sequences, nseqs)
+		gene_seqs = []
+		for seq in sequences:
+			gene_seqs.append(seq.format('fasta'))
+		with open(os.path.join(gene_dir, str(nameid) + '.fasta'), 'wb') \
+		as outfile:
+			for gene_seq in gene_seqs:
+				outfile.write("%s\n" % gene_seq)
+				seqcounter_gene += 1
+				basecounter += len(gene_seq)
+		spcounter_gene += 1
+	if noseqcounter_gene == len(namesdict.keys()):
+		print "No sequences were downloaded for gene [{0}]".format(gene)
+		os.rmdir(gene_dir)
+	else:
+		seqcounter += seqcounter_gene
+		spcounter += spcounter_gene
+		print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
+			format(seqcounter_gene,gene,spcounter_gene)
+print '\n\nStage finished. Downloaded [{0}] bases for [{1}] sequences for [{2}] species.'.\
+	format(basecounter, seqcounter, spcounter)
