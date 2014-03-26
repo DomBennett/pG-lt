@@ -39,8 +39,9 @@ requires
 # pickle
 *p
 
-# Trees
+# Data
 *.tre
+*.txt
 
 # Sublime
 *.sublime-workspace
