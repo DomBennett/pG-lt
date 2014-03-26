@@ -22,12 +22,22 @@ def genTaxTree(resolver, namesdict, draw = False):
 		  (Newick Tree Object, [shared lineage])"""
 	ranks = resolver.retrieve('classification_path_ranks')
 	qnames = resolver.retrieve('query_name')
+	lineages = resolver.retrieve('classification_path_ids')
+	resolved_names = [namesdict[e]["name"] for e in namesdict.keys()]
+	resolved_names_bool = [e in resolved_names for e in qnames]
+	ranks = [ranks[ei] for ei,e in enumerate(resolved_names_bool) if e]
+	lineages = [lineages[ei] for ei,e in enumerate(resolved_names_bool) if e]
+	unresolved_names = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if not e]
+	qnames = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if e]
+	statement = "Unresolved names: "
+	for each in unresolved_names:
+		statement += " " + each
+	print statement
 	idents = []
 	namesdicts_ids = [e for e in namesdict.keys() if e != "outgroup"]
 	for each in namesdicts_ids:
 		idents.append(qnames.index(namesdict[each]["name"]))
 	idents = [namesdicts_ids[e] for e in idents]
-	lineages = resolver.retrieve('classification_path_ids')
 	for i, lineage in enumerate(lineages):
 		lineage.reverse()
 		lineages[i] = lineage
@@ -106,16 +116,15 @@ def genNamesDict(resolver):
 		non_unique_ranks = [ranks[e][-1] for e in non_uniques]
 		i = 0
 		while len(non_unique_ids) > 0:
-			temp_id = non_unique_ids.pop(i)
+			temp_id = non_unique_ids.pop(0)
 			# find ids in the next level
 			temp_children = findChildren(str(temp_id), next = True)
 			temp_children = [int(e) for e in temp_children]
 			# if none are in all_ids, must be unique
 			temp_children = [e for e in temp_children if e not in all_ids]
-			if len(temp_children) == 0:
-				continue # no unique children
-			namesdict["id{0}".format(len(namesdict.keys()) + 1)] = {"name" : non_unique_qnames[i],\
-				 "ids" : temp_children, "unique_name" : "Non-unique resolution", "rank" : non_unique_ranks[i]}
+			if len(temp_children) > 0:
+				namesdict["id{0}".format(len(namesdict.keys()) + 1)] = {"name" : non_unique_qnames[i],\
+					 "ids" : temp_children, "unique_name" : "Non-unique resolution", "rank" : non_unique_ranks[i]}
 			i += 1
 	# get outgroup
 	if resolver.taxon_id:
