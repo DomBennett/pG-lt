@@ -29,8 +29,7 @@ nosetests.xml
 # Translations
 *.mo
 
-# Stage folders
-0_info
+# Folders
 1_names
 2_download
 3_alignment
@@ -39,6 +38,9 @@ requires
 
 # pickle
 *p
+
+# Trees
+*.tre
 
 # Sublime
 *.sublime-workspace
