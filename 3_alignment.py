@@ -3,143 +3,90 @@
 ## D.J. Bennet
 ## 24/03/2014
 
-## Parameters
-minfails = 10 # the minimum sequence quality
-minoverlap = 200 # the minimum number of overlapping nucleotides for each seq in an alignment
-pintgapmax = 0.01 # # the proportion of internal gaps in a sequence for a good alignment
-iterations = 20 # number of iterations to perform
-max_trys = 100 # the maximum number of failed in a row alignments
-
 ## Print stage
 print "\n\nThis is stage 3: alignment\n"
 
 ## Packages
-import sys, os, re, random, csv, copy
-import time
-import numpy as np
-import alignment_tools
+import os, re, pickle
 from Bio import SeqIO
+from alignment_tools import *
 
 ## Dirs
-input_dirs = [os.path.join(os.getcwd(), '2_download'), os.path.join(os.getcwd(), '0_names')]
-output_dir = os.path.join(os.getcwd(), '3_alignments')
-if not os.path.isdir(output_dir):
-	os.mkdir(output_dir)
+download_dir = os.path.join(os.getcwd(),'2_download')
+alignment_dir = os.path.join(os.getcwd(),'3_alignment')
+if not os.path.isdir(alignment_dir):
+	os.mkdir(alignment_dir)
 
-## Taxadata for identifying outgroup
-print "Reading in taxadata.csv ..."
-taxadict = {}
-with open(os.path.join(input_dirs[1], 'taxadata.csv'), 'rb') as csvfile:
-	taxreader = csv.DictReader(csvfile)
-	for row in taxreader:
-		taxadict[row['study']] = row['sisterID']
-print "Done. Read in taxadata for [{0}] studies.".format(len(taxadict))
+## Input
+with open("genedict.p", "rb") as file:
+	genedict = pickle.load(file)
+with open("paradict.p", "rb") as file:
+	paradict = pickle.load(file)
 
-## Loop through studies
-studies = sorted(os.listdir(input_dirs[0]))
-studies = [st for st in studies if not re.search("^\.|^log\.txt$", st)]
-counter = 0
-print '\nLooping through studies ...'
-naligns_all = 0
-for i in range(2,len(studies)):
+## Parameters
+#naligns = int(paradict["naligns"])
+naligns = 10
+aligncounter = 0
 
-	## what study?
-	print '\n\nWorking on: [{0}]\n'.format(studies[i])
-
-	## determine what genes to use
-	print 'Working out how many genes to use ...'
-	study_dir = os.path.join(os.getcwd(), input_dirs[0], studies[i])
-	genes = sorted(os.listdir(study_dir))
-	genes = [e for e in genes if not re.search("^\.", e)]
-	genes = [e for e in genes if e == "cytb"]
-	print 'Done. Working with [{0}] ...'.format(genes)
-
-	## read in seqs
-	print 'Reading in sequences ...'
-	outgroup = taxadict[studies[i]]
-	seqs_obj = []
-	for gene in genes:
-		gene_dir = os.path.join(study_dir, gene)
-		seq_files = os.listdir(gene_dir)
-		seq_obj = SeqObj(gene_dir, seq_files, outgroup, minfails)
-		if len(seq_obj) < 5 or seq_obj.nseqs < 5:
-			continue
-		else:
-			seqs_obj.append((gene, seq_obj))
-	if len(seqs_obj) == 0:
-		print "Too little sequence data -- dropping study"
+## Process
+genes = sorted(os.listdir(download_dir))
+genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
+print 'Reading in sequences'
+geneobj = []
+for gene in genes:
+	gene_dir = os.path.join(download_dir, gene)
+	seq_files = os.listdir(gene_dir)
+	seqobj = SeqObj(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]))
+	geneobj.append((gene, seqobj))
+print "Running alignments"
+for gene,seqobj in geneobj:
+	print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seqobj))
+	mingaps = float(genedict[gene]["mingaps"])
+	minoverlap = int(genedict[gene]["minoverlap"])
+	minfails = int(genedict[gene]["minfails"])
+	maxtrys = int(genedict[gene]["maxtrys"])
+	minseedsize = int(genedict[gene]["minseedsize"])
+	maxseedtrys = int(genedict[gene]["maxseedtrys"])
+	alignments = []
+	seedsize = len(seqobj)
+	trys = 0
+	i = 1
+	try:
+		while i <= naligns:
+			print "iteration [{0}]".format(i)
+			alignment, seedsize = incrAlign(seqobj, mingaps, minoverlap, seedsize,\
+				minseedsize, maxseedtrys)
+			if alignment is None:
+				trys += 1
+				if trys > maxtrys:
+					print "Max trys with no alignments hit!"
+					break
+				else:
+					continue
+			print "... alignment length [{0}] for [{1}] species".\
+				format(alignment.get_alignment_length(), len(alignment))
+			alignments.append(alignment)
+			trys = 0
+			i += 1
+	except OutgroupError:
+		print "... outgroup dropped"
 		continue
-	nseqs = [e[1].nseqs for e in seqs_obj]
-	ntaxa = [len(e[1]) for e in seqs_obj]
-	if max(ntaxa) > 50: # to keep things fast for now
-		print "Dropping large studies for now..."
+	except MinSpeciesError:
+		print "... too few species left in sequence pool"
 		continue
-	print 'Done. Read in [{0}] sequences for [{1}] gene(s) and between [{2}] to [{3}] species'\
-		.format(sum(nseqs), len(seqs_obj), min(ntaxa), max(ntaxa))
-		
-	## alignment
-	print "\nRunning alignments ..."
-	all_alignments = []
-	study_dir = os.path.join(output_dir, studies[i])
-
-	if not os.path.isdir(study_dir):
-		os.mkdir(study_dir)
-	for gene,seq_obj in seqs_obj:
-		print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seq_obj))
-		gene_alignments = []
-		temp_seqobj = copy.deepcopy(seq_obj)
-		nstart = len(seq_obj)
-		iteration_trys = 0
-		j = 1
-		try:
-			while j <= iterations:
-				print "iteration [{0}]".format(j)
-				t0 = time.clock()
-				alignment, nstart = incrAlign(temp_seqobj, pintgapmax, minoverlap, nstart)
-				t1 = time.clock() - t0
-				if alignment is None:
-					iteration_trys += 1
-					if iteration_trys > max_trys:
-						print "Max iterations with no alignments hit!"
-						break
-					else:
-						continue
-				print "... alignment length [{0}] for [{1}] species in [t{2}]".\
-					format(alignment.get_alignment_length(), len(alignment), t1)
-				for each in alignment:
-					print each.description
-				gene_alignments.append(alignment)
-				iteration_trys = 0
-				j += 1
-		except OutgroupError:
-			print "... outgroup dropped"
-			continue
-		except MinSpeciesError:
-			print "... too few species left in sequence pool"
-			continue
-		if len(gene_alignments) < 1:
-			print "... no alignments generated"
-			continue
-		# Write out alignments
-		print "... writing out alignments for [{0}] alignments".\
-			format(len(gene_alignments))
-		for j,alignment in enumerate(gene_alignments):
-			gene_dir = os.path.join(study_dir, gene)
-			if not os.path.isdir(gene_dir):
-				os.mkdir(gene_dir)
-			alength = alignment.get_alignment_length()
-			ngap = sum([e.seq.count("-") for e in alignment])
-			output_file = "a{0}_ngap{1}_length{2}.faa".format(j,ngap,alength)
-			output_path = os.path.join(gene_dir, output_file)
-			with open(output_path, "w") as outfile:
-				count = SeqIO.write(alignment, outfile, "fasta")
-			naligns_all += 1   
-		counter += 1
-
-## Remove mafft files
-mafft_files = os.listdir(os.getcwd())
-mafft_files = [f for f in mafft_files if re.search("\.fasta$", f)]
-for f in mafft_files:
-	os.remove(f)
-print 'Stage finished. Generated [{0}] alignments across [{1}] studies.'.\
-	format(naligns_all, counter)
+	if len(alignments) < 1:
+		print "... no alignments generated"
+		continue
+	print "... writing out alignments for [{0}] alignments".\
+		format(len(alignments))
+	for i,alignment in enumerate(alignments):
+		gene_dir = os.path.join(alignment_dir, gene)
+		if not os.path.isdir(gene_dir):
+			os.mkdir(gene_dir)
+		align_len = alignment.get_alignment_length()
+		output_file = "{0}_nspp{1}_len{2}.faa".format(i,align_len,len(alignment))
+		output_path = os.path.join(gene_dir, output_file)
+		with open(output_path, "w") as file:
+			count = SeqIO.write(alignment, file, "fasta")
+		aligncounter += 1
+print 'Stage finished. Generated [{0}] alignments.'.format(aligncounter)
