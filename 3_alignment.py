@@ -24,8 +24,7 @@ with open("paradict.p", "rb") as file:
 	paradict = pickle.load(file)
 
 ## Parameters
-#naligns = int(paradict["naligns"])
-naligns = 10
+naligns = int(paradict["naligns"])
 aligncounter = 0
 
 ## Process

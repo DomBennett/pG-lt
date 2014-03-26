@@ -28,8 +28,7 @@ with open("namesdict.p", "rb") as file:
 	namesdict = pickle.load(file)
 
 ## Parameters
-#nphylos = int(paradict["nphylos"])
-nphylos = 10
+nphylos = int(paradict["nphylos"])
 maxtrys = int(paradict["maxtrys"])
 maxpedge = float(paradict["maxpedge"])
 phylocounter = 0

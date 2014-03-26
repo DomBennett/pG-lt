@@ -37,12 +37,13 @@ filter_seed = 5
 mingaps = 0.01
 minoverlap = 200
 maxtrys = 100
+minnseq = 1
+minpwithseq = 0.6
 seqcounter = basecounter = spcounter = 0
 
 ## Process
 print 'Determining best genes'
-#genes = findBestGenes(namesdict, genedict, thoroughness, allrankids)
-genes = ["COI", "18S"]
+genes = findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
 statement = 'Using genes:'
 for gene in genes:
 	statement += " " + gene

@@ -42,6 +42,7 @@ requires
 # Data
 *.tre
 *.txt
+*.fasta
 
 # Sublime
 *.sublime-workspace
