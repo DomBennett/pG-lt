@@ -15,7 +15,7 @@ from phylogeny_tools import *
 
 ## Dirs
 alignment_dir = os.path.join(os.getcwd(),'3_alignment')
-phylogeny_dir = os.path.join(os.getcwd(),'4_phylgeny')
+phylogeny_dir = os.path.join(os.getcwd(),'4_phylogeny')
 if not os.path.isdir(phylogeny_dir):
 	os.mkdir(phylogeny_dir)
 
@@ -31,6 +31,7 @@ with open("namesdict.p", "rb") as file:
 nphylos = int(paradict["nphylos"])
 maxtrys = int(paradict["maxtrys"])
 maxpedge = float(paradict["maxpedge"])
+constraint = False
 phylocounter = 0
 
 ## Process
@@ -57,7 +58,8 @@ while phylocounter < nphylos:
 	trys += 1
 	alignments = [random.sample(alignobj[e], 1)[0] for e in genes]
 	alignment,partitions = concatenateAlignments(alignments)
-	constraint = genConstraintTree(alignment, "taxontree.tre")
+	if constraint:
+		constraint = genConstraintTree(alignment, "taxontree.tre")
 	phylogeny = RAxML(alignment, constraint = constraint, outgroup = "outgroup",\
 		partitions = partitions)
 	phylogeny.root_with_outgroup("outgroup")
@@ -72,8 +74,7 @@ filepath = os.path.join(phylogeny_dir, 'distribution.tre')
 with open(filepath, "w") as file:
 	Phylo.write(phylogenies, file, 'newick')
 phylos = dp.TreeList()
-phylos.read(open(filepath, "rU"), "newick")
-consensus = phylos.consensus(min_freq = 0.5)
-consensus.write_to_path(os.path.join(phylogeny_dir, "consensus.tre"), "newick",\
-	suppress_edge_lengths = True)
+phylos.read_from_path(open(filepath, "rU"), "newick", as_rooted = True)
+consensus = phylos.consensus(min_freq = 0.5, suppress_edge_lengths = True, rooted = True)
+consensus.write_to_path(os.path.join(phylogeny_dir, "consensus.tre"), "newick")
 print '\n\nStage finished. Generated [{0}] phylogenies.'.format(phylocounter)
