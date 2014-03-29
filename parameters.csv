@@ -8,6 +8,5 @@ verbose,True,Print progress?
 download_thoroughness,3,Either 1 2 or 3
 maxlen,2000,Max sequence length
 minlen,300,Min sequence length
-filter_threshold,100,Sequences downloaded with query with more than this threshold will be filtered
 maxtrys,1000,Max number of phylogeny attempts
 maxpedge,0.5,Max proportion of a tree a single branch can represent (between 0 and 1)

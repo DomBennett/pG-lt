@@ -214,8 +214,7 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 	alignment_store = []
 	# SEED PHASE
 	while True:
-		print "Seed phase: [{0}] seedsize".format(seedsize)
-		print seedtrys
+		print "Seed phase: [{0}] seed size".format(seedsize)
 		minlen = min([seqobj[e][1] for e in seqobj.keys()])
 		sequences = seqobj.start(seedsize)
 		alignment = alignSequences(sequences)
@@ -238,10 +237,10 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 	# ADD PHASE
 	trys = 0
 	while True:
+		print "Add phase: [{0}] alignment size".format(len(alignment))
 		minlen = min([seqobj[e][1] for e in seqobj.keys()])
 		alignment = addToAlignment(alignment, sequence)
 		if alignmentCheck(alignment, mingaps, minoverlap, minlen):
-			print "success"
 			trys = 0
 			if len(seqobj.sppool) == 0:
 				return alignment, seedsize
@@ -249,7 +248,6 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 				alignment_store.append(alignment)
 				sequence = seqobj.next(alignment)
 		elif trys < maxtrys:
-			print "fail"
 			sequence = seqobj.back()
 			if len(seqobj.sppool) == 0:
 				# here a species has been dropped and now all species are present
@@ -257,7 +255,6 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 			alignment = alignment_store[-1]
 			trys += 1
 		else:
-			print "fail"
 			# when the maximum number of species is not reached...
 			# ... return the best alignment in the alignment store
 			return returnBestAlignment(alignment_store), seedsize

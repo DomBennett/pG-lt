@@ -38,7 +38,7 @@ for gene in genes:
 	seqobj = SeqObj(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]))
 	geneobj.append((gene, seqobj))
 print "Running alignments"
-for gene,seqobj in geneobj:
+for gene,seqobj in geneobj[1:]:
 	print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seqobj))
 	mingaps = float(genedict[gene]["mingaps"])
 	minoverlap = int(genedict[gene]["minoverlap"])
@@ -47,7 +47,7 @@ for gene,seqobj in geneobj:
 	minseedsize = int(genedict[gene]["minseedsize"])
 	maxseedtrys = int(genedict[gene]["maxseedtrys"])
 	alignments = []
-	seedsize = len(seqobj)
+	seedsize = 25
 	trys = 0
 	i = 1
 	try:

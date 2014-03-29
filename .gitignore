@@ -43,6 +43,7 @@ requires
 *.tre
 *.txt
 *.fasta
+*phylip*
 
 # Sublime
 *.sublime-workspace

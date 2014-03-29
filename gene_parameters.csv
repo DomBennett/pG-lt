@@ -1,11 +1,11 @@
 gene,names,group,taxid,notes,mingaps,minoverlap,minfails,maxtrys,minseedsize,maxseedtrys
 COI,COI:CO1:COX1:COXI,eukaryotes,2759,,0.01,200,10,100,5,5
 CYTB,cytb:cytochrome b,eukaryotes,2759,,0.01,200,10,100,5,5
-16S,16S:16S ribosomal RNA,eukaryotes,2759,,0.1,200,10,100,5,10
-18S,18S:18S ribosomal RNA,eukaryotes,2759,,0.1,200,10,100,5,10
+16S,16S:16S ribosomal RNA,eukaryotes,2759,,0.5,200,10,100,5,10
+18S,18S:18S ribosomal RNA,eukaryotes,2759,,0.5,200,10,100,5,10
 COII,COII:CO2:COXII:COX2,eukaryotes,2759,,0.01,200,10,100,5,5
 rbcl,rbcl,viridiplantae,33090,,0.01,200,10,100,5,5
-matk,matk,viridiplantae,33090,,0.01,200,10,100,5,5
+matk,matk,viridiplantae,33090,,0.05,100,10,100,5,5
 NADHs1,NADH subunit 1:NADH dehydrogenase subunit 1:ND1:NAD1,eukaryotes,2759,,0.01,200,10,100,5,5
 NADHs2,NADH subunit 2:NADH dehydrogenase subunit 2:ND2:NAD2,eukaryotes,2759,,0.01,200,10,100,5,5
 NADHs3,NADH subunit 3:NADH dehydrogenase subunit 3:ND3:NAD3,eukaryotes,2759,,0.01,200,10,100,5,5

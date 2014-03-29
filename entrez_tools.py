@@ -133,7 +133,6 @@ def findChildren(taxid, target = 100, next = False):
 				break
 			taxid = taxids.pop()
 			frecord = eFetch(taxid, db = "taxonomy")
-			print frecord[0]['Rank']
 			if frecord[0]['Rank'] in target_ranks:
 				res.append(taxid)
 			else:

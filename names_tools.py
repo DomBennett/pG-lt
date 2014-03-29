@@ -22,6 +22,7 @@ def genTaxTree(resolver, namesdict, draw = False):
 		  (Newick Tree Object, [shared lineage])"""
 	ranks = resolver.retrieve('classification_path_ranks')
 	qnames = resolver.retrieve('query_name')
+	qnames = [re.sub("\s", "_", e) for e in qnames]
 	lineages = resolver.retrieve('classification_path_ids')
 	resolved_names_bool = [e in namesdict.keys() for e in qnames]
 	ranks = [ranks[ei] for ei,e in enumerate(resolved_names_bool) if e]
@@ -74,6 +75,7 @@ def genTaxTree(resolver, namesdict, draw = False):
 
 def genNamesDict(resolver):
 	q_names = resolver.retrieve('query_name')
+	q_names = [re.sub("\s", "_", e) for e in q_names]
 	r_names = resolver.retrieve('classification_path')
 	ranks = resolver.retrieve('classification_path_ranks')
 	lineages = resolver.retrieve('classification_path_ids')

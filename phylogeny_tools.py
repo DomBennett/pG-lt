@@ -112,7 +112,7 @@ def genConstraintTree(alignment, taxontree_file):
 
 def concatenateAlignments(alignments):
 	if len(alignments) == 1:
-		return alignments,False
+		return alignments[0],False
 	# Sort IDs
 	alignment_ids = []
 	for gene in alignments:
