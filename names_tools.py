@@ -23,21 +23,15 @@ def genTaxTree(resolver, namesdict, draw = False):
 	ranks = resolver.retrieve('classification_path_ranks')
 	qnames = resolver.retrieve('query_name')
 	lineages = resolver.retrieve('classification_path_ids')
-	resolved_names = [namesdict[e]["name"] for e in namesdict.keys()]
-	resolved_names_bool = [e in resolved_names for e in qnames]
+	resolved_names_bool = [e in namesdict.keys() for e in qnames]
 	ranks = [ranks[ei] for ei,e in enumerate(resolved_names_bool) if e]
 	lineages = [lineages[ei] for ei,e in enumerate(resolved_names_bool) if e]
 	unresolved_names = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if not e]
-	qnames = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if e]
+	idents = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if e]
 	statement = "Unresolved names: "
 	for each in unresolved_names:
 		statement += " " + each
 	print statement
-	idents = []
-	namesdicts_ids = [e for e in namesdict.keys() if e != "outgroup"]
-	for each in namesdicts_ids:
-		idents.append(qnames.index(namesdict[each]["name"]))
-	idents = [namesdicts_ids[e] for e in idents]
 	for i, lineage in enumerate(lineages):
 		lineage.reverse()
 		lineages[i] = lineage
@@ -84,11 +78,11 @@ def genNamesDict(resolver):
 	ranks = resolver.retrieve('classification_path_ranks')
 	lineages = resolver.retrieve('classification_path_ids')
 	lineages = [[int(e2) for e2 in e1] for e1 in lineages]
-	all_ids = []
-	[all_ids.extend(e) for e in lineages]
-	all_ids = list(set(all_ids))
+	allrankids = []
+	[allrankids.extend(e) for e in lineages]
+	allrankids = list(set(allrankids))
 	namesdict = {}
-	non_uniques = []
+	non_unique_lineages = []
 	for i in range(len(lineages)):
 		query_line = lineages.pop(i)
 		best_bool = [len(lineages)]
@@ -99,32 +93,31 @@ def genNamesDict(resolver):
 			if sum(match_bool) < sum(best_bool):
 				best_bool = match_bool
 			if not any(best_bool):
-				non_uniques.append(i)
+				non_unique_lineages.append(i)
 				break
 			j += 1
 		lineages.insert(i, query_line)
-		if i in non_uniques:
+		if i in non_unique_lineages:
 			continue
 		txid = query_line[best_bool.index(True)]
 		rank = ranks[i][best_bool.index(True)]
 		rname = r_names[i][best_bool.index(True)]
-		namesdict["id{}".format(i)] = {"name" : q_names[i], "ids" : [txid],\
-			"unique_name" : rname, "rank" : rank}
-	if non_uniques:
-		non_unique_ids = [lineages[e][-1] for e in non_uniques]
-		non_unique_qnames = [q_names[e] for e in non_uniques]
-		non_unique_ranks = [ranks[e][-1] for e in non_uniques]
+		namesdict[q_names[i]] = {"txids" : [txid], "unique_name" : rname, "rank" : rank}
+	if non_unique_lineages:
+		nul_ids = [lineages[e][-1] for e in non_unique_lineages]
+		nul_qnames = [q_names[e] for e in non_unique_lineages]
+		nul_ranks = [ranks[e][-1] for e in non_unique_lineages]
 		i = 0
-		while len(non_unique_ids) > 0:
-			temp_id = non_unique_ids.pop(0)
+		while len(nul_ids) > 0:
+			temp_id = nul_ids.pop(0)
 			# find ids in the next level
 			temp_children = findChildren(str(temp_id), next = True)
 			temp_children = [int(e) for e in temp_children]
-			# if none are in all_ids, must be unique
-			temp_children = [e for e in temp_children if e not in all_ids]
+			# if none are in allrankids, must be unique
+			temp_children = [e for e in temp_children if e not in allrankids]
 			if len(temp_children) > 0:
-				namesdict["id{0}".format(len(namesdict.keys()) + 1)] = {"name" : non_unique_qnames[i],\
-					 "ids" : temp_children, "unique_name" : "Non-unique resolution", "rank" : non_unique_ranks[i]}
+				namesdict[nul_qnames[i]] = {"txids" : temp_children, "unique_name" : "Non-unique resolution",\
+					"rank" : nul_ranks[i]}
 			i += 1
 	# get outgroup
 	if resolver.taxon_id:
@@ -137,11 +130,10 @@ def genNamesDict(resolver):
 	above_id = eFetch(str(parentid), db = "taxonomy")[0]['ParentTaxId']
 	temp_children = findChildren(above_id, next = True)
 	temp_children = [int(e) for e in temp_children]
-	# if none are in all_ids, must be unique
+	# if none are in allrankids, must be unique
 	temp_children = [e for e in temp_children if e != parentid]
-	namesdict["outgroup"] = {"name" : "outgroup", "ids" : temp_children, "unique_name" : "outgroup",\
-		"rank" : "outgroup"}
-	return namesdict,all_ids
+	namesdict["outgroup"] = {"txids" : temp_children, "unique_name" : "outgroup", "rank" : "outgroup"}
+	return namesdict,allrankids
 
 if __name__ == '__main__':
 	pass

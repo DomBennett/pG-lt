@@ -36,7 +36,7 @@ except:
 resolver = TaxonNamesResolver(terms = terms, datasource = "NCBI", taxon_id = parentid)
 resolver.main()
 print "Generating names dictionary"
-namesdict,all_ids = genNamesDict(resolver)
+namesdict,allrankids = genNamesDict(resolver)
 print 'Generating taxonomic tree'
 taxontree,shared_lineages = genTaxTree(resolver, namesdict)
 
@@ -44,21 +44,21 @@ taxontree,shared_lineages = genTaxTree(resolver, namesdict)
 shutil.rmtree("resolved_names")
 with open("namesdict.p", "wb") as file:
 	pickle.dump(namesdict, file)
-with open("all_ids.p", "wb") as file:
-	pickle.dump(all_ids, file)
-headers = ["MPE_id", "name", "unique_name", "rank", "NCBI_Taxids"]
+with open("allrankids.p", "wb") as file:
+	pickle.dump(allrankids, file)
+headers = ["name", "unique_name", "rank", "NCBI_Taxids"]
 with open(os.path.join(names_dir, 'resovled_names.csv'), 'wb') as file:
 	writer = csv.writer(file)
 	writer.writerow(headers)
 	for key in namesdict.keys():
 		temp = namesdict[key]
-		row = [key, temp["name"], temp["unique_name"], temp["rank"]]
-		if len(temp["ids"]) > 1:
+		row = [key, temp["unique_name"], temp["rank"]]
+		if len(temp["txids"]) > 1:
 			ids = ""
-			for each in temp["ids"]:
+			for each in temp["txids"]:
 				ids += str(each) + "|"
 		else:
-			ids = temp["ids"][0]
+			ids = temp["txids"][0]
 		row.append(ids)
 		writer.writerow(row)
 Phylo.write(taxontree, "taxontree.tre", "newick")
