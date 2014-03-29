@@ -43,35 +43,34 @@ class SeqObj(dict):
 	def start(self, n):
 		"""Return n starting random sp sequences, update sppool"""
 		self.sppool = self.keys()
-		self.alignobj = []
+		self.sequences_in_alignment = []
 		for i in range(n):
 			self._add()
-		return [e[0] for e in self.alignobj]
+		return [e[0] for e in self.sequences_in_alignment]
 
 	def _add(self):
 		"""Add new random species' sequence"""
 		rand_int = random.randint(0, (len(self.sppool)-1))
 		self.next_sp = self.sppool.pop(rand_int)
 		next_seq = random.sample(self[self.next_sp][0], 1)[0]
-		self.alignobj.append(next_seq)
+		self.sequences_in_alignment.append(next_seq)
 		
 	def back(self):
 		"""Add to nfails for random species, return new random species"""
-		self.alignobj[-1][1] += 1
-		print [e[1] for e in self.alignobj]
-		del self.alignobj[-1]
+		self.sequences_in_alignment[-1][1] += 1
+		del self.sequences_in_alignment[-1]
 		self.sppool.append(self.next_sp)
 		self._check()
 		if len(self.sppool) != 0:
 			self._add()
-		return [e[0] for e in self.alignobj]
+		return self.sequences_in_alignment[-1][0]
 			
 	def next(self, align):
 		"""Set nfails to 0, add additional random species"""
-		for i in range(len(self.alignobj)):
-			self.alignobj[i][1] = 0
+		for i in range(len(self.sequences_in_alignment)):
+			self.sequences_in_alignment[i][1] = 0
 		self._add()
-		return [e[0] for e in self.alignobj]
+		return self.sequences_in_alignment[-1][0]
 		
 	def _check(self):
 		"""Check nfails, drop sequences and species"""
@@ -93,11 +92,12 @@ class SeqObj(dict):
 					self.dspp.append(sp)
 					self.sppool = [e for e in self.sppool if e != sp]
 					del self[sp]
-		if len(self.keys()) < 5: # Raise error if fewer than 5 species left in spp pool
+		if len(self.keys()) < 5:
 			raise MinSpeciesError
 
 ## Functions
-def alignCheck(align, mingaps, minoverlap, minlen):
+def alignmentCheck(align, mingaps, minoverlap, minlen):
+	"""Determine if an alignment is good or not based on given parameters"""
 	def calcOverlap(columns):
 		pcolgaps = []
 		for i in columns:
@@ -144,10 +144,10 @@ def alignCheck(align, mingaps, minoverlap, minlen):
 	return True
 
 def alignSequences(sequences, timeout=99999999, silent=False, verbose=True):
-	"""Adapted pG function : aligns sequences using mafft (external program)"""
-	input_file = "alignment_in" + '.fasta'
-	output_file = "alignment_out" + '.fasta'
-	command_line = 'mafft --auto ' + input_file + " > " + output_file
+	"""Align sequences using mafft (external program)"""
+	input_file = "sequences_in.fasta"
+	output_file = "alignment_out.fasta"
+	command_line = 'mafft --auto {0} > {1}'.format(input_file,output_file)
 	with open(input_file, "w") as file:
 		count = SeqIO.write(sequences, file, "fasta")
 	pipe = TerminationPipe(command_line, timeout)
@@ -163,76 +163,104 @@ def alignSequences(sequences, timeout=99999999, silent=False, verbose=True):
 		raise RuntimeError("Mafft alignment not complete in time allowed")
 	return res
 
+def addToAlignment(alignment, sequence, timeout=99999999, silent=False, verbose=True):
+	"""Align sequence(s) to an alignment using mafft (external program)"""
+	alignment_file = "alignment_in.fasta"
+	sequence_file = "sequence_in.fasta"
+	output_file = "alignment_out.fasta" + '.fasta'
+	command_line = 'mafft --auto --add {0} {1} > {2}'.format(sequence_file,alignment_file,output_file)
+	print command_line
+	with open(sequence_file, "w") as file:
+		count = SeqIO.write(sequence, file, "fasta")
+	with open(alignment_file, "w") as file:
+		count = AlignIO.write(alignment, file, "fasta")
+	pipe = TerminationPipe(command_line, timeout)
+	pipe.run(silent=silent)
+	os.remove(alignment_file)
+	os.remove(sequence_file)
+	if not pipe.failure:
+		try:
+			res = AlignIO.read(output_file, 'fasta')
+		except:
+			raise RuntimeError("No MAFFT output.")
+		os.remove(output_file)
+	else:
+		raise RuntimeError("Mafft alignment not complete in time allowed")
+	return res
+
+def returnBestAlignment(alignments):
+	"""Return best alignment from a list of alignments based on: presence of outgroup,
+	number of species and length of alignment"""
+	# keep alignments with outgroups
+	# keep alignments with more than 5 species
+	alignments = [al for al in alignments if "outgroup" in\
+				  [e.id for e in al._records]]
+	alignments = [al for al in alignments if len(al) >= 5]
+	if len(alignments) == 0:
+		return None
+	# keep only alignments with lots of records
+	nrecords = [len(e._records) for e in alignments]
+	alignments = [alignments[i] for i,e in enumerate(nrecords)\
+				  if e == max(nrecords)]
+	# return longest alignment
+	alignments_lens = [len(e) for e in alignments]
+	max_i = alignments_lens.index(max(alignments_lens))
+	return alignments[max_i]
+
 def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
-	"""Incrementally build an alignment"""
-	def returnBestAlignment(alignments):
-		# keep alignments with outgroups
-		# keep alignments with more than 5 species
-		alignments = [al for al in alignments if "outgroup" in\
-					  [e.id for e in al._records]]
-		alignments = [al for al in alignments if len(al) >= 5]
-		if len(alignments) == 0:
-			return None
-		# keep only alignments with lots of records
-		nrecords = [len(e._records) for e in alignments]
-		alignments = [alignments[i] for i,e in enumerate(nrecords)\
-					  if e == max(nrecords)]
-		# return longest alignment
-		alignments_lens = [len(e) for e in alignments]
-		max_i = alignments_lens.index(max(alignments_lens))
-		return alignments[max_i]
-	## run alignments until alignment for all species made
-	trys = 0
+	"""Incrementally build an alignment by adding sequences to a seed alignment"""
+	trys = seedtrys = 0
 	maxtrys = maxseedtrys*2 # twice as many attempts with minseedsize
-	seedtrys = 0
-	alignstore = [] # stores successful aligns generated
-	# start with as many sequences at start as possible
+	alignment_store = []
+	# SEED PHASE
 	while True:
 		print "Seed phase: [{0}] seedsize".format(seedsize)
 		print seedtrys
 		minlen = min([seqobj[e][1] for e in seqobj.keys()])
 		sequences = seqobj.start(seedsize)
-		align = alignSequences(sequences)
-		if alignCheck(align, mingaps, minoverlap, minlen):
+		alignment = alignSequences(sequences)
+		if alignmentCheck(alignment, mingaps, minoverlap, minlen):
 			if len(seqobj.sppool) == 0:
-				return align, seedsize
+				return alignment, seedsize
 			else:
-				alignstore.append(align)
-				sequences = seqobj.next(align)
+				alignment_store.append(alignment)
+				sequence = seqobj.next(alignment)
 			break
-		trys += 1
-		# drop seedsize by 1 if maxseedtrys
 		if seedsize > minseedsize:
 			seedtrys += 1
 			if maxseedtrys < seedtrys:
 				seedtrys = 0
 				seedsize -= 1
-		if maxtrys < trys:
-			return None, seedsize
+		else:
+			trys += 1
+			if maxtrys < trys:
+				return None, seedsize
+	# ADD PHASE
 	trys = 0
 	while True:
 		minlen = min([seqobj[e][1] for e in seqobj.keys()])
-		align = alignSequences(sequences)
-		if alignCheck(align, mingaps, minoverlap, minlen):
+		alignment = addToAlignment(alignment, sequence)
+		if alignmentCheck(alignment, mingaps, minoverlap, minlen):
 			print "success"
 			trys = 0
 			if len(seqobj.sppool) == 0:
-				return align, seedsize
+				return alignment, seedsize
 			else:
-				alignstore.append(align)
-				alignobj = seqobj.next(align)
+				alignment_store.append(alignment)
+				sequence = seqobj.next(alignment)
 		elif trys < maxtrys:
 			print "fail"
-			sequences = seqobj.back()
+			sequence = seqobj.back()
 			if len(seqobj.sppool) == 0:
 				# here a species has been dropped and now all species are present
-				return returnBestAlignment(alignstore), seedsize
+				return returnBestAlignment(alignment_store), seedsize
+			alignment = alignment_store[-1]
 			trys += 1
 		else:
 			print "fail"
 			# when the maximum number of species is not reached...
 			# ... return the best alignment in the alignment store
-			return returnBestAlignment(alignstore), seedsize
+			return returnBestAlignment(alignment_store), seedsize
 
 if __name__ == '__main__':
 	pass
