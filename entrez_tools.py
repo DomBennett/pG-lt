@@ -31,7 +31,7 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
 	global download_counter
 	while finished <= max_check:
 		if download_counter > 1000:
-			print "Download counter hit. Waiting for 60 seconds ..."
+			print " ---- download counter hit: waiting 60 seconds ----"
 			download_counter = 0
 			time.sleep(60)
 		try:
@@ -74,7 +74,7 @@ def eFetch(ncbi_id, db = "nucleotide"):
 	global download_counter
 	while finished <= max_check:
 		if download_counter > 1000:
-			print "Download counter hit. Waiting for 60 seconds ..."
+			print " ---- download counter hit: waiting 60 seconds ----"
 			download_counter = 0
 			time.sleep(60)
 		try:
@@ -99,11 +99,11 @@ def eFetch(ncbi_id, db = "nucleotide"):
 			finished = max_check + 1
 		except:
 			if finished == 0:
-				print "!!!Server error - retrying..."
+				print " ----- server error: retrying ----"
 				finished += 1
 				time.sleep(10)
 			if finished == max_check:
-				print "!!!!!!Unreachable. Returning nothing."
+				print " ----- server error: no sequences retrieved ----"
 				return ()
 	return results
 

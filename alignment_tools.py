@@ -116,7 +116,7 @@ def alignmentCheck(align, mingaps, minoverlap, minlen):
 		totgaps = align_len - totnucs
 		overlap = calcOverlap(columns)
 		if overlap < minoverlap:
-			print "Not enough overlap"
+			print "not enough overlap"
 			return False
 		extgaps = 0
 		start_extgaps = re.search("^-+", sequence)
@@ -133,7 +133,7 @@ def alignmentCheck(align, mingaps, minoverlap, minlen):
 		else:
 			pintgaps.append(pintgap)
 		if pintgap > mingaps:
-			print "Too many gaps ..."
+			print "too many gaps"
 			return False
 	#try:
 	#	if any([e > pintgap_outgroup for e in pintgaps]):
@@ -169,7 +169,6 @@ def addToAlignment(alignment, sequence, timeout=99999999, silent=False, verbose=
 	sequence_file = "sequence_in.fasta"
 	output_file = "alignment_out.fasta" + '.fasta'
 	command_line = 'mafft --auto --add {0} {1} > {2}'.format(sequence_file,alignment_file,output_file)
-	print command_line
 	with open(sequence_file, "w") as file:
 		count = SeqIO.write(sequence, file, "fasta")
 	with open(alignment_file, "w") as file:
@@ -212,9 +211,8 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 	trys = seedtrys = 0
 	maxtrys = maxseedtrys*2 # twice as many attempts with minseedsize
 	alignment_store = []
-	# SEED PHASE
+	print " ........ seed phase: [{0}] seed size".format(seedsize)
 	while True:
-		print "Seed phase: [{0}] seed size".format(seedsize)
 		minlen = min([seqobj[e][1] for e in seqobj.keys()])
 		sequences = seqobj.start(seedsize)
 		alignment = alignSequences(sequences)
@@ -234,10 +232,9 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 			trys += 1
 			if maxtrys < trys:
 				return None, seedsize
-	# ADD PHASE
 	trys = 0
+	print  " ........ add phase : [{0}] species".format(len(alignment))
 	while True:
-		print "Add phase: [{0}] alignment size".format(len(alignment))
 		minlen = min([seqobj[e][1] for e in seqobj.keys()])
 		alignment = addToAlignment(alignment, sequence)
 		if alignmentCheck(alignment, mingaps, minoverlap, minlen):

@@ -4,7 +4,7 @@
 ## 24/03/2014
 
 ## Print stage
-print "\n\nThis is stage 2: sequence download\n"
+print "\n\nStage 2: sequence download\n"
 
 ## Packages
 import sys, os, re, random, pickle
@@ -32,7 +32,7 @@ nseqs = int(paradict['nseqs'])
 thoroughness = int(paradict['download_thoroughness'])
 maxlen = int(paradict['maxlen'])
 minlen = int(paradict['minlen'])
-seedsize = 5
+seedsize = 3
 mingaps = 0.01
 minoverlap = 200
 maxtrys = 100
@@ -52,7 +52,7 @@ print statement
 for gene in genes:
 	seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 	gene_names = genedict[gene]["names"]
-	print 'Downloading and outputting for [{0}]...'.format(gene)
+	print 'Downloading and outputting for [{0}]....'.format(gene)
 	gene_dir  = os.path.join(download_dir, str(gene))
 	if not os.path.isdir(gene_dir):
 		os.mkdir(gene_dir)

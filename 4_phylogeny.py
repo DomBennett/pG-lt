@@ -4,7 +4,7 @@
 ## 24/03/2014
 
 ## Print stage
-print "\n\nThis is stage 4: phylogenies\n"
+print "\n\nStage 4: phylogenies\n"
 
 ## Packages
 import os, re, random, pickle
@@ -31,7 +31,7 @@ with open("namesdict.p", "rb") as file:
 nphylos = int(paradict["nphylos"])
 maxtrys = int(paradict["maxtrys"])
 maxpedge = float(paradict["maxpedge"])
-constraint = False
+constraint = True
 phylocounter = 0
 
 ## Process
@@ -74,7 +74,7 @@ filepath = os.path.join(phylogeny_dir, 'distribution.tre')
 with open(filepath, "w") as file:
 	Phylo.write(phylogenies, file, 'newick')
 phylos = dp.TreeList()
-phylos.read_from_path(open(filepath, "rU"), "newick", as_rooted = True)
+phylos.read_from_path(filepath, "newick", as_rooted = True)
 consensus = phylos.consensus(min_freq = 0.5, suppress_edge_lengths = True, rooted = True)
 consensus.write_to_path(os.path.join(phylogeny_dir, "consensus.tre"), "newick")
 print '\n\nStage finished. Generated [{0}] phylogenies.'.format(phylocounter)

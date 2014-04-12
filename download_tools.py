@@ -24,9 +24,8 @@ class SequenceDownloader(object):
 		self.minoverlap = minoverlap
 		self.maxlen = maxlen
 		self.minlen = minlen
-		self.temp_taxids = None
-		self.seqs_deja_vues = []
-		self.taxids_deja_vues = []
+		self.thoroughness = 1
+		self.deja_vues = []
 		self.pattern = re.compile("[ACTGactg]")
 
 	def _buildSearchTerm(self, taxids, thoroughness):
@@ -58,38 +57,37 @@ class SequenceDownloader(object):
 							 format(gene_term, gene_name))
 			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT shotgun[TI] NOT scaffold[TI] NOT assembly[TI] NOT unverified[TI]".\
 						   format(taxids_term, gene_term))
-		print search_term
+		#print search_term
 		return search_term
 
 	def _search(self, taxids):
 		"""Search GenBank for matches, increasing thoroughness if no matches"""
 		seqids = []
-		self.thoroughness = 1
 		while len(seqids) == 0:
 			if self.thoroughness > self.max_thoroughness:
-				return None
+				return ()
 			search_term = self._buildSearchTerm(taxids, self.thoroughness)
 			seqcount = eSearch(search_term)['Count']
 			if int(seqcount) >= 1:
 				seqids.extend(eSearch(search_term, retMax = seqcount)['IdList'])
-				seqids = [e for e in seqids if not e in self.seqs_deja_vues]
+				seqids = [e for e in seqids if not e in self.deja_vues]
 			self.thoroughness += 1
-		self._DejaVue(seqids)
+		self.deja_vues.extend(seqids)
+		self.deja_vues = list(set(self.deja_vues))
 		return list(set(seqids))
 
 	def _filterSequences(self, sequences):
-		"""Filter sequences by aligning sequences from closely organisms"""
-		if len(sequences) < self.seedsize:
-			return sequences
+		"""Filter sequences by aligning sequences"""
 		def filterByAlignment(sequences):
 			alignment = alignSequences(sequences)
 			return alignmentCheck(alignment, self.mingaps, self.minoverlap, self.minlen)
 		filtered = []
 		trys = 0
 		seedsize = self.seedsize
-		while seedsize > 2 and trys < self.maxtrys:
+		while seedsize < len(sequences) and trys < self.maxtrys:
 			temp = []
 			for i in range(seedsize):
+				print len(filtered)
 				randn = random.randint(0, len(sequences)-1)
 				temp.append(sequences.pop(randn))
 			if filterByAlignment(temp):
@@ -97,11 +95,7 @@ class SequenceDownloader(object):
 			else:
 				sequences.extend(temp)
 				trys += 1
-			if len(sequences) < seedsize*2:
-				seedsize -= 1
-			if len(sequences) < seedsize:
-				seedsize = len(sequences) - 1
-		return filtered
+		return filtered,sequences
 
 	def _findGeneInSeq(self, record):
 		"""Extract gene sequence from larger sequence by searching features."""
@@ -122,11 +116,11 @@ class SequenceDownloader(object):
 						found_seq = extractor.extract(record)
 						return found_seq
 				else:
-					return None
+					return ()
 			else:
-				return None
+				return ()
 		except ValueError: # catch value errors raised for sequences with "fuzzy" positions
-			return None
+			return ()
 
 	def _parse(self, record):
 		"""Parse record returned from GenBank"""
@@ -151,7 +145,7 @@ class SequenceDownloader(object):
 		return None
 
 	def _download(self, seqids):
-		"""Download records from genbank given sequence ids"""
+		"""Download records from GenBank given sequence ids"""
 		records = []
 		i = 1
 		while i <= self.nseqs and len(seqids) > 0:
@@ -170,61 +164,32 @@ class SequenceDownloader(object):
 					i += 1
 		return records
 
-	def _findGenera(self, taxids):
-		"""Randomly return a taxid of decendant genera (or below). None if genera deja-vue."""
-		if self.temp_taxids:
-			temp_taxid = self.temp_taxids.pop(-1)
-		else:
-			taxid = random.sample(taxids, 1)[0]
-			temp_taxids = findChildren(taxid, target = 1)
-			temp_taxid = random.sample(temp_taxids, 1)[0]
-		if temp_taxid in self.taxids_deja_vues:
-			return None
-		else:
-			self._DejaVue(temp_taxid, sequences = False)
-			return [temp_taxid]
-
-	def _DejaVue(self, vues, sequences = True):
-		"""Add new elements to lists of deja_vues"""
-		if sequences:
-			self.seqs_deja_vues.extend(vues)
-			self.seqs_deja_vues = list(set(self.seqs_deja_vues))
-		else:
-			self.taxids_deja_vues.extend(vues)
-			self.taxids_deja_vues = list(set(self.taxids_deja_vues))
-
 	def main(self, taxids):
 		"""Dynamic sequence download"""
-		sequences = []
-		seqids = self._search(taxids)
-		if seqids:
-			if len(seqids) >= 1000: # Only filter if more than 1000 mathces in genbank
-				print "Lots of sequences -- filtering ...."
+		while self.thoroughness < self.max_thoroughness:
+			seqids = self._search(taxids)
+			if len(seqids) >= 1000:
+				print "     .... lots of sequences -- filtering"
+				sequences = []
+				downloaded = []
+				lower = 0
 				while len(sequences) < self.nseqs:
-					downloaded = []
-					temp_taxid = self._findGenera(taxids)
-					if not temp_taxid:
+					upper = min(len(seqids), lower + 1000)
+					downloaded.extend(self._download(seqids[lower:upper]))
+					if not downloaded:
 						break
-					seqids = self._search(temp_taxid)
-					print seqids
-					if seqids:
-						downloaded = self._download(seqids)
-						if not downloaded:
-							break
-						filtered = self._filterSequences(downloaded)
-						if filtered:
-							sequences.extend(filtered)
-				return sequences
-			else:
+					filtered,downloaded = self._filterSequences(downloaded)
+					print filtered
+					if filtered:
+						sequences.extend(filtered)
+					lower = upper
+				if len(sequences) > 0:
+					return sequences
+			if len(seqids) > 0:
 				sequences = self._download(seqids)
 				if sequences:
 					return sequences
-				for _ in range(self.thoroughness+1, self.max_thoroughness+1):
-					seqids = self._search(taxids)
-					sequences = self._download(seqids)
-				return sequences
-		else:
-			return None
+		return None
 
 ## Functions
 def findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq = 1, minpwithseq = 0.5):
@@ -232,7 +197,7 @@ def findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq = 1, mi
 	alltipids = [namesdict[e]["txids"] for e in namesdict.keys()]
 	genes = []
 	for gene in genedict.keys():
-		print "Checking [{0}]".format(gene)
+		print " .... checking [{0}]".format(gene)
 		taxid = genedict[gene]["taxid"]
 		if int(taxid) in allrankids:
 			gene_bool = []

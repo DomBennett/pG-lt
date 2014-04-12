@@ -4,7 +4,7 @@
 ## 24/03/2014
 
 ## Print stage
-print "\n\nThis is stage 3: alignment\n"
+print "\n\nStage 3: alignment\n"
 
 ## Packages
 import os, re, pickle
@@ -37,8 +37,11 @@ for gene in genes:
 	seq_files = os.listdir(gene_dir)
 	seqobj = SeqObj(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]))
 	geneobj.append((gene, seqobj))
+gene_dir = os.path.join(alignment_dir, gene)
+if not os.path.isdir(gene_dir):
+	os.mkdir(gene_dir)
 print "Running alignments"
-for gene,seqobj in geneobj[1:]:
+for gene,seqobj in geneobj:
 	print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seqobj))
 	mingaps = float(genedict[gene]["mingaps"])
 	minoverlap = int(genedict[gene]["minoverlap"])
@@ -46,13 +49,13 @@ for gene,seqobj in geneobj[1:]:
 	maxtrys = int(genedict[gene]["maxtrys"])
 	minseedsize = int(genedict[gene]["minseedsize"])
 	maxseedtrys = int(genedict[gene]["maxseedtrys"])
+	seedsize = len(seqobj)
 	alignments = []
-	seedsize = 25
 	trys = 0
 	i = 1
 	try:
 		while i <= naligns:
-			print "iteration [{0}]".format(i)
+			print " ....iteration [{0}]".format(i)
 			alignment, seedsize = incrAlign(seqobj, mingaps, minoverlap, seedsize,\
 				minseedsize, maxseedtrys)
 			if alignment is None:
@@ -64,7 +67,12 @@ for gene,seqobj in geneobj[1:]:
 					continue
 			print "... alignment length [{0}] for [{1}] species".\
 				format(alignment.get_alignment_length(), len(alignment))
-			alignments.append(alignment)
+			align_len = alignment.get_alignment_length()
+			output_file = "{0}_nspp{1}_len{2}.faa".format(i,len(alignment),align_len)
+			output_path = os.path.join(gene_dir, output_file)
+			with open(output_path, "w") as file:
+				count = SeqIO.write(alignment, file, "fasta")
+			aligncounter += 1
 			trys = 0
 			i += 1
 	except OutgroupError:
@@ -76,16 +84,4 @@ for gene,seqobj in geneobj[1:]:
 	if len(alignments) < 1:
 		print "... no alignments generated"
 		continue
-	print "... writing out alignments for [{0}] alignments".\
-		format(len(alignments))
-	for i,alignment in enumerate(alignments):
-		gene_dir = os.path.join(alignment_dir, gene)
-		if not os.path.isdir(gene_dir):
-			os.mkdir(gene_dir)
-		align_len = alignment.get_alignment_length()
-		output_file = "{0}_nspp{1}_len{2}.faa".format(i,align_len,len(alignment))
-		output_path = os.path.join(gene_dir, output_file)
-		with open(output_path, "w") as file:
-			count = SeqIO.write(alignment, file, "fasta")
-		aligncounter += 1
 print 'Stage finished. Generated [{0}] alignments.'.format(aligncounter)
