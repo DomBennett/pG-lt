@@ -37,19 +37,22 @@ for gene in genes:
 	seq_files = os.listdir(gene_dir)
 	seqobj = SeqObj(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]))
 	geneobj.append((gene, seqobj))
-gene_dir = os.path.join(alignment_dir, gene)
-if not os.path.isdir(gene_dir):
-	os.mkdir(gene_dir)
 print "Running alignments"
 for gene,seqobj in geneobj:
+	gene_dir = os.path.join(alignment_dir, gene)
+	if not os.path.isdir(gene_dir):
+		os.mkdir(gene_dir)
 	print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seqobj))
 	mingaps = float(genedict[gene]["mingaps"])
 	minoverlap = int(genedict[gene]["minoverlap"])
+	#mingaps = 0.01
+	#minoverlap = 200
 	minfails = int(genedict[gene]["minfails"])
 	maxtrys = int(genedict[gene]["maxtrys"])
 	minseedsize = int(genedict[gene]["minseedsize"])
 	maxseedtrys = int(genedict[gene]["maxseedtrys"])
 	seedsize = len(seqobj)
+	#seedsize = 5
 	alignments = []
 	trys = 0
 	i = 1
@@ -57,7 +60,7 @@ for gene,seqobj in geneobj:
 		while i <= naligns:
 			print " ....iteration [{0}]".format(i)
 			alignment, seedsize = incrAlign(seqobj, mingaps, minoverlap, seedsize,\
-				minseedsize, maxseedtrys)
+				minseedsize, maxtrys, maxseedtrys)
 			if alignment is None:
 				trys += 1
 				if trys > maxtrys:
