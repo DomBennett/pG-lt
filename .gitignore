@@ -45,6 +45,7 @@ requires
 *.fasta
 *.faa
 *phylip*
+*.p
 
 # Sublime
 *.sublime-workspace
