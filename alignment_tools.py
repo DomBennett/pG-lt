@@ -8,6 +8,11 @@ import sys, os, re, random
 import numpy as np
 from Bio import SeqIO
 from Bio import AlignIO
+from Bio.Align import AlignInfo
+from Bio.SeqRecord import SeqRecord
+from Bio.Blast.Applications import NcbiblastnCommandline
+from Bio.Blast import NCBIXML
+from StringIO import StringIO
 from sys_tools import *
 
 ## Objects
@@ -45,15 +50,29 @@ class SeqObj(dict):
 		self.sppool = self.keys()
 		self.sequences_in_alignment = []
 		for i in range(n):
-			self._add()
+			rand_int = random.randint(0, (len(self.sppool)-1))
+			self.next_sp = self.sppool.pop(rand_int)
+			next_seq = random.sample(self[self.next_sp][0], 1)[0]
+			self.sequences_in_alignment.append(next_seq)
 		return [e[0] for e in self.sequences_in_alignment]
 
-	def _add(self):
+	def _add(self, alignment):
 		"""Add new random species' sequence"""
-		rand_int = random.randint(0, (len(self.sppool)-1))
-		self.next_sp = self.sppool.pop(rand_int)
-		next_seq = random.sample(self[self.next_sp][0], 1)[0]
-		self.sequences_in_alignment.append(next_seq)
+		rand_ints = range(len(self.sppool))
+		random.shuffle(rand_ints)
+		for i in rand_ints:
+			sp = self.sppool[i]
+			next_seqs = [e[0] for e in self[sp][0]]
+			next_seq_is = findOverlappingSeqs(alignment, next_seqs)
+			if next_seq_is:
+				next_seq_i = random.sample(next_seq_is, 1)[0]
+				break
+		else:
+			return False
+		self.next_sp = self.sppool.pop(i)
+		print self.next_sp
+		self.sequences_in_alignment.append(self[self.next_sp][0][next_seq_i])
+		return True
 		
 	def back(self):
 		"""Add to nfails for random species, return new random species"""
@@ -62,15 +81,20 @@ class SeqObj(dict):
 		self.sppool.append(self.next_sp)
 		self._check()
 		if len(self.sppool) != 0:
-			self._add()
+			rand_int = random.randint(0, (len(self.sppool)-1))
+			self.next_sp = self.sppool.pop(rand_int)
+			next_seq = random.sample(self[self.next_sp][0], 1)[0]
+			self.sequences_in_alignment.append(next_seq)
 		return self.sequences_in_alignment[-1][0]
 			
-	def next(self, align):
+	def next(self, alignment):
 		"""Set nfails to 0, add additional random species"""
 		for i in range(len(self.sequences_in_alignment)):
 			self.sequences_in_alignment[i][1] = 0
-		self._add()
-		return self.sequences_in_alignment[-1][0]
+		if self._add(alignment):
+			return self.sequences_in_alignment[-1][0]
+		else:
+			return False
 		
 	def _check(self):
 		"""Check nfails, drop sequences and species"""
@@ -116,7 +140,7 @@ def alignmentCheck(align, mingaps, minoverlap, minlen):
 		totgaps = align_len - totnucs
 		overlap = calcOverlap(columns)
 		if overlap < minoverlap:
-			print "not enough overlap"
+			#print "not enough overlap"
 			return False
 		extgaps = 0
 		start_extgaps = re.search("^-+", sequence)
@@ -133,7 +157,7 @@ def alignmentCheck(align, mingaps, minoverlap, minlen):
 		else:
 			pintgaps.append(pintgap)
 		if pintgap > mingaps:
-			print "too many gaps"
+			#print "too many gaps"
 			return False
 	#try:
 	#	if any([e > pintgap_outgroup for e in pintgaps]):
@@ -142,6 +166,70 @@ def alignmentCheck(align, mingaps, minoverlap, minlen):
 	#except UnboundLocalError:
 	#	pass
 	return True
+
+def findOverlappingSeqs (alignment, sequences):
+	"""Match a sequence to an alignment with stand-alone blast to determine if sequences overlap"""
+	summary_align = AlignInfo.SummaryInfo(alignment)
+	consensus = SeqRecord(summary_align.gap_consensus(ambiguous = 'N', threshold = 0.5),\
+		id = "con", name = "Alignment consensus", description = "ambiguous = N, threshold = 0.5")
+	#print consensus.format("fasta")
+	#AlignIO.write(alignment, "subj.fasta", "fasta")
+	SeqIO.write(consensus, "query.fasta", "fasta")
+	SeqIO.write(sequences, "subj.fasta", "fasta")
+	sresults = []
+	try:
+		output = NcbiblastnCommandline(query = "query.fasta", subject = "subj.fasta", outfmt = 5)()[0]
+	except Bio.Application.ApplicationError:
+		print "BLAST error"
+	else:
+		bresults = NCBIXML.parse(StringIO(output)) # BLAST records for each sequence
+		i = 0
+		for record in bresults:
+			if record.alignments:
+				ns = record.alignments[0].hsps[0].query.count("N")
+				length = record.alignments[0].hsps[0].align_length - ns
+				if length > 200:
+					identities = record.alignments[0].hsps[0].identities
+					pgaps = 1 - float(length)/identities
+					if pgaps < 0.1:
+						sresults.append(i)
+			i += 1
+	os.remove("query.fasta")
+	os.remove("subj.fasta")
+	return sresults
+
+def sequenceCheck (alignment, sequence, minoverlap, mingaps):
+	"""Match a sequence to a alignment with stand-alone blast"""
+	summary_align = AlignInfo.SummaryInfo(alignment)
+	consensus = SeqRecord(summary_align.gap_consensus(ambiguous = 'N', threshold = 0.5),\
+		id = "con", name = "Alignment consensus", description = "ambiguous = N, threshold = 0.5")
+	#print consensus.format("fasta")
+	#AlignIO.write(alignment, "subj.fasta", "fasta")
+	SeqIO.write(consensus, "subj.fasta", "fasta")
+	SeqIO.write(sequence, "query.fasta", "fasta")
+	success = False
+	try:
+		output = NcbiblastnCommandline(query = "query.fasta", subject = "subj.fasta", outfmt = 5)()[0]
+	except Bio.Application.ApplicationError:
+		print "BLAST error"
+	else:
+		results = NCBIXML.parse(StringIO(output))
+		for record in results:
+			if record.alignments:
+				ns = record.alignments[0].hsps[0].sbjct.count("N")
+				length = record.alignments[0].hsps[0].align_length - ns
+				if length > minoverlap:
+					identities = record.alignments[0].hsps[0].identities
+					pgaps = 1 - float(length)/identities
+					if pgaps < mingaps:
+						success = True
+				break
+	os.remove("query.fasta")
+	os.remove("subj.fasta")
+	if success:
+		return True
+	else:
+		return False
 
 def alignSequences(sequences, timeout=99999999, silent=False, verbose=True):
 	"""Align sequences using mafft (external program)"""
@@ -194,6 +282,8 @@ def returnBestAlignment(alignments):
 	# keep alignments with more than 5 species
 	alignments = [al for al in alignments if "outgroup" in\
 				  [e.id for e in al._records]]
+	if len(alignments) == 0:
+		print "No outgroup!"
 	alignments = [al for al in alignments if len(al) >= 5]
 	if len(alignments) == 0:
 		return None
@@ -206,10 +296,10 @@ def returnBestAlignment(alignments):
 	max_i = alignments_lens.index(max(alignments_lens))
 	return alignments[max_i]
 
-def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
+def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxtrys, maxseedtrys):
 	"""Incrementally build an alignment by adding sequences to a seed alignment"""
 	trys = seedtrys = 0
-	maxtrys = maxseedtrys*2 # twice as many attempts with minseedsize
+	print maxtrys
 	alignment_store = []
 	print " ........ seed phase: [{0}] seed size".format(seedsize)
 	while True:
@@ -236,6 +326,7 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 	print  " ........ add phase : [{0}] species".format(len(alignment))
 	while True:
 		minlen = min([seqobj[e][1] for e in seqobj.keys()])
+		#print "Number of species: {0}".format(len(alignment))
 		alignment = addToAlignment(alignment, sequence)
 		if alignmentCheck(alignment, mingaps, minoverlap, minlen):
 			trys = 0
@@ -244,6 +335,8 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 			else:
 				alignment_store.append(alignment)
 				sequence = seqobj.next(alignment)
+				if not sequence:
+					return returnBestAlignment(alignment_store), seedsize
 		elif trys < maxtrys:
 			sequence = seqobj.back()
 			if len(seqobj.sppool) == 0:
@@ -252,6 +345,7 @@ def incrAlign(seqobj, mingaps, minoverlap, seedsize, minseedsize, maxseedtrys):
 			alignment = alignment_store[-1]
 			trys += 1
 		else:
+			print "maxtrys hit!"
 			# when the maximum number of species is not reached...
 			# ... return the best alignment in the alignment store
 			return returnBestAlignment(alignment_store), seedsize
