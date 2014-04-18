@@ -4,7 +4,7 @@
 ## 24/03/2014
 
 ## Packages
-import sys, os, re, random
+import sys, os, re, random, pickle
 import dendropy as dp
 from Bio import Phylo
 from Bio.Seq import Seq

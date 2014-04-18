@@ -43,8 +43,8 @@ seqcounter = basecounter = spcounter = 0
 
 ## Process
 print 'Determining best genes'
-#genes = findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
-genes = ['rbcl']
+genes = findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
+#genes = ['rbcl']
 statement = 'Using genes:'
 for gene in genes:
 	statement += " " + gene
