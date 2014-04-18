@@ -161,7 +161,7 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 		options += " -q " + "partitions.txt"
 	if constraint:
 		options += constraint
-	command_line = 'raxml' + file_line + dnamodel + options
+	command_line = raxmlpath + file_line + dnamodel + options
 	pipe = TerminationPipe(command_line, timeout)
 	pipe.run(changeDir = True)
 	if not pipe.failure:
