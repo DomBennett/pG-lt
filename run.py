@@ -145,13 +145,19 @@ def main():
 	except IOError:
 		print "Parameters file could not be opened. File: [{0}]".parameters
 	 	sys.exit()
- 	# Output
+	# Build programdict
+	programdict = {}
+	programdict['raxml'] = os.path.join('requires', 'raxml')
+	programdict['mafft'] = 'mafft'
+	# Output
  	with open("genedict.p", "wb") as file:
  		pickle.dump(genedict, file)
  	with open("paradict.p", "wb") as file:
  		pickle.dump(paradict, file)
  	with open("terms.p", "wb") as file:
  		pickle.dump(terms, file)
+ 	with open("programdict.p", "wb") as file:
+ 		pickle.dump(programdict, file)
 	Stage.run_all()
 
 if __name__ == '__main__':
