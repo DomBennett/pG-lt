@@ -11,6 +11,7 @@ from Bio import AlignIO
 from Bio.Align import AlignInfo
 from Bio.SeqRecord import SeqRecord
 from Bio.Blast.Applications import NcbiblastnCommandline
+from Bio.Application import ApplicationError
 from Bio.Blast import NCBIXML
 from StringIO import StringIO
 from sys_tools import *
@@ -118,7 +119,7 @@ class SeqStore(dict):
 		sresults = []
 		try:
 			output = NcbiblastnCommandline(query = "query.fasta", subject = "subj.fasta", outfmt = 5)()[0]
-		except Bio.Application.ApplicationError:
+		except ApplicationError:
 			print "BLAST error"
 		else:
 			os.remove("query.fasta")
@@ -205,7 +206,7 @@ class Aligner(object):
 		"""Incrementally build an alignment by adding sequences to a seed alignment"""
 		trys = seedtrys = 0
 		store = []
-		print " ........ seed phase: [{0}] seed size".format(self.seedsize)
+		print "........ seed phase: [{0}] seed size".format(self.seedsize)
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
@@ -229,7 +230,7 @@ class Aligner(object):
 				if self.maxtrys < trys:
 					return None
 		trys = 0
-		print  " ........ add phase : [{0}] species".format(len(alignment))
+		print  "........ add phase : [{0}] species".format(len(alignment))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			#print "Number of species: {0}".format(len(alignment))

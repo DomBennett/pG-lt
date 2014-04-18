@@ -57,7 +57,7 @@ for gene,seqstore in genestore:
 	i = 1
 	try:
 		while i <= naligns:
-			print " ....iteration [{0}]".format(i)
+			print "...iteration [{0}]".format(i)
 			alignment = aligner.run()
 			if alignment is None:
 				trys += 1
@@ -82,7 +82,7 @@ for gene,seqstore in genestore:
 	except MinSpeciesError:
 		print "... too few species left in sequence pool"
 		continue
-	if len(alignments) < 1:
+	if aligncounter == 0:
 		print "... no alignments generated"
 		continue
 print 'Stage finished. Generated [{0}] alignments.'.format(aligncounter)
