@@ -10,7 +10,7 @@ from alignment_tools import *
 from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 ## Objects
-class SequenceDownloader(object):
+class Downloader(object):
 	"""Download sequences given taxids and gene_names"""
 	def __init__(self, gene_names, nseqs, thoroughness, maxpn, seedsize, maxtrys, \
 			mingaps, minoverlap, maxlen, minlen):
@@ -76,18 +76,17 @@ class SequenceDownloader(object):
 		self.deja_vues = list(set(self.deja_vues))
 		return list(set(seqids))
 
-	def _filterSequences(self, sequences):
+	def _filter(self, sequences):
 		"""Filter sequences by aligning sequences"""
 		def filterByAlignment(sequences):
-			alignment = alignSequences(sequences)
-			return alignmentCheck(alignment, self.mingaps, self.minoverlap, self.minlen)
+			alignment = align(sequences)
+			return checkAlignment(alignment, self.mingaps, self.minoverlap, self.minlen)
 		filtered = []
 		trys = 0
 		seedsize = self.seedsize
 		while seedsize < len(sequences) and trys < self.maxtrys:
 			temp = []
 			for i in range(seedsize):
-				print len(filtered)
 				randn = random.randint(0, len(sequences)-1)
 				temp.append(sequences.pop(randn))
 			if filterByAlignment(temp):
@@ -178,8 +177,7 @@ class SequenceDownloader(object):
 					downloaded.extend(self._download(seqids[lower:upper]))
 					if not downloaded:
 						break
-					filtered,downloaded = self._filterSequences(downloaded)
-					print filtered
+					filtered,downloaded = self._filter(downloaded)
 					if filtered:
 						sequences.extend(filtered)
 					lower = upper
@@ -202,10 +200,10 @@ def findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq = 1, mi
 		if int(taxid) in allrankids:
 			gene_bool = []
 			for tipids in alltipids:
-				sequence_downloader = SequenceDownloader(gene_names = genedict[gene]["names"],\
+				downloader = Downloader(gene_names = genedict[gene]["names"],\
 					nseqs = 0, thoroughness = thoroughness, maxpn = 0, seedsize = 0, maxtrys = 0,\
 					mingaps = 0, minoverlap = 0, maxlen = 0, minlen = 0)
-				res = sequence_downloader._search(tipids)
+				res = downloader._search(tipids)
 				gene_bool.append(len(res) >= minnseq)
 			pwithseq = float(sum(gene_bool))/len(alltipids)
 			if pwithseq > minpwithseq:

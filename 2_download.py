@@ -25,6 +25,8 @@ with open("namesdict.p", "rb") as file:
 	namesdict = pickle.load(file)
 with open("allrankids.p", "rb") as file:
 	allrankids = pickle.load(file)
+with open("programdict.p", "rb") as file:
+ 	programdict = pickle.load(file)
 
 ## Parameters
 Entrez.email = paradict["email"]
@@ -32,6 +34,7 @@ nseqs = int(paradict['nseqs'])
 thoroughness = int(paradict['download_thoroughness'])
 maxlen = int(paradict['maxlen'])
 minlen = int(paradict['minlen'])
+mafftpath = programdict['mafft']
 seedsize = 3
 mingaps = 0.01
 minoverlap = 200
@@ -43,8 +46,7 @@ seqcounter = basecounter = spcounter = 0
 
 ## Process
 print 'Determining best genes'
-#genes = findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
-genes = ["matk", "rbcl"]
+genes = findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
 statement = 'Using genes:'
 for gene in genes:
 	statement += " " + gene
@@ -59,9 +61,9 @@ for gene in genes:
 	for name in namesdict.keys():
 		print "..... [{0}]".format(name)
 		taxids = namesdict[name]["txids"]
-		sequence_downloader = SequenceDownloader(gene_names, nseqs, thoroughness,\
+		downloader = Downloader(gene_names, nseqs, thoroughness,\
 			maxpn, seedsize, maxtrys, mingaps, minoverlap, maxlen, minlen)
-		sequences = sequence_downloader.main(taxids)
+		sequences = downloader.main(taxids)
 		if not sequences:
 			noseqcounter_gene += 1
 			print "No sequences found for [{0}].".format(name)
