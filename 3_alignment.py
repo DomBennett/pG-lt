@@ -22,45 +22,46 @@ with open("genedict.p", "rb") as file:
 	genedict = pickle.load(file)
 with open("paradict.p", "rb") as file:
 	paradict = pickle.load(file)
+with open("programdict.p", "rb") as file:
+ 	programdict = pickle.load(file)
 
 ## Parameters
 naligns = int(paradict["naligns"])
+mafftpath = programdict['mafft']
 aligncounter = 0
 
 ## Process
 genes = sorted(os.listdir(download_dir))
 genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
 print 'Reading in sequences'
-geneobj = []
+genestore = []
 for gene in genes:
 	gene_dir = os.path.join(download_dir, gene)
 	seq_files = os.listdir(gene_dir)
-	seqobj = SeqObj(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]))
-	geneobj.append((gene, seqobj))
+	seqstore = SeqStore(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]),\
+		mingaps = float(genedict[gene]["mingaps"]), minoverlap = int(genedict[gene]["minoverlap"]))
+	genestore.append((gene, seqstore))
 print "Running alignments"
-for gene,seqobj in geneobj:
+for gene,seqstore in genestore:
 	gene_dir = os.path.join(alignment_dir, gene)
 	if not os.path.isdir(gene_dir):
 		os.mkdir(gene_dir)
-	print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seqobj))
+	print "Aligning gene [{0}] for [{1}] species ...".format(gene, len(seqstore))
 	mingaps = float(genedict[gene]["mingaps"])
 	minoverlap = int(genedict[gene]["minoverlap"])
-	#mingaps = 0.01
-	#minoverlap = 200
 	minfails = int(genedict[gene]["minfails"])
 	maxtrys = int(genedict[gene]["maxtrys"])
 	minseedsize = int(genedict[gene]["minseedsize"])
 	maxseedtrys = int(genedict[gene]["maxseedtrys"])
-	seedsize = len(seqobj)
-	#seedsize = 5
+	aligner = Aligner(seqstore, mingaps, minoverlap, minseedsize, maxtrys,\
+		maxseedtrys)
 	alignments = []
 	trys = 0
 	i = 1
 	try:
 		while i <= naligns:
 			print " ....iteration [{0}]".format(i)
-			alignment, seedsize = incrAlign(seqobj, mingaps, minoverlap, seedsize,\
-				minseedsize, maxtrys, maxseedtrys)
+			alignment = aligner.run()
 			if alignment is None:
 				trys += 1
 				if trys > maxtrys:
