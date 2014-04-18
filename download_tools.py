@@ -163,12 +163,12 @@ class Downloader(object):
 					i += 1
 		return records
 
-	def main(self, taxids):
+	def run(self, taxids):
 		"""Dynamic sequence download"""
 		while self.thoroughness < self.max_thoroughness:
 			seqids = self._search(taxids)
 			if len(seqids) >= 1000:
-				print "     .... lots of sequences -- filtering"
+				print "........ filtering"
 				sequences = []
 				downloaded = []
 				lower = 0

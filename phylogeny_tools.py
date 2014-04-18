@@ -15,6 +15,11 @@ from Bio import AlignIO
 import numpy as np
 from sys_tools import *
 
+## Globals
+with open("programdict.p", "rb") as file:
+ 	programdict = pickle.load(file)
+raxmlpath = programdict['raxml']
+
 ## Functions
 def renameTips(phylo, names):
 	for each in phylo.get_terminals():
@@ -162,8 +167,8 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 	if constraint:
 		options += constraint
 	command_line = raxmlpath + file_line + dnamodel + options
-	pipe = TerminationPipe(command_line, timeout)
-	pipe.run(changeDir = True)
+	pipe = TerminationPipe(command_line)
+	pipe.run()
 	if not pipe.failure:
 		with open('RAxML_bestTree.' + output_file, "r") as file:
 			tree = Phylo.read(file, "newick")	

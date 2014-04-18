@@ -4,7 +4,7 @@
 ## 24/03/2014
 
 ## Packages
-import sys, os, re, random
+import sys, os, re, random, pickle
 import numpy as np
 from Bio import SeqIO
 from Bio import AlignIO
@@ -14,6 +14,11 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Blast import NCBIXML
 from StringIO import StringIO
 from sys_tools import *
+
+## Globals
+with open("programdict.p", "rb") as file:
+ 	programdict = pickle.load(file)
+mafftpath = programdict['mafft']
 
 ## Objects
 class OutgroupError(Exception):
@@ -165,8 +170,8 @@ class Aligner(object):
 		self.minseedsize = minseedsize
 		self.maxtrys = maxtrys
 		self.maxseedtrys = maxseedtrys
-		#self.seedsize = len(seqstore)
-		self.seedsize = 5
+		self.seedsize = len(seqstore)
+		#self.seedsize = 5
 		self.timeout = 99999999
 		self.silent = False
 		self.verbose = True
@@ -252,15 +257,15 @@ class Aligner(object):
 				return self._return(store)
 
 ## Functions
-def align(self, sequences, silent = False, timeout = 99999):
+def align(sequences):
 	"""Align sequences using mafft (external program)"""
 	input_file = "sequences_in.fasta"
 	output_file = "alignment_out.fasta"
 	command_line = '{0} --auto {1} > {2}'.format(mafftpath, input_file, output_file)
 	with open(input_file, "w") as file:
 		count = SeqIO.write(sequences, file, "fasta")
-	pipe = TerminationPipe(command_line, timeout)
-	pipe.run(silent = silent)
+	pipe = TerminationPipe(command_line)
+	pipe.run()
 	os.remove(input_file)
 	if not pipe.failure:
 		try:
@@ -273,7 +278,7 @@ def align(self, sequences, silent = False, timeout = 99999):
 		raise RuntimeError("MAFFT alignment not complete in time allowed")
 	return res
 
-def add(self, alignment, sequence, silent = False, timeout = 99999):
+def add(alignment, sequence):
 	"""Align sequence(s) to an alignment using mafft (external program)"""
 	alignment_file = "alignment_in.fasta"
 	sequence_file = "sequence_in.fasta"
@@ -284,8 +289,8 @@ def add(self, alignment, sequence, silent = False, timeout = 99999):
 		count = SeqIO.write(sequence, file, "fasta")
 	with open(alignment_file, "w") as file:
 		count = AlignIO.write(alignment, file, "fasta")
-	pipe = TerminationPipe(command_line, timeout)
-	pipe.run(silent = silent)
+	pipe = TerminationPipe(command_line)
+	pipe.run()
 	os.remove(alignment_file)
 	os.remove(sequence_file)
 	if not pipe.failure:

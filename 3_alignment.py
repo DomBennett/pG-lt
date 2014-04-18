@@ -22,12 +22,9 @@ with open("genedict.p", "rb") as file:
 	genedict = pickle.load(file)
 with open("paradict.p", "rb") as file:
 	paradict = pickle.load(file)
-with open("programdict.p", "rb") as file:
- 	programdict = pickle.load(file)
 
 ## Parameters
 naligns = int(paradict["naligns"])
-mafftpath = programdict['mafft']
 aligncounter = 0
 
 ## Process

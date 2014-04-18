@@ -26,14 +26,11 @@ with open("paradict.p", "rb") as file:
 	paradict = pickle.load(file)
 with open("namesdict.p", "rb") as file:
 	namesdict = pickle.load(file)
-with open("programdict.p", "rb") as file:
- 	programdict = pickle.load(file)
 
 ## Parameters
 nphylos = int(paradict["nphylos"])
 maxtrys = int(paradict["maxtrys"])
 maxpedge = float(paradict["maxpedge"])
-raxmlpath = programdict['raxml']
 constraint = True
 phylocounter = 0
 
