@@ -121,7 +121,8 @@ class SeqStore(dict):
 			output = NcbiblastnCommandline(query = "query.fasta", subject = "subj.fasta", outfmt = 5)()[0]
 		except ApplicationError:
 			print "BLAST error"
-		else:
+			return False
+		finally:
 			os.remove("query.fasta")
 			os.remove("subj.fasta")
 		bresults = NCBIXML.parse(StringIO(output)) # BLAST records for each sequence
