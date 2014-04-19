@@ -172,7 +172,7 @@ class Downloader(object):
 				sequences = []
 				downloaded = []
 				lower = 0
-				while len(sequences) < self.nseqs:
+				while len(sequences) < self.nseqs and lower != len(seqids):
 					upper = min(len(seqids), lower + 1000)
 					downloaded.extend(self._download(seqids[lower:upper]))
 					if not downloaded:
