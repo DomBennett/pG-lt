@@ -39,7 +39,7 @@ maxtrys = 100
 minnseq = 1
 minpwithseq = 0.6
 maxpn = 0.1
-seqcounter = basecounter = spcounter = 0
+seqcounter = basecounter = 0
 
 ## Process
 print 'Determining best genes'
@@ -49,6 +49,9 @@ statement = 'Using genes:'
 for gene in genes:
 	statement += " " + gene
 print statement
+# Add genes to namesdict
+for key in namesdict.keys():
+	namesdict[key]['genes'] = 0
 for gene in genes:
 	seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 	gene_names = genedict[gene]["names"]
@@ -75,14 +78,16 @@ for gene in genes:
 				outfile.write("%s\n" % gene_seq)
 				seqcounter_gene += 1
 				basecounter += len(gene_seq)
+		namesdict[name]['genes'] += 1
 		spcounter_gene += 1
 	if noseqcounter_gene == len(namesdict.keys()):
 		print "No sequences were downloaded for gene [{0}]".format(gene)
 		os.rmdir(gene_dir)
 	else:
 		seqcounter += seqcounter_gene
-		spcounter += spcounter_gene
 		print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
-			format(seqcounter_gene,gene,spcounter_gene)
+			format(seqcounter_gene, gene, spcounter_gene)
+with open("namesdict.p", "wb") as file:
+	pickle.dump(namesdict, file)
 print '\n\nStage finished. Downloaded [{0}] bases for [{1}] sequences for [{2}] species.'.\
-	format(basecounter, seqcounter, spcounter)
+	format(basecounter, seqcounter, sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()]))

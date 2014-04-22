@@ -47,7 +47,7 @@ for gene in genes:
 	for alignment_file in alignment_files:
 		with open(os.path.join(gene_dir, alignment_file), "r") as file:
 			alignment = AlignIO.read(file, "fasta")
-		alignobj[gene].append(alignment)
+		alignobj[gene].append((alignment, alignment_file))
 print "Generating [{0}] phylogenies".format(nphylos)
 phylogenies = []
 trys = 0
@@ -56,8 +56,11 @@ while phylocounter < nphylos:
 	if trys > maxtrys:
 		break
 	trys += 1
-	alignments = [random.sample(alignobj[e], 1)[0] for e in genes]
-	alignment,partitions = concatenateAlignments(alignments)
+	alignments,alignment_files = zip(*[random.sample(alignobj[e], 1)[0] for e in genes])
+	print "Using alignments....."
+	for gene,alignment_file in zip(genes,alignment_files):
+		print "....[{0}]:[{1}]".format(gene, alignment_file)
+	alignment,partitions = concatenateAlignments(list(alignments))
 	if constraint:
 		constraint = genConstraintTree(alignment, "taxontree.tre")
 	phylogeny = RAxML(alignment, constraint = constraint, outgroup = "outgroup",\
