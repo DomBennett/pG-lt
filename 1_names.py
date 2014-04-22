@@ -62,6 +62,4 @@ with open(os.path.join(names_dir, 'resovled_names.csv'), 'wb') as file:
 		row.append(ids)
 		writer.writerow(row)
 Phylo.write(taxontree, "taxontree.tre", "newick")
-
-## Print stageout
 print 'Stage finished. Resolved [{0}] names including outgroup.'.format(len(namesdict.keys()))

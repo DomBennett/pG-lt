@@ -167,6 +167,7 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 	if constraint:
 		options += constraint
 	command_line = raxmlpath + file_line + dnamodel + options
+	#print command_line
 	pipe = TerminationPipe(command_line)
 	pipe.run()
 	if not pipe.failure:
