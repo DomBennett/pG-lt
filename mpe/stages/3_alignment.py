@@ -10,20 +10,20 @@ print "\n\nStage 3: alignment\n"
 import os, re, pickle
 import numpy
 from Bio import SeqIO
-from alignment_tools import *
+import mpe.tools.alignment as atools
 
 ## Dirs
-download_dir = os.path.join(os.getcwd(),'2_download')
-alignment_dir = os.path.join(os.getcwd(),'3_alignment')
+download_dir = '2_download'
+alignment_dir = '3_alignment'
 if not os.path.isdir(alignment_dir):
 	os.mkdir(alignment_dir)
 
 ## Input
-with open("genedict.p", "rb") as file:
+with open(".genedict.p", "rb") as file:
 	genedict = pickle.load(file)
-with open("paradict.p", "rb") as file:
+with open(".paradict.p", "rb") as file:
 	paradict = pickle.load(file)
-with open("namesdict.p", "rb") as file:
+with open(".namesdict.p", "rb") as file:
 	namesdict = pickle.load(file)
 
 ## Parameters
@@ -41,7 +41,7 @@ genestore = []
 for gene in genes:
 	gene_dir = os.path.join(download_dir, gene)
 	seq_files = os.listdir(gene_dir)
-	seqstore = SeqStore(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]),\
+	seqstore = atools.SeqStore(gene_dir, seq_files, minfails = int(genedict[gene]["minfails"]),\
 		mingaps = float(genedict[gene]["mingaps"]), minoverlap = int(genedict[gene]["minoverlap"]))
 	genestore.append((gene, seqstore))
 print "Running alignments"
@@ -56,7 +56,7 @@ for gene,seqstore in genestore:
 	maxtrys = int(genedict[gene]["maxtrys"])
 	minseedsize = int(genedict[gene]["minseedsize"])
 	maxseedtrys = int(genedict[gene]["maxseedtrys"])
-	aligner = Aligner(seqstore, mingaps, minoverlap, minseedsize, maxtrys,\
+	aligner = atools.Aligner(seqstore, mingaps, minoverlap, minseedsize, maxtrys,\
 		maxseedtrys)
 	alignments = []
 	trys = 0
@@ -84,9 +84,9 @@ for gene,seqstore in genestore:
 			aligncounter += 1
 			trys = 0
 			i += 1
-	except OutgroupError:
+	except atools.OutgroupError:
 		print "... outgroup dropped"
-	except MinSpeciesError:
+	except atools.MinSpeciesError:
 		print "... too few species left in sequence pool"
 	if aligncounter < naligns:
 		print "... too few alignments generated"
@@ -94,7 +94,10 @@ for gene,seqstore in genestore:
 		continue
 naligns_name = [namesdict[e]['alignments'] for e in namesdict.keys() if namesdict[e]['genes'] > 0]
 paligns_name = [len(naligns_name) * float(e)/aligncounter for e in naligns_name]
-with open("namesdict.p", "wb") as file:
+with open(".namesdict.p", "wb") as file:
 	pickle.dump(namesdict, file)
 print 'Stage finished. Generated [{n1}] alignments for mean [{n2:.{d}f}](sd[{n3:.{d}f}]) species.'.\
 	format(n1 = aligncounter, n2 = numpy.mean(paligns_name), n3 = numpy.std(paligns_name), d = 2)
+stage = 3
+with open(".stage.p", "wb") as file:
+	pickle.dump(stage, file)

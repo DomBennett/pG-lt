@@ -4,10 +4,10 @@
 ## 24/03/2014
 
 ## Packages
-import collections, re, copy
+import collections, re
 from Bio import Phylo
 from cStringIO import StringIO
-from entrez_tools import *
+from mpe.tools.entrez import *
 
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):

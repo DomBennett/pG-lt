@@ -3,29 +3,32 @@
 ## D.J. Bennett
 ## 24/03/2014
 
+## Packages
+import os, csv, pickle, shutil
+import mpe.tools.names as ntools
+from mpe.tools.taxon_names_resolver import TaxonNamesResolver
+
 ## Print stage
 print "\n\nStage 1: names resolution\n"
 
-## Packages
-import os, re, sys, csv, pickle, shutil
-from names_tools import *
-from taxon_names_resolver import TaxonNamesResolver
-
 ## Dirs
-names_dir = os.path.join(os.getcwd(),'1_names')
+names_dir = '1_names'
+phylogeny_dir = '4_phylogeny'
 if not os.path.isdir(names_dir):
 	os.mkdir(names_dir)
+if not os.path.isdir(phylogeny_dir):
+	os.mkdir(phylogeny_dir)
 
 ## Input
-with open("genedict.p", "rb") as file:
+with open(".genedict.p", "rb") as file:
 	genedict = pickle.load(file)
-with open("paradict.p", "rb") as file:
+with open(".paradict.p", "rb") as file:
 	paradict = pickle.load(file)
-with open("terms.p", "rb") as file:
+with open(".terms.p", "rb") as file:
 	terms = pickle.load(file)
 
 ## Parameters
-Entrez.email = paradict["email"]
+ntools.Entrez.email = paradict["email"]
 
 ## Process
 print 'Searching for taxids'
@@ -36,15 +39,15 @@ except:
 resolver = TaxonNamesResolver(terms = terms, datasource = "NCBI", taxon_id = parentid)
 resolver.main()
 print "Generating names dictionary"
-namesdict,allrankids = genNamesDict(resolver)
+namesdict,allrankids = ntools.genNamesDict(resolver)
 print 'Generating taxonomic tree'
-taxontree,shared_lineages = genTaxTree(resolver, namesdict)
+taxontree,shared_lineages = ntools.genTaxTree(resolver, namesdict)
 
 ## Output
 shutil.rmtree("resolved_names")
-with open("namesdict.p", "wb") as file:
+with open(".namesdict.p", "wb") as file:
 	pickle.dump(namesdict, file)
-with open("allrankids.p", "wb") as file:
+with open(".allrankids.p", "wb") as file:
 	pickle.dump(allrankids, file)
 headers = ["name", "unique_name", "rank", "NCBI_Taxids"]
 with open(os.path.join(names_dir, 'resovled_names.csv'), 'wb') as file:
@@ -61,5 +64,8 @@ with open(os.path.join(names_dir, 'resovled_names.csv'), 'wb') as file:
 			ids = temp["txids"][0]
 		row.append(ids)
 		writer.writerow(row)
-Phylo.write(taxontree, "taxontree.tre", "newick")
+ntools.Phylo.write(taxontree, os.path.join(phylogeny_dir, "taxontree.tre"), "newick")
 print 'Stage finished. Resolved [{0}] names including outgroup.'.format(len(namesdict.keys()))
+stage = 1
+with open(".stage.p", "wb") as file:
+	pickle.dump(stage, file)

@@ -4,7 +4,7 @@
 ## 24/03/2014
 
 ## Packages
-import sys, os, re, random, pickle
+import os, re, random
 import numpy as np
 from Bio import SeqIO
 from Bio import AlignIO
@@ -14,12 +14,7 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Application import ApplicationError
 from Bio.Blast import NCBIXML
 from StringIO import StringIO
-from sys_tools import *
-
-## Globals
-with open("programdict.p", "rb") as file:
- 	programdict = pickle.load(file)
-mafftpath = programdict['mafft']
+from mpe.tools.system import *
 
 ## Objects
 class OutgroupError(Exception):
@@ -263,9 +258,9 @@ def align(sequences):
 	"""Align sequences using mafft (external program)"""
 	input_file = "sequences_in.fasta"
 	output_file = "alignment_out.fasta"
-	command_line = '{0} --auto {1} > {2}'.format(mafftpath, input_file, output_file)
+	command_line = '{0} --auto {1} > {2}'.format('mafft', input_file, output_file)
 	with open(input_file, "w") as file:
-		count = SeqIO.write(sequences, file, "fasta")
+		SeqIO.write(sequences, file, "fasta")
 	pipe = TerminationPipe(command_line)
 	pipe.run()
 	os.remove(input_file)
@@ -285,12 +280,12 @@ def add(alignment, sequence):
 	alignment_file = "alignment_in.fasta"
 	sequence_file = "sequence_in.fasta"
 	output_file = "alignment_out.fasta" + '.fasta'
-	command_line = '{0} --auto --add {1} {2} > {3}'.format(mafftpath, sequence_file,\
+	command_line = '{0} --auto --add {1} {2} > {3}'.format('mafft', sequence_file,\
 		alignment_file, output_file)
 	with open(sequence_file, "w") as file:
-		count = SeqIO.write(sequence, file, "fasta")
+		SeqIO.write(sequence, file, "fasta")
 	with open(alignment_file, "w") as file:
-		count = AlignIO.write(alignment, file, "fasta")
+		AlignIO.write(alignment, file, "fasta")
 	pipe = TerminationPipe(command_line)
 	pipe.run()
 	os.remove(alignment_file)
@@ -339,10 +334,10 @@ def checkAlignment(alignment, mingaps, minoverlap, minlen):
 		intgaps = totgaps - extgaps
 		overlap = intgaps + totnucs
 		pintgap = float(intgaps)/overlap
-		if each.id == "outgroup":
-			pintgap_outgroup = pintgap
-		else:
-			pintgaps.append(pintgap)
+		#if each.id == "outgroup":
+		#	pintgap_outgroup = pintgap
+		#else:
+		pintgaps.append(pintgap)
 		if pintgap > mingaps:
 			#print "too many gaps"
 			return False
@@ -353,6 +348,3 @@ def checkAlignment(alignment, mingaps, minoverlap, minlen):
 	#except UnboundLocalError:
 	#	pass
 	return True
-
-if __name__ == '__main__':
-	pass

@@ -4,50 +4,44 @@
 ## 24/03/2014
 
 ## Packages
-import sys, os, re, random, pickle
-import dendropy as dp
-from Bio import Phylo
-from Bio.Seq import Seq
+import os,re,random
+#from Bio import Phylo
+#from Bio.Seq import Seq
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio import AlignIO
 import numpy as np
-from sys_tools import *
-
-## Globals
-with open("programdict.p", "rb") as file:
- 	programdict = pickle.load(file)
-raxmlpath = programdict['raxml']
+from mpe.tools.system import *
 
 ## Functions
-def renameTips(phylo, names):
-	for each in phylo.get_terminals():
-		try:
-			each.name = names[each.name]["name"]
-		except KeyError:
-			pass
-	return phylo
+# def renameTips(phylo, names):
+# 	for each in phylo.get_terminals():
+# 		try:
+# 			each.name = names[each.name]["name"]
+# 		except KeyError:
+# 			pass
+# 	return phylo
 
-def getRTTDists(phylo):
-	"""Calcualte root to tips distance"""
-	names = []
-	for terminal in phylo.get_terminals():
-		names.append(terminal.name)
-	rtt_dists = []
-	for name in names:
-		rtt_dists.append(phylo.distance(name))
-	return rtt_dists
+# def getRTTDists(phylo):
+# 	"""Calcualte root to tips distance"""
+# 	names = []
+# 	for terminal in phylo.get_terminals():
+# 		names.append(terminal.name)
+# 	rtt_dists = []
+# 	for name in names:
+# 		rtt_dists.append(phylo.distance(name))
+# 	return rtt_dists
 
-def getTBP(phylo):
-	term_lens = []
-	for terminal in phylo.get_terminals():
-		term_lens.append(terminal.branch_length)
-	total_len = phylo.total_branch_length()
-	tbps = []
-	for term_len in term_lens:
-		tbps.append(term_len/total_len)
-	return tbps
+# def getTBP(phylo):
+# 	term_lens = []
+# 	for terminal in phylo.get_terminals():
+# 		term_lens.append(terminal.branch_length)
+# 	total_len = phylo.total_branch_length()
+# 	tbps = []
+# 	for term_len in term_lens:
+# 		tbps.append(term_len/total_len)
+# 	return tbps
 
 def getBranchLengths(phylo):
 	lens = []
@@ -166,7 +160,7 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 		options += " -q " + "partitions.txt"
 	if constraint:
 		options += constraint
-	command_line = raxmlpath + file_line + dnamodel + options
+	command_line = 'raxml' + file_line + dnamodel + options
 	#print command_line
 	pipe = TerminationPipe(command_line)
 	pipe.run()
@@ -187,6 +181,3 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 		return tree
 	else:
 		raise RuntimeError("Either phylogeny building program failed, or ran out of time")
-
-if __name__ == '__main__':
-	pass

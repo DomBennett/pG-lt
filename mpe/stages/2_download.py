@@ -7,27 +7,26 @@
 print "\n\nStage 2: sequence download\n"
 
 ## Packages
-import sys, os, re, random, pickle
-from download_tools import *
-from entrez_tools import *
+import os, pickle
+import mpe.tools.download as dtools
 
 ## Dirs
-download_dir = os.path.join(os.getcwd(),'2_download')
+download_dir = '2_download'
 if not os.path.isdir(download_dir):
 	os.mkdir(download_dir)
 
 ## Input
-with open("genedict.p", "rb") as file:
+with open(".genedict.p", "rb") as file:
 	genedict = pickle.load(file)
-with open("paradict.p", "rb") as file:
+with open(".paradict.p", "rb") as file:
 	paradict = pickle.load(file)
-with open("namesdict.p", "rb") as file:
+with open(".namesdict.p", "rb") as file:
 	namesdict = pickle.load(file)
-with open("allrankids.p", "rb") as file:
+with open(".allrankids.p", "rb") as file:
 	allrankids = pickle.load(file)
 
 ## Parameters
-Entrez.email = paradict["email"]
+dtools.Entrez.email = paradict["email"]
 nseqs = int(paradict['nseqs'])
 thoroughness = int(paradict['download_thoroughness'])
 maxlen = int(paradict['maxlen'])
@@ -43,7 +42,7 @@ seqcounter = basecounter = 0
 
 ## Process
 print 'Determining best genes'
-genes = findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
+genes = dtools.findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
 #genes = ['rbcl']
 statement = 'Using genes:'
 for gene in genes:
@@ -62,7 +61,7 @@ for gene in genes:
 	for name in namesdict.keys():
 		print "..... [{0}]".format(name)
 		taxids = namesdict[name]["txids"]
-		downloader = Downloader(gene_names, nseqs, thoroughness,\
+		downloader = dtools.Downloader(gene_names, nseqs, thoroughness,\
 			maxpn, seedsize, maxtrys, mingaps, minoverlap, maxlen, minlen)
 		sequences = downloader.run(taxids)
 		if not sequences:
@@ -91,3 +90,6 @@ with open("namesdict.p", "wb") as file:
 	pickle.dump(namesdict, file)
 print '\n\nStage finished. Downloaded [{0}] bases for [{1}] sequences for [{2}] species.'.\
 	format(basecounter, seqcounter, sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()]))
+stage = 2
+with open(".stage.p", "wb") as file:
+	pickle.dump(stage, file)

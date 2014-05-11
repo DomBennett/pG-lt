@@ -11,20 +11,18 @@ import os, re, random, pickle
 from Bio import AlignIO
 from Bio import Phylo
 import dendropy as dp
-from phylogeny_tools import *
+import mpe.tools.phylogeny as ptools
 
 ## Dirs
-alignment_dir = os.path.join(os.getcwd(),'3_alignment')
-phylogeny_dir = os.path.join(os.getcwd(),'4_phylogeny')
-if not os.path.isdir(phylogeny_dir):
-	os.mkdir(phylogeny_dir)
+alignment_dir = '3_alignment'
+phylogeny_dir = '4_phylogeny'
 
 ## Input
-with open("genedict.p", "rb") as file:
+with open(".genedict.p", "rb") as file:
 	genedict = pickle.load(file)
-with open("paradict.p", "rb") as file:
+with open(".paradict.p", "rb") as file:
 	paradict = pickle.load(file)
-with open("namesdict.p", "rb") as file:
+with open(".namesdict.p", "rb") as file:
 	namesdict = pickle.load(file)
 
 ## Parameters
@@ -60,16 +58,16 @@ while phylocounter < nphylos:
 	print "Using alignments....."
 	for gene,alignment_file in zip(genes,alignment_files):
 		print "....[{0}]:[{1}]".format(gene, alignment_file)
-	alignment,partitions = concatenateAlignments(list(alignments))
+	alignment,partitions = ptools.concatenateAlignments(list(alignments))
 	if constraint:
-		constraint = genConstraintTree(alignment, "taxontree.tre")
-	phylogeny = RAxML(alignment, constraint = constraint, outgroup = "outgroup",\
+		constraint = ptools.genConstraintTree(alignment, os.path.join(phylogeny_dir, "taxontree.tre"))
+	phylogeny = ptools.RAxML(alignment, constraint = constraint, outgroup = "outgroup",\
 		partitions = partitions)
 	phylogeny.root_with_outgroup("outgroup")
 	phylogeny.prune("outgroup")
-	phylogeny = renameTips(phylogeny, namesdict)
+	phylogeny = ptools.renameTips(phylogeny, namesdict)
 	#Phylo.draw_ascii(phylogeny)
-	if goodPhylogenyTest(phylogeny, maxpedge):
+	if ptools.goodPhylogenyTest(phylogeny, maxpedge):
 		phylogenies.append(phylogeny)
 		phylocounter += 1
 print 'Generating consensus.'
@@ -81,3 +79,6 @@ phylos.read_from_path(filepath, "newick", as_rooted = True)
 consensus = phylos.consensus(min_freq = 0.5, suppress_edge_lengths = True, rooted = True)
 consensus.write_to_path(os.path.join(phylogeny_dir, "consensus.tre"), "newick")
 print '\n\nStage finished. Generated [{0}] phylogenies.'.format(phylocounter)
+stage = 4
+with open(".stage.p", "wb") as file:
+	pickle.dump(stage, file)

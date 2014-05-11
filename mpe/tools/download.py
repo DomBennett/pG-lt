@@ -5,9 +5,9 @@
 
 ## Packages
 import re,random
-from entrez_tools import *
-from alignment_tools import *
-from Bio.SeqFeature import SeqFeature, FeatureLocation
+from mpe.tools.entrez import *
+from mpe.tools.alignment import *
+from Bio.SeqFeature import SeqFeature
 
 ## Objects
 class Downloader(object):
