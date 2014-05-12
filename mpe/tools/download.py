@@ -209,6 +209,3 @@ def findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq = 1, mi
 			if pwithseq > minpwithseq:
 				genes.append(gene)
 	return genes
-
-if __name__ == "__main__":
-	pass
