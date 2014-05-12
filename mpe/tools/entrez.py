@@ -4,10 +4,8 @@
 ## 24/03/2014
 
 ## Packages
-import re, time, sys, os, random
+import time, random
 from Bio import Entrez
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
 from Bio import SeqIO
 
 ## Globals
@@ -47,15 +45,15 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
 				handle.close()
 			else:
 				print "Invalid db argument!"
-				break
+				return()
 			download_counter += 1
 			finished = max_check + 1
 		except:
 			if finished == 0:
-				print "!!!Server error checking", term, " - retrying..."
+				print " ---- server error: retrying ----"
 				time.sleep(10)
 			elif finished == max_check:
-				print "!!!!!!Unreachable. Returning nothing."
+				print " ----- server error: no records retrieved ----"
 				return()
 			else:
 				finished += 1
