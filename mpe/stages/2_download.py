@@ -26,7 +26,7 @@ with open(".allrankids.p", "rb") as file:
 	allrankids = pickle.load(file)
 
 ## Parameters
-dtools.Entrez.email = paradict["email"]
+dtools.etools.Entrez.email = paradict["email"]
 nseqs = int(paradict['nseqs'])
 thoroughness = int(paradict['download_thoroughness'])
 maxlen = int(paradict['maxlen'])

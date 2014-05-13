@@ -12,7 +12,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio import AlignIO
 import numpy as np
-from mpe.tools.system import *
+from system import TerminationPipe
 
 ## Functions
 # def renameTips(phylo, names):

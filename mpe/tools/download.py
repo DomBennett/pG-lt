@@ -5,8 +5,8 @@
 
 ## Packages
 import re,random
-from mpe.tools.entrez import *
-from mpe.tools.alignment import *
+import entrez as etools
+import alignment as atools
 from Bio.SeqFeature import SeqFeature
 
 ## Objects
@@ -41,22 +41,22 @@ class Downloader(object):
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}[GENE]".\
 							 format(gene_term, gene_name))
-			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT genome[TI] NOT unverified[TI]".\
-						   format(taxids_term, gene_term))
+			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT genome[TI] NOT \
+unverified[TI]".format(taxids_term, gene_term))
 		elif thoroughness == 2: # use title for gene name and ignore: predicted, genome
 			gene_term = ("{0}[TI]".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}[TI]".\
 							 format(gene_term, gene_name))
-			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT genome[TI] NOT unverified[TI]".\
-						   format(taxids_term, gene_term))
+			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT genome[TI] NOT \
+unverified[TI]".format(taxids_term, gene_term))
 		else: # all fields, ignore whole genome shotguns scaffolds and genome assemblies
 			gene_term = ("{0}".format(gene_names[0]))
 			for gene_name in gene_names[1:]:
 				gene_term = ("({0}) OR {1}".\
 							 format(gene_term, gene_name))
-			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT shotgun[TI] NOT scaffold[TI] NOT assembly[TI] NOT unverified[TI]".\
-						   format(taxids_term, gene_term))
+			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT shotgun[TI] NOT \
+scaffold[TI] NOT assembly[TI] NOT unverified[TI]".format(taxids_term, gene_term))
 		#print search_term
 		return search_term
 
@@ -67,9 +67,9 @@ class Downloader(object):
 			if self.thoroughness > self.max_thoroughness:
 				return ()
 			search_term = self._buildSearchTerm(taxids, self.thoroughness)
-			seqcount = eSearch(search_term)['Count']
+			seqcount = etools.eSearch(search_term)['Count']
 			if int(seqcount) >= 1:
-				seqids.extend(eSearch(search_term, retMax = seqcount)['IdList'])
+				seqids.extend(etools.eSearch(search_term, retMax = seqcount)['IdList'])
 				seqids = [e for e in seqids if not e in self.deja_vues]
 			self.thoroughness += 1
 		self.deja_vues.extend(seqids)
@@ -79,8 +79,8 @@ class Downloader(object):
 	def _filter(self, sequences):
 		"""Filter sequences by aligning sequences"""
 		def filterByAlignment(sequences):
-			alignment = align(sequences)
-			return checkAlignment(alignment, self.mingaps, self.minoverlap, self.minlen)
+			alignment = atools.align(sequences)
+			return atools.checkAlignment(alignment, self.mingaps, self.minoverlap, self.minlen)
 		filtered = []
 		trys = 0
 		seedsize = self.seedsize
@@ -126,7 +126,7 @@ class Downloader(object):
 		if isinstance(record, list):
 			# find which sequence in the list has the gene
 			for each in record:
-				for gene in gene_names:
+				for gene in self.gene_names:
 					if gene in each.description.lower():
 						record = each
 						break
@@ -156,7 +156,7 @@ class Downloader(object):
 			for _ in range(n):
 				randi = random.randint(0, len(seqids)-1)
 				seqs.append(seqids.pop(randi))
-			for record in eFetch(seqs):
+			for record in etools.eFetch(seqs):
 				record = self._parse(record)
 				if record:
 					records.append(record)

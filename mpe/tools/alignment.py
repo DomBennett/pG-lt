@@ -14,7 +14,7 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Application import ApplicationError
 from Bio.Blast import NCBIXML
 from StringIO import StringIO
-from mpe.tools.system import *
+from system import TerminationPipe
 
 ## Objects
 class OutgroupError(Exception):

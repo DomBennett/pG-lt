@@ -7,7 +7,7 @@
 import collections, re
 from Bio import Phylo
 from cStringIO import StringIO
-from mpe.tools.entrez import *
+import entrez as etools
 
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):
@@ -113,7 +113,7 @@ def genNamesDict(resolver):
 		while len(nul_ids) > 0:
 			temp_id = nul_ids.pop(0)
 			# find ids in the next level
-			temp_children = findChildren(str(temp_id), next = True)
+			temp_children = etools.findChildren(str(temp_id), next = True)
 			temp_children = [int(e) for e in temp_children]
 			# if none are in allrankids, must be unique
 			temp_children = [e for e in temp_children if e not in allrankids]
@@ -129,8 +129,8 @@ def genNamesDict(resolver):
 		for each in lineages[0]:
 			shared_bool.append(all([each in e for e in lineages]))
 		parentid = lineages[0][shared_bool.index(False) - 1]
-	above_id = eFetch(str(parentid), db = "taxonomy")[0]['ParentTaxId']
-	temp_children = findChildren(above_id, next = True)
+	above_id = etools.eFetch(str(parentid), db = "taxonomy")[0]['ParentTaxId']
+	temp_children = etools.findChildren(above_id, next = True)
 	temp_children = [int(e) for e in temp_children]
 	# if none are in allrankids, must be unique
 	temp_children = [e for e in temp_children if e != parentid]
