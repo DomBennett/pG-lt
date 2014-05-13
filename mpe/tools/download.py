@@ -130,8 +130,8 @@ scaffold[TI] NOT assembly[TI] NOT unverified[TI]".format(taxids_term, gene_term)
 					if gene in each.description.lower():
 						record = each
 						break
-			else:
-				return None
+		if isinstance(record, list):
+			return None
 		if len(record) > self.maxlen:
 			record = self._findGeneInSeq(record)
 		if self.maxlen > len(record) > self.minlen:
