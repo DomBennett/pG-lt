@@ -2,7 +2,7 @@
 Tests for Download tools.
 """
 
-import unittest
+import unittest,pickle,os
 import mpe.tools.download as dtools
 
 ## Dummy data and stubs
@@ -18,6 +18,11 @@ NOT assembly[TI] NOT unverified[TI]'
 t1_search_res = {'Count':0}
 t2_search_res = {'Count':2, 'IdList':['seq1', 'seq2']}
 t3_search_res = {'Count':3, 'IdList':['seq1', 'seq2', 'seq3']}
+
+# Example seqrecord for findgeneinseq
+with open(os.path.join('data',"test_findgeneinseq_examplesequence.p"),\
+	"rb") as file:
+	sequence = pickle.load(file)
 
 # Dummy seq records for download
 class dummy_Seq(object):
@@ -92,6 +97,11 @@ maxtrys = 100
 maxlen = 2000
 minlen = 300
 
+# dictionary variables
+namesdict = {"species1":{'txids':['1','2']}}
+allrankids = [1, 2, 3]
+genedict = {'gene1':{'taxid':'3','names':['name1', 'name2']}}
+
 class DownloadTestSuite(unittest.TestCase):
 
 	def setUp(self):
@@ -111,6 +121,10 @@ class DownloadTestSuite(unittest.TestCase):
 		self.seq3 = seq3
 		self.sequences = sequences
 		self.taxids = taxids
+		self.record = sequence
+		self.namesdict = namesdict
+		self.allrankids = allrankids
+		self.genedict = genedict
 
 	def test_downloader_private_buildsearchterm_thoroughness1(self):
 		res = self.downloader._buildSearchTerm(self.taxids, 1)
@@ -138,11 +152,18 @@ class DownloadTestSuite(unittest.TestCase):
 		self.assertTrue(all(res_filtered))
 
 	def test_downloader_private_findgeneinseq(self):
-		pass
+		# change gene names for test
+		gene_names = self.downloader.gene_names
+		self.downloader.gene_names = ['COI']
+		res = self.downloader._findGeneInSeq(self.record)
+		self.downloader.gene_names = gene_names
+		# I know that the COI sequence is 1545bp (5350..6894)
+		# (http://www.ncbi.nlm.nih.gov/nuccore/AM711897.1)
+		self.assertEqual(len(res), 1545)
 
 	def test_downloader_private_parse(self):
 		# seq3, a list of SeqRecords of which the third is the right
-		#  size and contains no Ns
+		#  size and contains no Nste
 		res = self.downloader._parse(self.seq3)
 		self.assertIsNotNone(res)
 
@@ -158,7 +179,9 @@ class DownloadTestSuite(unittest.TestCase):
 		self.assertEqual(len(res), 3)
 
 	def test_findbestgenes(self):
-		pass
+		res = dtools.findBestGenes(self.namesdict, self.genedict, 3,\
+		 self.allrankids, minnseq = 1, minpwithseq = 0.5)
+		self.assertEqual(res[0], 'gene1')
 
 if __name__ == '__main__':
     unittest.main()
