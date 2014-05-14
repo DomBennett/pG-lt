@@ -36,16 +36,12 @@ nosetests.xml
 4_phylogeny
 requires
 
-# pickle
-*p
-
 # Data
 *.tre
 *.txt
 *.fasta
 *.faa
 *phylip*
-*.p
 
 # Sublime
 *.sublime-workspace
