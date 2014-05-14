@@ -97,7 +97,8 @@ scaffold[TI] NOT assembly[TI] NOT unverified[TI]".format(taxids_term, gene_term)
 		return filtered,sequences
 
 	def _findGeneInSeq(self, record):
-		"""Extract gene sequence from larger sequence by searching features."""
+		"""Extract gene sequence from larger sequence (e.g. genomes) by \
+searching features."""
 		try:
 			if record.features:
 				for feature in record.features:
