@@ -3,40 +3,68 @@ Tests for Phylogeny tools.
 """
 
 import unittest,pickle,os
+from Bio import Phylo
 import mpe.tools.phylogeny as ptools
 
+## Mock data
 with open(os.path.join("data","test_alignment.p"),\
 	"rb") as file:
 	alignment = pickle.load(file)
 
-# TODO: create dummy phylogeny
-# TODO: create dummy alignments
-# TODO: create taxonomic tree
+with open(os.path.join("data","test_alignments.p"),\
+	"rb") as file:
+	alignments = pickle.load(file)
 
-partitions = [0, 1760, 3141]
+with open(os.path.join("data","test_phylo.p"),\
+	"rb") as file:
+	phylo = pickle.load(file)
+
+partitions = [0, 1761, 3141]
 
 class DownloadTestSuite(unittest.TestCase):
 
 	def setUp(self):
 		self.partitions = partitions
 		self.alignment = alignment
+		self.phylo = phylo
+		self.alignment = alignment
+		self.alignments = alignments
+		self.constraint_opt = " -g constraint.tre"
 
 	def test_getbranchlengths(self):
-		pass
+		# 15 tips, one in-group, one root
+		# lengths are all scaled to 1
+		# total branch length should equal 17
+		res = ptools.getBranchLengths(self.phylo)
+		self.assertEqual(sum(res), 17)
 
 	def test_goodphylogenytest(self):
-		pass
-
-	def test_genconstrainttree(self):
-		pass
+		res = ptools.goodPhylogenyTest(self.phylo, 0.5)
+		self.assertTrue(res)
 
 	def test_concatenatealignments(self):
-		pass
+		res_alignment,res_partitions = \
+			ptools.concatenateAlignments(self.alignments)
+		self.assertEqual(res_partitions, self.partitions)
+		seq = self.alignment[0]
+		for each in res_alignment:
+			if each.id == seq.id:
+				res_seq = each
+		self.assertEqual(str(res_seq.seq), str(seq.seq))
+		
+	def test_genconstrainttree(self):
+		# 4 tips not present in alignment
+		res_opt = ptools.genConstraintTree(self.alignment,\
+			os.path.join('data', 'test_phylo.tre'))
+		with open("constraint.tre", "r") as file:
+			res_tree = Phylo.read(file, "newick")
+		self.assertEqual(len(res_tree.get_terminals()), 11)
+		self.assertEqual(res_opt, self.constraint_opt)
 
 	def test_raxml(self):
-		# TODO: add outgroup + constraint
 		phylo = ptools.RAxML(self.alignment,\
-			partitions = self.partitions)
+			partitions = self.partitions, outgroup = \
+			"Ignatius_tetrasporus", constraint = self.constraint_opt)
 		self.assertTrue(phylo)
 
 if __name__ == '__main__':
