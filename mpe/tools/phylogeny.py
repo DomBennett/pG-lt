@@ -143,7 +143,7 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 	input_file = 'phylogeny_in.phylip'
 	output_file = 'phylogeny_out'
 	file_line = ' -s ' + input_file + ' -n ' + output_file
-	options = ' -p ' + str(random.randint(0,10000000))
+	options = ' -p ' + str(random.randint(0,10000000)) + ' -T 2'
 	if outgroup:
 		options += ' -o ' + outgroup
 	with open(input_file, "w") as file:
@@ -155,8 +155,8 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 	if partitions:
 		with open("partitions.txt", 'w') as f:
 			for i in range(0, len(partitions)-1):
-				f.write("DNA, position" + str(partitions[i]) + " = " + str(partitions[i]+1) +\
-					"-" + str(partitions[i+1]) + "\n")
+				f.write("DNA, position" + str(partitions[i]+1) + " = "\
+				 + str(partitions[i]+1) + "-" + str(partitions[i+1]) + "\n")
 		options += " -q " + "partitions.txt"
 	if constraint:
 		options += constraint
