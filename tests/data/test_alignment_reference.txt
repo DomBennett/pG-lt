@@ -1,0 +1,9 @@
+TreeBASE (cc) 1994-2008
+
+Study reference:
+Skaloud P., Kalina T., Nemjova K., De clerck O., & Leliaert F. 2012. Morphology and
+phylogenetic position of the freshwater green microalgae Chlorochytrium (Chlorophyceae)
+and Scotinosphaera (Scotinosphaerales, ord. nov., Ulvophyceae). Journal
+of Phycology, .
+
+TreeBASE Study URI:  http://purl.org/phylo/treebase/phylows/study/TB2:S13318]
