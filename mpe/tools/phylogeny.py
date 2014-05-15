@@ -135,7 +135,8 @@ def concatenateAlignments(alignments):
 		alignment.append(sequence)
 	# Get partitions
 	lengths = [e.get_alignment_length() for e in alignments]
-	partitions = [0].append(np.cumsum(lengths))
+	partitions = [0]
+	partitions.extend(list(np.cumsum(lengths)))
 	return alignment,partitions
 
 def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=999999999):
@@ -176,7 +177,7 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 		for each in all_files:
 			if re.search("(RAxML)", each):
 				os.remove(each)
-			if "In.phylip.reduced" == each:
+			if re.search("\.reduced$", each):
 				os.remove(each)
 		return tree
 	else:
