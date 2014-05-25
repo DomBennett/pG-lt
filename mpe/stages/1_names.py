@@ -6,7 +6,7 @@
 ## Packages
 import os, csv, pickle, shutil
 import mpe.tools.names as ntools
-from mpe.tools.taxon_names_resolver import TaxonNamesResolver
+from taxon_names_resolver import Resolver
 
 ## Print stage
 print "\n\nStage 1: names resolution\n"
@@ -28,7 +28,7 @@ with open(".terms.p", "rb") as file:
 	terms = pickle.load(file)
 
 ## Parameters
-ntools.Entrez.email = paradict["email"]
+ntools.etools.Entrez.email = paradict["email"]
 
 ## Process
 print 'Searching for taxids'
@@ -36,7 +36,7 @@ try:
 	parentid = int(paradict["parentid"])
 except:
 	parentid = False
-resolver = TaxonNamesResolver(terms = terms, datasource = "NCBI", taxon_id = parentid)
+resolver = Resolver(terms = terms, datasource = "NCBI", taxon_id = parentid)
 resolver.main()
 print "Generating names dictionary"
 namesdict,allrankids = ntools.genNamesDict(resolver)
