@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 ## MPE: Run stage
 ## D.J. Bennett
 ## 25/03/2014
@@ -9,8 +9,21 @@ from mpe import _PARS as default_pars
 from mpe import _GPARS as default_gpars
 
 def main():
-	# Check args
 	args = parser.parse_args()
+	if args.names:
+		try:
+			terms = []
+			with open(args.names) as names:
+				for name in names:
+					terms.append(name.strip())
+			terms = [term for term in terms if not term == '']
+		except IOError:
+			print "Names file could not be opened. File: \
+[{0}]".args.names
+			sys.exit()
+	else:
+		print "No names file given! Type 'MPE.py -h' for help."
+		sys.exit()
 	if args.parameters:
 		parameters = args.parameters
 	else:
@@ -19,16 +32,6 @@ def main():
 		genes = args.genes
 	else:
 		genes = default_gpars
-	# Input
-	try:
-		terms = []
-		with open(args.names) as names:
-			for name in names:
-				terms.append(name.strip())
-		terms = [term for term in terms if not term == '']
-	except IOError:
-		print "Names file could not be opened. File: [{0}]".args.names
-		sys.exit()
 	try:
 	 	genedict = {}
 	 	with open(genes, 'rb') as csvfile:
@@ -81,10 +84,12 @@ def main():
 		Stager.run_all(0)
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(description="Mass Phylogeny Estimation (MPE) - an automated pipeline\
-		for the generation of phylogenies from taxonomic names (Author: D.J. Bennett).")
+	parser = argparse.ArgumentParser(description="Mass Phylogeny Estimation (MPE) -\
+an automated pipeline for the generation of phylogenies from taxonomic names (Author:\
+ D.J. Bennett).")
 	parser.add_argument("-names", "-n", help=".txt file of taxonomic names.")
 	parser.add_argument("-parameters", "-p", help=".csv file of parameters.")
 	parser.add_argument("-genes", "-g", help=".csv file of gene parameters")
-	parser.add_argument("-restart", "-r", action='store_true', default = False, help="restart process from last completed stage")
+	parser.add_argument("-restart", "-r", action='store_true', default = False,\
+		help="restart process from last completed stage")
 	main()
