@@ -19,7 +19,7 @@ setup(
     packages = PACKAGES,
     package_dir = dict(zip (PACKAGES, PACKAGE_DIRS)),
     package_data = {'mpe':['parameters.csv','gene_parameters.csv']},
-    scripts = [os.path.join('mpe','MPE.py')],
+    scripts = ['MPE.py'],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 1 - Planning",
@@ -29,6 +29,7 @@ setup(
     install_requires=[
           # -*- Extra requirements: -*-
           'setuptools',
+          'taxon_names_resolver',
           'biopython',
           'dendropy',
           'numpy',
