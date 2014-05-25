@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 ## MPE Names tools
 ## D.J. Bennett
 ## 24/03/2014
@@ -25,14 +25,17 @@ def genTaxTree(resolver, namesdict, draw = False):
 	qnames = [re.sub("\s", "_", e) for e in qnames]
 	lineages = resolver.retrieve('classification_path_ids')
 	resolved_names_bool = [e in namesdict.keys() for e in qnames]
-	ranks = [ranks[ei] for ei,e in enumerate(resolved_names_bool) if e]
-	lineages = [lineages[ei] for ei,e in enumerate(resolved_names_bool) if e]
-	unresolved_names = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if not e]
+	ranks = [ranks[ei] for ei,e in enumerate(resolved_names_bool)\
+	if e]
+	lineages = [lineages[ei] for ei,e in enumerate(resolved_names_bool)\
+	if e]
+	unresolved_names = [qnames[ei] for ei,e in\
+	enumerate(resolved_names_bool) if not e]
 	idents = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if e]
 	statement = "Unresolved names: "
 	for each in unresolved_names:
 		statement += " " + each
-	print statement
+	#print statement
 	for i, lineage in enumerate(lineages):
 		lineage.reverse()
 		lineages[i] = lineage
@@ -54,17 +57,22 @@ def genTaxTree(resolver, namesdict, draw = False):
 	for i in range(len(lineages[0])):
 		for uniq in set([each[1][i] for each in line_obj]):
 			# find shared taxonomic groups
-			new_node = [each[0] for each in line_obj if each[1][i] == uniq]
+			new_node = [each[0] for each in line_obj if each[1][i]\
+			== uniq]
 			if len(new_node) > 1:
 				# extract shared lineage
-				lineage = [each[1] for each in line_obj if each[0] == new_node[0]]
+				lineage = [each[1] for each in line_obj if each[0]\
+				== new_node[0]]
 				# remove shareds from line_obj
-				line_obj = [each for each in line_obj if not each[0] in new_node]
+				line_obj = [each for each in line_obj if not each[0]\
+				in new_node]
 				# convert to strings
 				new_node = [str(each) for each in new_node]
-				new_node = [re.sub("\\s", "_", each) for each in new_node]
+				new_node = [re.sub("\\s", "_", each) for each\
+				in new_node]
 				# add new node to line_obj
-				new_node = ('(' + ','.join(new_node) + ')' + str(uniq), lineage[0])
+				new_node = ('(' + ','.join(new_node) + ')' +\
+					str(uniq), lineage[0])
 				line_obj.append(new_node)
 		if len(line_obj) < 1:
 			break
@@ -87,7 +95,7 @@ def genNamesDict(resolver):
 	non_unique_lineages = []
 	for i in range(len(lineages)):
 		query_line = lineages.pop(i)
-		best_bool = [len(lineages)]
+		best_bool = [True] * len(lineages)
 		j = 0
 		while j < len(lineages):
 			subj_line = lineages[j]
@@ -104,7 +112,8 @@ def genNamesDict(resolver):
 		txid = query_line[best_bool.index(True)]
 		rank = ranks[i][best_bool.index(True)]
 		rname = r_names[i][best_bool.index(True)]
-		namesdict[q_names[i]] = {"txids" : [txid], "unique_name" : rname, "rank" : rank}
+		namesdict[q_names[i]] = {"txids" : [txid], "unique_name" : rname,\
+		"rank" : rank}
 	if non_unique_lineages:
 		nul_ids = [lineages[e][-1] for e in non_unique_lineages]
 		nul_qnames = [q_names[e] for e in non_unique_lineages]
@@ -118,7 +127,8 @@ def genNamesDict(resolver):
 			# if none are in allrankids, must be unique
 			temp_children = [e for e in temp_children if e not in allrankids]
 			if len(temp_children) > 0:
-				namesdict[nul_qnames[i]] = {"txids" : temp_children, "unique_name" : "Non-unique resolution",\
+				namesdict[nul_qnames[i]] = {"txids" : temp_children,\
+				"unique_name" : "Non-unique resolution",\
 					"rank" : nul_ranks[i]}
 			i += 1
 	# get outgroup
@@ -134,8 +144,6 @@ def genNamesDict(resolver):
 	temp_children = [int(e) for e in temp_children]
 	# if none are in allrankids, must be unique
 	temp_children = [e for e in temp_children if e != parentid]
-	namesdict["outgroup"] = {"txids" : temp_children, "unique_name" : "outgroup", "rank" : "outgroup"}
+	namesdict["outgroup"] = {"txids" : temp_children, "unique_name" :\
+	"outgroup", "rank" : "outgroup"}
 	return namesdict,allrankids
-
-if __name__ == '__main__':
-	pass
