@@ -191,19 +191,23 @@ searching features."""
 		return None
 
 ## Functions
-def findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq = 1, minpwithseq = 0.5):
-	"""Return suitable genes for phylogeny by searching for matches in GenBank"""
+def findBestGenes(namesdict, genedict, thoroughness, allrankids,\
+	minnseq = 1, minpwithseq = 0.5, verbose = True):
+	"""Return suitable genes for phylogeny by searching for \
+matches in GenBank"""
 	alltipids = [namesdict[e]["txids"] for e in namesdict.keys()]
 	genes = []
 	for gene in genedict.keys():
-		print " .... checking [{0}]".format(gene)
+		if verbose:
+			print " .... checking [{0}]".format(gene)
 		taxid = genedict[gene]["taxid"]
 		if int(taxid) in allrankids:
 			gene_bool = []
 			for tipids in alltipids:
 				downloader = Downloader(gene_names = genedict[gene]["names"],\
-					nseqs = 0, thoroughness = thoroughness, maxpn = 0, seedsize = 0, maxtrys = 0,\
-					mingaps = 0, minoverlap = 0, maxlen = 0, minlen = 0)
+					nseqs = 0, thoroughness = thoroughness, maxpn = 0,\
+					seedsize = 0, maxtrys = 0, mingaps = 0, minoverlap = 0,\
+					maxlen = 0, minlen = 0)
 				res = downloader._search(tipids)
 				gene_bool.append(len(res) >= minnseq)
 			pwithseq = float(sum(gene_bool))/len(alltipids)
