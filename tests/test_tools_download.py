@@ -5,6 +5,9 @@ Tests for Download tools.
 import unittest,pickle,os
 import mpe.tools.download as dtools
 
+## Dirs
+working_dir = os.path.dirname(__file__)
+
 ## Dummy data and stubs
 
 # expected terms and term search results
@@ -20,8 +23,8 @@ t2_search_res = {'Count':2, 'IdList':['seq1', 'seq2']}
 t3_search_res = {'Count':3, 'IdList':['seq1', 'seq2', 'seq3']}
 
 # Example seqrecord for findgeneinseq
-with open(os.path.join('data',"test_findgeneinseq_examplesequence.p"),\
-	"rb") as file:
+with open(os.path.join(os.path.dirname(__file__),'data',\
+	"test_findgeneinseq_examplesequence.p"),"rb") as file:
 	sequence = pickle.load(file)
 
 # Dummy seq records for download
@@ -79,11 +82,6 @@ def dummy_align(sequences):
 def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen):
 	return alignment
 
-dtools.etools.eSearch = dummy_eSearch
-dtools.etools.eFetch = dummy_eFetch
-dtools.atools.align = dummy_align
-dtools.atools.checkAlignment = dummy_checkAlignment
-
 # downloader init variables
 taxids = ['1', '2']
 gene_names = ['name1', 'name2']
@@ -105,6 +103,14 @@ genedict = {'gene1':{'taxid':'3','names':['name1', 'name2']}}
 class DownloadTestSuite(unittest.TestCase):
 
 	def setUp(self):
+		self.true_eSearch = dtools.etools.eSearch
+		self.true_eFetch = dtools.etools.eFetch
+		self.true_align = dtools.atools.align
+		self.true_checkAlignment = dtools.atools.checkAlignment
+		dtools.etools.eSearch = dummy_eSearch
+		dtools.etools.eFetch = dummy_eFetch
+		dtools.atools.align = dummy_align
+		dtools.atools.checkAlignment = dummy_checkAlignment
 		# mock Downloader instance
 		self.downloader = dtools.Downloader (gene_names = gene_names,\
 			nseqs = nseqs, thoroughness = thoroughness,\
@@ -125,6 +131,13 @@ class DownloadTestSuite(unittest.TestCase):
 		self.namesdict = namesdict
 		self.allrankids = allrankids
 		self.genedict = genedict
+
+	def tearDown(self):
+		#repatch
+		dtools.etools.eSearch = self.true_eSearch
+		dtools.etools.eFetch = self.true_eFetch
+		dtools.atools.align = self.true_align
+		dtools.atools.checkAlignment = self.true_checkAlignment
 
 	def test_downloader_private_buildsearchterm_thoroughness1(self):
 		res = self.downloader._buildSearchTerm(self.taxids, 1)
@@ -180,7 +193,7 @@ class DownloadTestSuite(unittest.TestCase):
 
 	def test_findbestgenes(self):
 		res = dtools.findBestGenes(self.namesdict, self.genedict, 3,\
-		 self.allrankids, minnseq = 1, minpwithseq = 0.5)
+		 self.allrankids, minnseq = 1, minpwithseq = 0.5, verbose = False)
 		self.assertEqual(res[0], 'gene1')
 
 if __name__ == '__main__':

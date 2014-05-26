@@ -8,13 +8,16 @@ import taxon_names_resolver as tnr
 
 ntools.etools.Entrez.email = "python.unittests@mpe.program"
 
+## Dirs
+working_dir = os.path.dirname(__file__)
+
 ## Test data
-with open(os.path.join('data','test_search.json'),\
-	'r') as file:
+with open(os.path.join(working_dir,'data',\
+	'test_search.json'),'r') as file:
 	res = json.load(file)
 
-with open(os.path.join('data', 'test_namesdict.p'),\
-	'r') as file:
+with open(os.path.join(working_dir,\
+	'data','test_namesdict.p'),'r') as file:
 	exp_namesdict = pickle.load(file)
 
 terms = ['GenusA speciesA', 'GenusA speciesB', 'GenusA speciesC',\
@@ -42,7 +45,7 @@ class Dummy_GnrDataSources(object):
 		else:
 			return [4]
 
-class NamesToolsTestSuite(unittest.TestCase):
+class NamesTestSuite(unittest.TestCase):
 
 	def setUp(self):
 		self.True_GnrDataSources = tnr.gnr_tools.GnrDataSources

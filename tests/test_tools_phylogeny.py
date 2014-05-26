@@ -6,22 +6,25 @@ import unittest,pickle,os
 from Bio import Phylo
 import mpe.tools.phylogeny as ptools
 
+## Dirs
+working_dir = os.path.dirname(__file__)
+
 ## Mock data
-with open(os.path.join("data","test_alignment.p"),\
-	"rb") as file:
+with open(os.path.join(working_dir,"data",\
+	"test_alignment.p"),"rb") as file:
 	alignment = pickle.load(file)
 
-with open(os.path.join("data","test_alignments.p"),\
-	"rb") as file:
+with open(os.path.join(working_dir,"data",\
+	"test_alignments.p"),"rb") as file:
 	alignments = pickle.load(file)
 
-with open(os.path.join("data","test_phylo.p"),\
-	"rb") as file:
+with open(os.path.join(working_dir,"data",\
+	"test_phylo.p"),"rb") as file:
 	phylo = pickle.load(file)
 
 partitions = [0, 1761, 3141]
 
-class DownloadTestSuite(unittest.TestCase):
+class PhylogenyTestSuite(unittest.TestCase):
 
 	def setUp(self):
 		self.partitions = partitions
@@ -29,7 +32,7 @@ class DownloadTestSuite(unittest.TestCase):
 		self.phylo = phylo
 		self.alignment = alignment
 		self.alignments = alignments
-		self.constraint_opt = " -g constraint.tre"
+		self.constraint_opt = ' -g constraint.tre'
 
 	def test_getbranchlengths(self):
 		# 15 tips, one in-group, one root
@@ -55,7 +58,8 @@ class DownloadTestSuite(unittest.TestCase):
 	def test_genconstrainttree(self):
 		# 4 tips not present in alignment
 		res_opt = ptools.genConstraintTree(self.alignment,\
-			os.path.join('data', 'test_phylo.tre'))
+			os.path.join(working_dir, 'data',\
+				'test_phylo.tre'))
 		with open("constraint.tre", "r") as file:
 			res_tree = Phylo.read(file, "newick")
 		self.assertEqual(len(res_tree.get_terminals()), 11)
@@ -68,4 +72,4 @@ class DownloadTestSuite(unittest.TestCase):
 		self.assertTrue(phylo)
 
 if __name__ == '__main__':
-    unittest.main()
+	unittest.main()
