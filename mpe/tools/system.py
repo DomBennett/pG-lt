@@ -1,7 +1,9 @@
-#!/usr/bin/python
-## MPE System tools
+#! /bin/usr/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE system tools
+"""
 
 ## Packages
 import subprocess,threading,sys,os,platform

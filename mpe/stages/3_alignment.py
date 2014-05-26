@@ -1,7 +1,9 @@
-#!/usr/bin/python
-## MPE Stage 3: Aligning sequences
+#! /usr/bin/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE Stage 3: Aligning sequences
+"""
 
 ## Print stage
 print "\n\nStage 3: alignment\n"

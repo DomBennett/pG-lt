@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 26/05/2014
 """
-Setup.py for MPE.
+Setup.py for MPE
 """
 import os,subprocess,re,sys
 from setuptools import setup, find_packages
@@ -49,11 +49,11 @@ PACKAGE_DIRS = [p.replace(".", os.path.sep) for p in PACKAGES]
 ## Setup
 setup(
 	name = "mpe",
-	version = "0.0.1",
+	version = "1.0.0",
 	author = "Dominic John Bennett",
 	author_email = "dominic.john.bennett@gmail.com",
 	description = ("An automated pipeline for phylogeney generation."),
-	license = "No license",
+	license = "LICENSE.txt",
 	keywords = "ecology evolution conservation phylogenetics",
 	url = "https://github.com/DomBennett/MassPhylogenyEstimation",
 	packages = PACKAGES,

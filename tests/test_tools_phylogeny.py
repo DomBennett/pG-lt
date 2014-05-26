@@ -1,5 +1,8 @@
+#! /bin/usr/env python
+## D.J. Bennett
+## 26/05/2014
 """
-Tests for Phylogeny tools.
+Tests for phylogeny tools.
 """
 
 import unittest,pickle,os

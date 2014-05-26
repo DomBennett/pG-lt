@@ -1,5 +1,8 @@
+#! /bin/usr/env python
+## D.J. Bennett
+## 26/05/2014
 """
-Tests for Alignment tools.
+Tests for alignment tools.
 """
 
 import unittest,os,re,copy,pickle,random

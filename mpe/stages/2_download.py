@@ -1,7 +1,9 @@
-#!/usr/bin/python
-## MPE Stage 2: Sequence Download
+#! /usr/bin/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE Stage 2: Sequence Download
+"""
 
 ## Print stage
 print "\n\nStage 2: sequence download\n"

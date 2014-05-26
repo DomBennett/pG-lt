@@ -1,4 +1,10 @@
-#
+#! /bin/usr/env python
+## D.J. Bennett
+## 26/05/2014
+"""
+MPE tools
+"""
+
 from mpe.tools import names
 from mpe.tools import taxon_names_resolver
 from mpe.tools import alignment

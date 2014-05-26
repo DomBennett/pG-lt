@@ -1,7 +1,9 @@
-#!/usr/bin/python
-## MPE Alignment tools
+#! /bin/usr/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE alignment tools
+"""
 
 ## Packages
 import os, re, random

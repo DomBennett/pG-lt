@@ -1,7 +1,9 @@
-#!/usr/bin/python
-## MPE Stage 1: Names resolution
+#! /usr/bin/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE Stage 1: Names resolution
+"""
 
 ## Packages
 import os, csv, pickle, shutil

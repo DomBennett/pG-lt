@@ -1,5 +1,8 @@
+#! /bin/usr/env python
+## D.J. Bennett
+## 26/05/2014
 """
-Tests for Download tools.
+Tests for download tools.
 """
 
 import unittest,pickle,os

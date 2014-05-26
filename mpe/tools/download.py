@@ -1,7 +1,9 @@
-#!/usr/bin/python
-## MPE Download tools
+#! /bin/usr/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE download tools
+"""
 
 ## Packages
 import re,random

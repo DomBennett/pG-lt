@@ -1,3 +1,10 @@
+#! /usr/bin/env python
+## D.J. Bennett
+## 26/04/2014
+"""
+MPE stages
+"""
+
 import os
 from mpe import _ROOT
 

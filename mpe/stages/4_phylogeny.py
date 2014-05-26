@@ -1,7 +1,9 @@
-#!/usr/bin/python
-## MPE Stage 4: Phylogeny generation
+#! /usr/bin/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE Stage 4: Phylogeny generation
+"""
 
 ## Print stage
 print "\n\nStage 4: phylogenies\n"

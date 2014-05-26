@@ -1,7 +1,9 @@
-#! /usr/bin/env python
-## MPE Names tools
+#! /bin/usr/env python
 ## D.J. Bennett
 ## 24/03/2014
+"""
+MPE names tools
+"""
 
 ## Packages
 import collections, re
