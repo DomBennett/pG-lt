@@ -46,6 +46,7 @@ if not all_present:
 PACKAGES = find_packages()
 PACKAGE_DIRS = [p.replace(".", os.path.sep) for p in PACKAGES]
 
+## Setup
 setup(
 	name = "mpe",
 	version = "0.0.1",
