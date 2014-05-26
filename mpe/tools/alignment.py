@@ -27,8 +27,10 @@ class MinSpeciesError(Exception):
 
 class SeqStore(dict):
 	"""Store species' gene sequences with functions for pulling sequences for \
-	alignments and adding penalties for sequences that did not align"""
-	def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap):
+alignments and adding penalties for sequences that did not align"""
+	def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap,\
+		verbose = True):
+		self.verbose = verbose
 		self.minfails = minfails # minimum number of fails in a row
 		self.dspp = [] # species dropped
 		self.nseqs = 0 # counter for seqs
@@ -102,18 +104,20 @@ class SeqStore(dict):
 			return False
 
 	def _blast(self, alignment, sequences):
-		"""Match a sequence to an alignment with stand-alone blast to determine if sequences overlap.
-		Return indexes of overlapping sequences."""
+		"""Match a sequence to an alignment with stand-alone blast to \
+determine if sequences overlap. Return indexes of overlapping sequences."""
 		summary_align = AlignInfo.SummaryInfo(alignment)
-		consensus = SeqRecord(summary_align.gap_consensus(ambiguous = 'N', threshold = 0.5),\
-			id = "con", name = "Alignment consensus", description = "ambiguous = N, threshold = 0.5")
+		consensus = SeqRecord(summary_align.gap_consensus(ambiguous = \
+			'N', threshold = 0.5), id = "con", name = "Alignment consensus",\
+		description = "ambiguous = N, threshold = 0.5")
 		#print consensus.format("fasta")
 		#AlignIO.write(alignment, "subj.fasta", "fasta")
 		SeqIO.write(consensus, "query.fasta", "fasta")
 		SeqIO.write(sequences, "subj.fasta", "fasta")
 		sresults = []
 		try:
-			output = NcbiblastnCommandline(query = "query.fasta", subject = "subj.fasta", outfmt = 5)()[0]
+			output = NcbiblastnCommandline(query = "query.fasta",\
+				subject = "subj.fasta", outfmt = 5)()[0]
 		except ApplicationError:
 			print "BLAST error"
 			return False
@@ -138,19 +142,20 @@ class SeqStore(dict):
 		"""Check nfails, drop sequences and species"""
 		spp = self.keys()
 		for sp in spp:
-			to_drop = []
-			for i in range(len(self[sp][0])):
-				if self[sp][0][i][1] > self.minfails:
-					print "Dropping [{0}] for [{1}] as nfails is [{2}]".\
-						format(self[sp][0][i][0].description,sp, self[sp][0][i][1])
-					to_drop.append(i)
-			for i in to_drop:
-				del self[sp][0][i]
+			to_drop = [ei for ei,e in enumerate(self[sp][0])\
+				if e[1] > self.minfails]
+			if self.verbose:
+				for i in to_drop:
+					print "Dropping [{0}] for [{1}] as nfails is \
+[{2}]".format(self[sp][0][i][0].description,sp,self[sp][0][i][1])
+			self[sp][0] = [e for ei,e in enumerate(self[sp][0])\
+				if ei not in to_drop]
 			if len(self[sp][0]) < 1:
 				if sp == "outgroup":
 					raise OutgroupError
 				else:
-					print "Dropped [{0}]".format(sp)
+					if self.verbose:
+						print "Dropped [{0}]".format(sp)
 					self.dspp.append(sp)
 					self.sppool = [e for e in self.sppool if e != sp]
 					del self[sp]
@@ -159,8 +164,9 @@ class SeqStore(dict):
 
 class Aligner(object):
 	"""Build alignments from seqstore"""
-	def __init__(self, seqstore, mingaps, minoverlap, minseedsize, maxtrys,\
-		maxseedtrys):
+	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
+		maxtrys, maxseedtrys, verbose = True):
+		self.verbose = verbose
 		self.seqstore = seqstore
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
@@ -171,20 +177,19 @@ class Aligner(object):
 		#self.seedsize = 5
 		self.timeout = 99999999
 		self.silent = False
-		self.verbose = True
 
 	def _check(self, alignment):
 		return checkAlignment(alignment, self.mingaps, self.minoverlap,\
 			self.minlen)
 
 	def _return(self, store):
-		"""Return best alignment from a list of alignments based on: presence of outgroup,
-		number of species and length of alignment"""
+		"""Return best alignment from a list of alignments based on:\
+presence of outgroup, number of species and length of alignment"""
 		# keep alignments with outgroups
 		# keep alignments with more than 5 species
 		store = [a for a in store if "outgroup" in\
 					  [e.id for e in a._records]]
-		if len(store) == 0:
+		if len(store) == 0 and self.verbose:
 			print "No outgroup!"
 		store = [e for e in store if len(e) >= 5]
 		if len(store) == 0:
@@ -202,7 +207,8 @@ class Aligner(object):
 		"""Incrementally build an alignment by adding sequences to a seed alignment"""
 		trys = seedtrys = 0
 		store = []
-		print "........ seed phase: [{0}] seed size".format(self.seedsize)
+		if self.verbose:
+			print "........ seed phase: [{0}] seed size".format(self.seedsize)
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
@@ -226,7 +232,8 @@ class Aligner(object):
 				if self.maxtrys < trys:
 					return None
 		trys = 0
-		print  "........ add phase : [{0}] species".format(len(alignment))
+		if self.verbose:
+			print  "........ add phase : [{0}] species".format(len(alignment))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			#print "Number of species: {0}".format(len(alignment))
@@ -248,7 +255,8 @@ class Aligner(object):
 				alignment = store[-1]
 				trys += 1
 			else:
-				print "Maxtrys hit!"
+				if self.verbose:
+					print "Maxtrys hit!"
 				# when the maximum number of species is not reached...
 				# ... return the best alignment in the alignment store
 				return self._return(store)
@@ -303,7 +311,7 @@ def add(alignment, sequence):
 
 def checkAlignment(alignment, mingaps, minoverlap, minlen):
 	"""Determine if an alignment is good or not based on given parameters.
-	Return bool"""
+Return bool"""
 	def calcOverlap(columns):
 		pcolgaps = []
 		for i in columns:
