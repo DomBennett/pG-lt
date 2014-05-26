@@ -143,6 +143,3 @@ def findChildren(taxid, target = 100, next = False):
 		return findNext(frecord)
 	else:
 		return findTillTarget([taxid])
-
-if __name__ == '__main__':
-	pass
