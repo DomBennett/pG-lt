@@ -32,6 +32,8 @@ class Tee(object):
 		self.stdout.flush()
 
 class Stager(object):
+	"""Stager class : runs each file in stage folder.\
+Adapted from code written by L. Hudson."""
 	STAGES = stages.STAGES
 
 	def __init__(self, stage):
