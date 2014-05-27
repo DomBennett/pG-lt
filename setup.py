@@ -32,14 +32,14 @@ all_present = True
 if getVersion(['mafft', '-u']) < 7.0:
 	print 'No MAFFT detected -- requires MAFFT v7+'
 	all_present = False
-if getVersion(['raxml', '-version']) < 8.0:
-	print 'No RAxML detected -- requires RAxML v8+'
+if getVersion(['raxml', '-version']) < 7.0:
+	print 'No RAxML detected -- requires RAxML v7+'
 	all_present = False
 if getVersion(['blastn', '-h']) < 2.0:
 	print 'No Stand-alone BLAST detected -- requires BLAST suite v2+'
 	all_present = False
 if not all_present:
-	print 'Unable to install! Please install missing external programs'
+	print 'Unable to install/test! Please install missing external programs'
 	sys.exit()
 
 ## Package info
