@@ -35,6 +35,7 @@ from mpe import _GPARS as default_gpars
 
 def main():
 	args = parser.parse_args()
+	print args
 	if args.names:
 		try:
 			terms = []
@@ -44,7 +45,7 @@ def main():
 			terms = [term for term in terms if not term == '']
 		except IOError:
 			print "Names file could not be opened. File: \
-[{0}]".args.names
+[{0}]".format(args.names)
 			sys.exit()
 	else:
 		print "No names file given! Type 'MPE.py -h' for help."
