@@ -35,7 +35,7 @@ class PhylogenyTestSuite(unittest.TestCase):
 		self.phylo = phylo
 		self.alignment = alignment
 		self.alignments = alignments
-		self.constraint_opt = ' -g constraint.tre'
+		self.constraint_opt = ' -g .constraint.tre'
 
 	def test_getbranchlengths(self):
 		# 15 tips, one in-group, one root
@@ -63,7 +63,7 @@ class PhylogenyTestSuite(unittest.TestCase):
 		res_opt = ptools.genConstraintTree(self.alignment,\
 			os.path.join(working_dir, 'data',\
 				'test_phylo.tre'))
-		with open("constraint.tre", "r") as file:
+		with open(".constraint.tre", "r") as file:
 			res_tree = Phylo.read(file, "newick")
 		self.assertEqual(len(res_tree.get_terminals()), 11)
 		self.assertEqual(res_opt, self.constraint_opt)

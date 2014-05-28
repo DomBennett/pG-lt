@@ -13,6 +13,7 @@ from Bio import SeqIO
 ## Globals
 max_check = 4
 download_counter = 0
+verbose = True
 
 ## Functions
 def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
@@ -31,7 +32,8 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
 	global download_counter
 	while finished <= max_check:
 		if download_counter > 1000:
-			print " ---- download counter hit: waiting 60 seconds ----"
+			if verbose:
+				print " ---- download counter hit: waiting 60 seconds ----"
 			download_counter = 0
 			time.sleep(60)
 		try:
@@ -74,7 +76,8 @@ def eFetch(ncbi_id, db = "nucleotide"):
 	global download_counter
 	while finished <= max_check:
 		if download_counter > 1000:
-			print " ---- download counter hit: waiting 60 seconds ----"
+			if verbose:
+				print " ---- download counter hit: waiting 60 seconds ----"
 			download_counter = 0
 			time.sleep(60)
 		try:

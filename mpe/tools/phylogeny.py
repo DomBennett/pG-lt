@@ -104,12 +104,12 @@ def genConstraintTree(alignment, taxontree_file):
 	tips_to_drop = [e for e in constraint_tips if not e in tip_names]
 	for tip in tips_to_drop:
 		constraint.prune(tip)
-	with open("constraint.tre", "w") as file:
+	with open(".constraint.tre", "w") as file:
 		Phylo.write(constraint, file, "newick")
 	if constraint.is_bifurcating():
-		return " -r constraint.tre"
+		return " -r .constraint.tre"
 	else:
-		return " -g constraint.tre"
+		return " -g .constraint.tre"
 
 def concatenateAlignments(alignments):
 	if len(alignments) == 1:
@@ -143,8 +143,8 @@ def concatenateAlignments(alignments):
 
 def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=999999999):
 	"""Adapted pG function: Generate phylogeny from alignment using RAxML (external program)."""
-	input_file = 'phylogeny_in.phylip'
-	output_file = 'phylogeny_out'
+	input_file = '.phylogeny_in.phylip'
+	output_file = '.phylogeny_out'
 	file_line = ' -s ' + input_file + ' -n ' + output_file
 	options = ' -p ' + str(random.randint(0,10000000)) + ' -T 2'
 	if outgroup:
@@ -156,11 +156,11 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 	else:
 		dnamodel = ' -m GTRGAMMA'
 	if partitions:
-		with open("partitions.txt", 'w') as f:
+		with open(".partitions.txt", 'w') as f:
 			for i in range(0, len(partitions)-1):
 				f.write("DNA, position" + str(partitions[i]+1) + " = "\
 				 + str(partitions[i]+1) + "-" + str(partitions[i+1]) + "\n")
-		options += " -q " + "partitions.txt"
+		options += " -q " + ".partitions.txt"
 	if constraint:
 		options += constraint
 	command_line = 'raxml' + file_line + dnamodel + options
@@ -171,9 +171,9 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 		with open('RAxML_bestTree.' + output_file, "r") as file:
 			tree = Phylo.read(file, "newick")	
 		if constraint:
-			os.remove('constraint.tre')
+			os.remove('.constraint.tre')
 		if partitions:
-			os.remove("partitions.txt")
+			os.remove(".partitions.txt")
 		os.remove(input_file)
 		all_files = os.listdir(os.getcwd())
 		for each in all_files:

@@ -15,7 +15,8 @@ from Bio.SeqFeature import SeqFeature
 class Downloader(object):
 	"""Download sequences given taxids and gene_names"""
 	def __init__(self, gene_names, nseqs, thoroughness, maxpn, seedsize, maxtrys, \
-			mingaps, minoverlap, maxlen, minlen):
+			mingaps, minoverlap, maxlen, minlen, verbose = True):
+		self.verbose = verbose
 		self.gene_names = gene_names
 		self.nseqs = nseqs
 		self.max_thoroughness = thoroughness
@@ -171,7 +172,8 @@ searching features."""
 		while self.thoroughness < self.max_thoroughness:
 			seqids = self._search(taxids)
 			if len(seqids) >= 1000:
-				print "........ filtering"
+				if self.verbose:
+					print "........ filtering"
 				sequences = []
 				downloaded = []
 				lower = 0

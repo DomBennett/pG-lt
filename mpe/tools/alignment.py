@@ -114,18 +114,18 @@ determine if sequences overlap. Return indexes of overlapping sequences."""
 		description = "ambiguous = N, threshold = 0.5")
 		#print consensus.format("fasta")
 		#AlignIO.write(alignment, "subj.fasta", "fasta")
-		SeqIO.write(consensus, "query.fasta", "fasta")
-		SeqIO.write(sequences, "subj.fasta", "fasta")
+		SeqIO.write(consensus, ".query.fasta", "fasta")
+		SeqIO.write(sequences, ".subj.fasta", "fasta")
 		sresults = []
 		try:
-			output = NcbiblastnCommandline(query = "query.fasta",\
-				subject = "subj.fasta", outfmt = 5)()[0]
+			output = NcbiblastnCommandline(query = ".query.fasta",\
+				subject = ".subj.fasta", outfmt = 5)()[0]
 		except ApplicationError:
 			print "BLAST error"
 			return False
 		finally:
-			os.remove("query.fasta")
-			os.remove("subj.fasta")
+			os.remove(".query.fasta")
+			os.remove(".subj.fasta")
 		bresults = NCBIXML.parse(StringIO(output)) # BLAST records for each sequence
 		i = 0
 		for record in bresults:
@@ -266,8 +266,8 @@ presence of outgroup, number of species and length of alignment"""
 ## Functions
 def align(sequences):
 	"""Align sequences using mafft (external program)"""
-	input_file = "sequences_in.fasta"
-	output_file = "alignment_out.fasta"
+	input_file = ".sequences_in.fasta"
+	output_file = ".alignment_out.fasta"
 	command_line = '{0} --auto {1} > {2}'.format('mafft', input_file, output_file)
 	with open(input_file, "w") as file:
 		SeqIO.write(sequences, file, "fasta")
@@ -287,8 +287,8 @@ def align(sequences):
 
 def add(alignment, sequence):
 	"""Align sequence(s) to an alignment using mafft (external program)"""
-	alignment_file = "alignment_in.fasta"
-	sequence_file = "sequence_in.fasta"
+	alignment_file = ".alignment_in.fasta"
+	sequence_file = ".sequence_in.fasta"
 	output_file = "alignment_out.fasta" + '.fasta'
 	command_line = '{0} --auto --add {1} {2} > {3}'.format('mafft', sequence_file,\
 		alignment_file, output_file)
