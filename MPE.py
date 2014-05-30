@@ -34,7 +34,6 @@ import argparse
 from mpe.tools.system import Stager
 from mpe.tools.system import readArgs
 
-## Variables
 description = """
 MPE (D.J. Bennett (C) 2014)
 
@@ -42,33 +41,19 @@ A pipeline for the automated generation of phylogenies from taxonomic
 names through Mass Phylogeny Estimation.
 """
 
-##TODO: python interaction
-
-## Terminal interaction
-if __name__ == '__main__':
+def parseArgs():
+	"""Read arguments"""
 	parser = argparse.ArgumentParser(description=description)
 	parser.add_argument("-names", "-n", help=".txt file of taxonomic names.")
 	parser.add_argument("-parameters", "-p", help=".csv file of parameters.")
 	parser.add_argument("-genes", "-g", help=".csv file of gene parameters")
 	parser.add_argument("--verbose", help="increase output verbosity",
 					action="store_true")
-	parser.add_argument("-restart", "-r", action='store_true', default = False,\
-		help="restart process from last completed stage")
-	# Read args
-	args = parser.parse_args()
-	stage = readArgs(args)
-	# Print + run
-	if args.parameters:
-		parameters = args.parameters
-	else:
-		parameters = 'DEFAULT'
-	if args.genes:
-		genes = args.genes
-	else:
-		genes = 'DEFAULT'
+	parser.add_argument("-restart", "-r", help="restart from specified stage")
+	return parser
+
+if __name__ == '__main__':
 	print '\n' + description + '\n'
-	print 'Using ...'
-	print '.... [{0}] names'.format(args.names)
-	print '.... [{0}] parameters'.format(parameters)
-	print '.... [{0}] genes\n'.format(genes)
-	Stager.run_all(stage = stage, verbose = args.verbose)
+	parser = parseArgs()
+	stage,verbose = readArgs(parser.parse_args())
+	Stager.run_all(stage = stage, verbose = verbose)
