@@ -4,16 +4,13 @@
 """
 MPE stages
 """
-
-import os
-from mpe import _ROOT
-
-path = os.path.join(_ROOT, 'stages')
-STAGES = {'1':os.path.join(path, '1_names.py'),
-'2':os.path.join(path, '2_download.py'),
-'3':os.path.join(path,'3_alignment.py'),
-'4':os.path.join(path,'phylogeny.py')}
-
-del os
-del path
-del _ROOT
+# populate STAGES dictionary with run stage functions
+#  and output dirs
+import names_stage
+import download_stage
+import alignment_stage
+import phylogeny_stage
+STAGES = {'1': (names_stage.run, '1_names'),\
+'2': (download_stage.run, '2_download'),\
+'3' : (alignment_stage.run, '3_alignment'),\
+'4' : (phylogeny_stage.run, '4_phylogeny')}

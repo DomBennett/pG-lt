@@ -28,13 +28,15 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
+
+## Populate namespace
 # http://stackoverflow.com/questions/4519127/setuptools-package-data-folder-location
 import os
-
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 _PARS = os.path.join(_ROOT,'parameters.csv')
 _GPARS = os.path.join(_ROOT,'gene_parameters.csv')
-from mpe import tools
-from mpe import stages
-
+import tools
+import stages
+# add stages -- a dictionary of stage functions -- to Stager
+tools.system.Stager.STAGES = stages.STAGES
 del os

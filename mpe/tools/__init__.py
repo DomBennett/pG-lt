@@ -5,9 +5,9 @@
 MPE tools
 """
 
-from mpe.tools import names
-from mpe.tools import alignment
-from mpe.tools import entrez
-from mpe.tools import download
-from mpe.tools import phylogeny
-from mpe.tools import system
+import names
+import alignment
+import entrez
+import download
+import phylogeny
+import system
