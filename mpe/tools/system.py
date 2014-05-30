@@ -6,9 +6,9 @@ MPE system tools
 """
 
 ## Packages
-import subprocess,threading,sys,os,platform,csv,pickle,argparse
+import subprocess,threading,sys,os,platform,csv,pickle,logging
 from datetime import datetime
-from mpe import stages
+#from mpe import stages
 from mpe import _PARS as default_pars
 from mpe import _GPARS as default_gpars
 
@@ -16,31 +16,9 @@ from mpe import _GPARS as default_gpars
 class StageError(Exception):
 	pass
 
-class Tee(object):
-	"""Tee class: duplicate stdout"""
-	#http://stackoverflow.com/questions/616645/how-do-i-duplicate-sys-stdout-to-a-log-file-in-python/616686#616686
-	def __init__(self, path):
-		self.file = open(path, 'w')
-		self.stdout,sys.stdout = sys.stdout,self
-		self.stderr,sys.stderr = sys.stderr,self
-
-	def __enter__(self):
-		pass
-
-	def __exit__(self, type, value, traceback):
-		sys.stdout,sys.stderr = self.stdout,self.stderr
-		self.file.close()
-
-	def write(self, data):
-		self.file.write(data)
-		self.file.flush()
-		self.stdout.write(data)
-		self.stdout.flush()
-
 class Stager(object):
 	"""Stager class : runs each file in stage folder. Adapted from\
  code written by L. Hudson."""
-	STAGES = stages.STAGES
 
 	def __init__(self, stage, verbose = True):
 		self.verbose = verbose
@@ -48,42 +26,26 @@ class Stager(object):
 			raise StageError('Stage [{0}] not recognised'.format(stage))
 		else:
 			self.stage = stage
-			output_dir = os.path.split(self.STAGES[stage])[1]
-			self.output_dir = os.path.splitext(output_dir)[0]
+			self.output_dir = self.STAGES[stage][1]
 
 	def _time_string(self):
 		return datetime.today().strftime("%A, %d %B %Y %I:%M%p")
 
-	def _cmd(self, arg, duplicate = True):
-		if duplicate:
-			with Tee(os.path.join(self.output_dir, 'log.txt')):
-				# -u let's prints as the process runs
-				s = subprocess.Popen(['python', '-u', arg],\
-					stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-				while s.poll() is None:
-					line = s.stdout.readline()
-					print line[:-1]
-				if s.poll():
-					sys.exit(s.poll())
+	def _cmd(self):
+		logfile = os.path.join(self.output_dir, 'log.txt')
+		if self.verbose:
+			logging.basicConfig(filename = logfile, level=logging.INFO)
 		else:
-			with open(os.path.join(self.output_dir, 'log.txt'), 'w')\
-			as logfile:
-				s = subprocess.Popen(['python', '-u', arg],\
-					stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-				while s.poll() is None:
-					line = s.stdout.readline()
-					logfile.write(line)
-				if s.poll():
-					sys.exit(s.poll())
+			print ' .... working .... '
+			logging.basicConfig(filename = logfile, level=logging.INFO)
+		self.STAGES[self.stage][0]()
 
 	def run(self):
 		if not os.path.isdir(self.output_dir):
 			os.mkdir(self.output_dir)
 		print '\nStage [{0}] started at [{1}]'.format(self.stage,
 			self._time_string())
-		print ' .... working .... '
-		stagefile = self.STAGES[self.stage]
-		self._cmd(stagefile, duplicate = self.verbose)
+		self._cmd()
 		print 'Stage finished at [{0}]\n'.format(self._time_string())
 
 	@classmethod
@@ -130,6 +92,14 @@ class TerminationPipe(object):
 ## Functions
 def readArgs(args):
 	"""Safely read arguments write pickle files, return stage"""
+	if args.restart:
+		try:
+			stage = int(args.restart) - 1
+		except TypeError:
+			print "Restart must be numeric!"
+			sys.exit()
+		print "Restarting from stage: [{0}]\n".format(args.restart)
+		return stage,args.verbose
 	if args.names:
 		try:
 			terms = []
@@ -189,13 +159,17 @@ def readArgs(args):
 		pickle.dump(paradict, file)
 	with open(".terms.p", "wb") as file:
 		pickle.dump(terms, file)
-	stage = 0
-	if args.restart:
-		# Find current stage
-		if os.path.isfile('.stage.p'):
-			with open('.stage.p', 'rb') as file:
-				pickle.load(file)
-		if stage > 4:
-			print "All stages have already been run!"
-			sys.exit()
-	return stage
+	# Print
+	if args.parameters:
+		parameters = args.parameters
+	else:
+		parameters = 'DEFAULT'
+	if args.genes:
+		genes = args.genes
+	else:
+		genes = 'DEFAULT'
+	print 'Input files ...'
+	print '.... [{0}] names'.format(args.names)
+	print '.... [{0}] parameters'.format(parameters)
+	print '.... [{0}] genes\n'.format(genes)
+	return 0,args.verbose
