@@ -66,6 +66,7 @@ setup(
 		"Development Status :: 1 - Planning",
 		"Topic :: Scientific/Engineering :: Bio-Informatics",
 		"Programming Language :: Python :: 2.7",
+		"License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
 	],
 	install_requires=[
 		  # -*- Extra requirements: -*-
