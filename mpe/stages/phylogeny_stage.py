@@ -6,7 +6,7 @@ MPE Stage 4: Phylogeny generation
 """
 
 ## Packages
-import os, re, random, pickle
+import os, re, random, pickle,logging
 from Bio import AlignIO
 from Bio import Phylo
 import dendropy as dp
@@ -14,7 +14,7 @@ import mpe.tools.phylogeny as ptools
 
 def run():
 	## Print stage
-	print "\n\nStage 4: phylogenies\n"
+	logging.info("\nStage 4: phylogenies\n")
 
 	## Dirs
 	alignment_dir = '3_alignment'
@@ -36,7 +36,7 @@ def run():
 	## Process
 	genes = sorted(os.listdir(alignment_dir))
 	genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
-	print "Reading in alignments"
+	logging.info("Reading in alignments")
 	alignobj = {}
 	for gene in genes:
 		alignobj[gene] = []
@@ -47,18 +47,18 @@ def run():
 			with open(os.path.join(gene_dir, alignment_file), "r") as file:
 				alignment = AlignIO.read(file, "fasta")
 			alignobj[gene].append((alignment, alignment_file))
-	print "Generating [{0}] phylogenies".format(nphylos)
+	logging.info("Generating [{0}] phylogenies".format(nphylos))
 	phylogenies = []
 	trys = 0
 	while phylocounter < nphylos:
-		print "Iteration [{0}]".format(phylocounter)
+		logging.info("Iteration [{0}]".format(phylocounter))
 		if trys > maxtrys:
 			break
 		trys += 1
 		alignments,alignment_files = zip(*[random.sample(alignobj[e], 1)[0] for e in genes])
-		print "Using alignments....."
+		logging.info("Using alignments.....")
 		for gene,alignment_file in zip(genes,alignment_files):
-			print "....[{0}]:[{1}]".format(gene, alignment_file)
+			logging.info("....[{0}]:[{1}]".format(gene, alignment_file))
 		alignment,partitions = ptools.concatenateAlignments(list(alignments))
 		if constraint:
 			constraint = ptools.genConstraintTree(alignment, os.path.join(phylogeny_dir, "taxontree.tre"))
@@ -71,7 +71,7 @@ def run():
 		if ptools.goodPhylogenyTest(phylogeny, maxpedge):
 			phylogenies.append(phylogeny)
 			phylocounter += 1
-	print 'Generating consensus.'
+	logging.info('Generating consensus.')
 	filepath = os.path.join(phylogeny_dir, 'distribution.tre')
 	with open(filepath, "w") as file:
 		Phylo.write(phylogenies, file, 'newick')
@@ -79,4 +79,4 @@ def run():
 	phylos.read_from_path(filepath, "newick", as_rooted = True)
 	consensus = phylos.consensus(min_freq = 0.5, suppress_edge_lengths = True, rooted = True)
 	consensus.write_to_path(os.path.join(phylogeny_dir, "consensus.tre"), "newick")
-	print '\n\nStage finished. Generated [{0}] phylogenies.'.format(phylocounter)
+	logging.info('\n\nStage finished. Generated [{0}] phylogenies.'.format(phylocounter))

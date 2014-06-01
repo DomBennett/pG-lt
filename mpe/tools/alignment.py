@@ -6,7 +6,7 @@ MPE alignment tools
 """
 
 ## Packages
-import os, re, random
+import os,re,random,logging
 import numpy as np
 from Bio import SeqIO
 from Bio import AlignIO
@@ -30,9 +30,7 @@ class MinSpeciesError(Exception):
 class SeqStore(dict):
 	"""Store species' gene sequences with functions for pulling sequences for \
 alignments and adding penalties for sequences that did not align"""
-	def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap,\
-		verbose = True):
-		self.verbose = verbose
+	def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap):
 		self.minfails = minfails # minimum number of fails in a row
 		self.dspp = [] # species dropped
 		self.nseqs = 0 # counter for seqs
@@ -121,7 +119,7 @@ determine if sequences overlap. Return indexes of overlapping sequences."""
 			output = NcbiblastnCommandline(query = ".query.fasta",\
 				subject = ".subj.fasta", outfmt = 5)()[0]
 		except ApplicationError:
-			print "BLAST error"
+			logging.warn("BLAST error")
 			return False
 		finally:
 			os.remove(".query.fasta")
@@ -146,18 +144,16 @@ determine if sequences overlap. Return indexes of overlapping sequences."""
 		for sp in spp:
 			to_drop = [ei for ei,e in enumerate(self[sp][0])\
 				if e[1] > self.minfails]
-			if self.verbose:
-				for i in to_drop:
-					print "Dropping [{0}] for [{1}] as nfails is \
-[{2}]".format(self[sp][0][i][0].description,sp,self[sp][0][i][1])
+			for i in to_drop:
+				logging.info("Dropping [{0}] for [{1}] as nfails is \
+[{2}]".format(self[sp][0][i][0].description,sp,self[sp][0][i][1]))
 			self[sp][0] = [e for ei,e in enumerate(self[sp][0])\
 				if ei not in to_drop]
 			if len(self[sp][0]) < 1:
 				if sp == "outgroup":
 					raise OutgroupError
 				else:
-					if self.verbose:
-						print "Dropped [{0}]".format(sp)
+					logging.info("Dropped [{0}]".format(sp))
 					self.dspp.append(sp)
 					self.sppool = [e for e in self.sppool if e != sp]
 					del self[sp]
@@ -167,8 +163,7 @@ determine if sequences overlap. Return indexes of overlapping sequences."""
 class Aligner(object):
 	"""Build alignments from seqstore"""
 	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
-		maxtrys, maxseedtrys, verbose = True):
-		self.verbose = verbose
+		maxtrys, maxseedtrys):
 		self.seqstore = seqstore
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
@@ -191,8 +186,8 @@ presence of outgroup, number of species and length of alignment"""
 		# keep alignments with more than 5 species
 		store = [a for a in store if "outgroup" in\
 					  [e.id for e in a._records]]
-		if len(store) == 0 and self.verbose:
-			print "No outgroup!"
+		if len(store) == 0:
+			logging.info("No outgroup!")
 		store = [e for e in store if len(e) >= 5]
 		if len(store) == 0:
 			return None
@@ -209,8 +204,7 @@ presence of outgroup, number of species and length of alignment"""
 		"""Incrementally build an alignment by adding sequences to a seed alignment"""
 		trys = seedtrys = 0
 		store = []
-		if self.verbose:
-			print "........ seed phase: [{0}] seed size".format(self.seedsize)
+		logging.info("........ seed phase: [{0}] seed size".format(self.seedsize))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
@@ -234,8 +228,7 @@ presence of outgroup, number of species and length of alignment"""
 				if self.maxtrys < trys:
 					return None
 		trys = 0
-		if self.verbose:
-			print  "........ add phase : [{0}] species".format(len(alignment))
+		logging.info("........ add phase : [{0}] species".format(len(alignment)))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			#print "Number of species: {0}".format(len(alignment))
@@ -257,8 +250,7 @@ presence of outgroup, number of species and length of alignment"""
 				alignment = store[-1]
 				trys += 1
 			else:
-				if self.verbose:
-					print "Maxtrys hit!"
+				logging.info("Maxtrys hit!")
 				# when the maximum number of species is not reached...
 				# ... return the best alignment in the alignment store
 				return self._return(store)

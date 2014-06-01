@@ -11,8 +11,8 @@ import mpe.tools.names as ntools
 from taxon_names_resolver import Resolver
 
 def run():
-	## logging.info stage
-	logging.info("\n\nStage 1: names resolution\n")
+	## print stage
+	logging.info("\nStage 1: names resolution\n")
 
 	## Dirs
 	names_dir = '1_names'

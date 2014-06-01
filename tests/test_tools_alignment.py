@@ -52,13 +52,13 @@ class AlignmentTestSuite(unittest.TestCase):
 		 e)]
 		self.store = atools.SeqStore(genedir=genedir,\
 			seqfiles=seqfiles, minfails = 10, mingaps = 0.5,\
-			minoverlap = 50, verbose = False)
+			minoverlap = 50)
 		self.dummy_store = Dummy_SeqStore(genedir=genedir,\
 			seqfiles=seqfiles, minfails = 10, mingaps = 0.5,\
-			minoverlap = 50, verbose = False)
+			minoverlap = 50)
 		self.aligner = atools.Aligner(self.dummy_store, mingaps = 0.5,\
 			minoverlap = 50, minseedsize = 3, maxtrys = 10,\
-			maxseedtrys = 10, verbose = False)
+			maxseedtrys = 10)
 
 	def tearDown(self):
 		pass

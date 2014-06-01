@@ -196,7 +196,7 @@ class DownloadTestSuite(unittest.TestCase):
 
 	def test_findbestgenes(self):
 		res = dtools.findBestGenes(self.namesdict, self.genedict, 3,\
-		 self.allrankids, minnseq = 1, minpwithseq = 0.5, verbose = False)
+		 self.allrankids, minnseq = 1, minpwithseq = 0.5)
 		self.assertEqual(res[0], 'gene1')
 
 if __name__ == '__main__':

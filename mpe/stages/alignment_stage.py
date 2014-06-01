@@ -12,8 +12,8 @@ from Bio import SeqIO
 import mpe.tools.alignment as atools
 
 def run():
-	## logging.info() stage
-	logging.info("\n\nStage 3: alignment\n")
+	## print stage
+	logging.info("\nStage 3: alignment\n")
 
 	## Dirs
 	download_dir = '2_download'

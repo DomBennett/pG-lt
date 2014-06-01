@@ -6,7 +6,7 @@ MPE names tools
 """
 
 ## Packages
-import collections, re
+import collections,re,logging
 from Bio import Phylo
 from cStringIO import StringIO
 import entrez as etools
@@ -37,7 +37,7 @@ def genTaxTree(resolver, namesdict, draw = False):
 	statement = "Unresolved names: "
 	for each in unresolved_names:
 		statement += " " + each
-	#print statement
+	logging.debug(statement)
 	for i, lineage in enumerate(lineages):
 		lineage.reverse()
 		lineages[i] = lineage

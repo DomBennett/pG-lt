@@ -6,14 +6,13 @@ MPE Entrez tools
 """
 
 ## Packages
-import time, random
+import time,random,logging
 from Bio import Entrez
 from Bio import SeqIO
 
 ## Globals
 max_check = 4
 download_counter = 0
-verbose = True
 
 ## Functions
 def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
@@ -32,8 +31,7 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
 	global download_counter
 	while finished <= max_check:
 		if download_counter > 1000:
-			if verbose:
-				print " ---- download counter hit: waiting 60 seconds ----"
+			logging.info(" ---- download counter hit: waiting 60 seconds ----")
 			download_counter = 0
 			time.sleep(60)
 		try:
@@ -48,16 +46,16 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db = "nucleotide"):
 				results = Entrez.read(handle)
 				handle.close()
 			else:
-				print "Invalid db argument!"
+				logging.warn("Invalid db argument!")
 				return()
 			download_counter += 1
 			finished = max_check + 1
 		except:
 			if finished == 0:
-				print " ---- server error: retrying ----"
+				logging.debug(" ---- server error: retrying ----")
 				time.sleep(10)
 			elif finished == max_check:
-				print " ----- server error: no records retrieved ----"
+				logging.debug(" ----- server error: no records retrieved ----")
 				return()
 			else:
 				finished += 1
@@ -76,8 +74,7 @@ def eFetch(ncbi_id, db = "nucleotide"):
 	global download_counter
 	while finished <= max_check:
 		if download_counter > 1000:
-			if verbose:
-				print " ---- download counter hit: waiting 60 seconds ----"
+			logging.info(" ---- download counter hit: waiting 60 seconds ----")
 			download_counter = 0
 			time.sleep(60)
 		try:
@@ -92,7 +89,7 @@ def eFetch(ncbi_id, db = "nucleotide"):
 				results = Entrez.read(handle)
 				handle.close()
 			else:
-				print "Invalid db argument!"
+				logging.warn("Invalid db argument!")
 				break
 			download_counter += len(ncbi_id)
 			finished = max_check + 1
@@ -102,11 +99,11 @@ def eFetch(ncbi_id, db = "nucleotide"):
 			finished = max_check + 1
 		except:
 			if finished == 0:
-				print " ----- server error: retrying ----"
+				logging.debug(" ----- server error: retrying ----")
 				finished += 1
 				time.sleep(10)
 			if finished == max_check:
-				print " ----- server error: no sequences retrieved ----"
+				logging.debug(" ----- server error: no sequences retrieved ----")
 				return ()
 	return results
 

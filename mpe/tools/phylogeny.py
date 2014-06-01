@@ -6,7 +6,7 @@ MPE phylogeny tools
 """
 
 ## Packages
-import os,re,random
+import os,re,random,logging
 #from Bio import Phylo
 #from Bio.Seq import Seq
 from Bio.Align import MultipleSeqAlignment

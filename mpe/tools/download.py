@@ -6,7 +6,7 @@ MPE download tools
 """
 
 ## Packages
-import re,random
+import re,random,logging
 import entrez as etools
 import alignment as atools
 from Bio.SeqFeature import SeqFeature
@@ -15,8 +15,7 @@ from Bio.SeqFeature import SeqFeature
 class Downloader(object):
 	"""Download sequences given taxids and gene_names"""
 	def __init__(self, gene_names, nseqs, thoroughness, maxpn, seedsize, maxtrys, \
-			mingaps, minoverlap, maxlen, minlen, verbose = True):
-		self.verbose = verbose
+			mingaps, minoverlap, maxlen, minlen):
 		self.gene_names = gene_names
 		self.nseqs = nseqs
 		self.max_thoroughness = thoroughness
@@ -172,8 +171,7 @@ searching features."""
 		while self.thoroughness < self.max_thoroughness:
 			seqids = self._search(taxids)
 			if len(seqids) >= 1000:
-				if self.verbose:
-					print "........ filtering"
+				logging.info("........ filtering")
 				sequences = []
 				downloaded = []
 				lower = 0
@@ -196,14 +194,13 @@ searching features."""
 
 ## Functions
 def findBestGenes(namesdict, genedict, thoroughness, allrankids,\
-	minnseq = 1, minpwithseq = 0.5, verbose = True):
+	minnseq = 1, minpwithseq = 0.5):
 	"""Return suitable genes for phylogeny by searching for \
 matches in GenBank"""
 	alltipids = [namesdict[e]["txids"] for e in namesdict.keys()]
 	genes = []
 	for gene in genedict.keys():
-		if verbose:
-			print " .... checking [{0}]".format(gene)
+		logging.info(" .... checking [{0}]".format(gene))
 		taxid = genedict[gene]["taxid"]
 		if int(taxid) in allrankids:
 			gene_bool = []

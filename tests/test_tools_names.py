@@ -58,7 +58,7 @@ class NamesTestSuite(unittest.TestCase):
 		ntools.etools.eFetch = dummy_eFetch
 		ntools.etools.findChildren = dummy_findChildren
 		self.resolver = tnr.resolver.Resolver(terms = terms, taxon_id\
-			= 51, verbose = False)
+			= 51)
 		test_store = tnr.gnr_tools.GnrStore(terms)
 		test_store.add(res)
 		self.resolver._store = test_store

@@ -6,12 +6,12 @@ MPE Stage 2: Sequence Download
 """
 
 ## Packages
-import os, pickle
+import os, pickle,logging
 import mpe.tools.download as dtools
 
 def run():
 	## Print stage
-	print "\n\nStage 2: sequence download\n"
+	logging.info("\nStage 2: sequence download\n")
 
 	## Dirs
 	download_dir = '2_download'
@@ -44,25 +44,25 @@ def run():
 	seqcounter = basecounter = 0
 
 	## Process
-	print 'Determining best genes'
+	logging.info('Determining best genes')
 	genes = dtools.findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
 	#genes = ['rbcl']
 	statement = 'Using genes:'
 	for gene in genes:
 		statement += " " + gene
-	print statement
+	logging.info(statement)
 	# Add genes to namesdict
 	for key in namesdict.keys():
 		namesdict[key]['genes'] = 0
 	for gene in genes:
 		seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 		gene_names = genedict[gene]["names"]
-		print 'Downloading and outputting for [{0}]....'.format(gene)
+		logging.info('Downloading and outputting for [{0}]....'.format(gene))
 		gene_dir  = os.path.join(download_dir, str(gene))
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
 		for name in namesdict.keys():
-			print "..... [{0}]".format(name)
+			logging.info("..... [{0}]".format(name))
 			taxids = namesdict[name]["txids"]
 			downloader = dtools.Downloader(gene_names, nseqs, thoroughness,\
 				maxpn, seedsize, maxtrys, mingaps, minoverlap, maxlen, minlen)
@@ -83,13 +83,13 @@ def run():
 			namesdict[name]['genes'] += 1
 			spcounter_gene += 1
 		if noseqcounter_gene == len(namesdict.keys()):
-			print "No sequences were downloaded for gene [{0}]".format(gene)
+			logging.info("No sequences were downloaded for gene [{0}]".format(gene))
 			os.rmdir(gene_dir)
 		else:
 			seqcounter += seqcounter_gene
-			print "Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
-				format(seqcounter_gene, gene, spcounter_gene)
+			logging.info("Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
+				format(seqcounter_gene, gene, spcounter_gene))
 	with open("namesdict.p", "wb") as file:
 		pickle.dump(namesdict, file)
-	print '\n\nStage finished. Downloaded [{0}] bases for [{1}] sequences for [{2}] species.'.\
-		format(basecounter, seqcounter, sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()]))
+	logging.info('\n\nStage finished. Downloaded [{0}] bases for [{1}] sequences for [{2}] species.'.\
+		format(basecounter, seqcounter, sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()])))
