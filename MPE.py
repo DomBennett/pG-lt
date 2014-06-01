@@ -8,9 +8,9 @@ and was written by D.J. Bennett with additional help from W.D. Pearse and L. Hud
 This program makes use of external programs for phylogeny generation and bioinformatics
 these are: RAxML (Copyright (C) Stamatakis 2013) , MAFFT (Copyright (C) 2013 Kazutaka
 Katoh) the NCBI's standalone BLAST suite 2.2.29+ and online API services
- (Copyright NCBI (C) 2009). It also uses a variety of python packages including:
- Biopython (Copyright Cook (C) 2009) and Dendropy (Copyright Sukumaran and Holder (C)
- 2010).
+ (Copyright NCBI (C) 2009). It also uses the following python packages:
+ Biopython (Copyright Cook (C) 2009), Dendropy (Copyright Sukumaran and Holder (C)
+ 2010) and Taxon Names Resovler (Copyright (C) Bennett 2014).
 
 Copyright (C) 2014  Dominic John Bennett
 
@@ -34,26 +34,28 @@ import argparse
 from mpe.tools.system import Stager
 from mpe.tools.system import readArgs
 
-description = """
-MPE (D.J. Bennett (C) 2014)
+description = """MPE D.J. Bennett (C) 2014
 
 A pipeline for the automated generation of phylogenies from taxonomic
-names through Mass Phylogeny Estimation.
-"""
+names through Mass Phylogeny Estimation."""
 
 def parseArgs():
 	"""Read arguments"""
-	parser = argparse.ArgumentParser(description=description)
+	parser = argparse.ArgumentParser()
 	parser.add_argument("-names", "-n", help=".txt file of taxonomic names.")
 	parser.add_argument("-parameters", "-p", help=".csv file of parameters.")
 	parser.add_argument("-genes", "-g", help=".csv file of gene parameters")
+	parser.add_argument("-restart", "-r", help="restart from specified stage")
 	parser.add_argument("--verbose", help="increase output verbosity",
 					action="store_true")
-	parser.add_argument("-restart", "-r", help="restart from specified stage")
+	parser.add_argument("--development", help="log warnings (developer only)",
+					action="store_true")
 	return parser
 
 if __name__ == '__main__':
-	print '\n' + description + '\n'
+	print '\n' + '#' * 70
+	print description
+	print '#' * 70 + '\n'
 	parser = parseArgs()
-	stage,verbose = readArgs(parser.parse_args())
-	Stager.run_all(stage = stage, verbose = verbose)
+	stage,verbose,dev = readArgs(parser.parse_args())
+	Stager.run_all(stage = stage, verbose = verbose, dev = dev)
