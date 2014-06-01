@@ -8,11 +8,18 @@ MPE system tools
 ## Packages
 import subprocess,threading,sys,os,platform,csv,pickle,logging
 from datetime import datetime
-#from mpe import stages
 from mpe import _PARS as default_pars
 from mpe import _GPARS as default_gpars
 
 ## Classes
+class LogFilter(object):
+	#http://stackoverflow.com/questions/8162419/python-logging-specific-level-only
+    def __init__(self, level):
+        self.__level = level
+
+    def filter(self, logRecord):
+        return logRecord.levelno <= self.__level
+
 class StageError(Exception):
 	pass
 
@@ -20,43 +27,78 @@ class Stager(object):
 	"""Stager class : runs each file in stage folder. Adapted from\
  code written by L. Hudson."""
 
-	def __init__(self, stage, verbose = True):
+	def __init__(self, stage, verbose = True, dev = False):
 		self.verbose = verbose
+		self.dev = dev
 		if stage not in self.STAGES:
 			raise StageError('Stage [{0}] not recognised'.format(stage))
 		else:
 			self.stage = stage
+			# dir is second element of tuple
 			self.output_dir = self.STAGES[stage][1]
+
+	def _prime(self):
+		if not os.path.isdir(self.output_dir):
+			os.mkdir(self.output_dir)
+		# root logger
+		root_log = logging.getLogger()
+		root_log.setLevel(logging.INFO)
+		# add file hander to root
+		logfile = os.path.join(self.output_dir, 'log.txt')
+		loghandler = logging.FileHandler(logfile, 'a')
+		loghandler.setFormatter(logging.Formatter('%(message)s'))
+		root_log.addHandler(loghandler)
+		if self.verbose:
+			# if verbose
+			console = logging.StreamHandler()
+			console.setFormatter(logging.Formatter('%(message)s'))
+			root_log.addHandler(console)
+		# if not dev, filter out everything but info
+		if not self.dev:
+			root_log.addFilter(LogFilter(logging.INFO))
+
+	def _second(self):
+		root_log = logging.getLogger()
+		root_handlers = root_log.handlers[:]
+		# remove all handlers
+		for each in root_handlers:
+			root_log.removeHandler(each)
+
+	def _start(self):
+		logging.info('\n' + '#' * 70)
+		logging.info('Stage [{0}] started at [{1}]'.format(self.stage,
+			self._time_string()))
+		logging.info('Running on [{0}] [{1}]'.format(platform.node(),
+					platform.platform()))
+		logging.info('Python [{0}]'.format(sys.version))
+		logging.info('#' * 70 + '\n')
+
+	def _end(self):
+		logging.info('\n' + '#' * 70)
+		logging.info('Stage [{0}] finished at [{1}]'.format(self.stage,
+			self._time_string()))
+		logging.info('#' * 70 + '\n')
 
 	def _time_string(self):
 		return datetime.today().strftime("%A, %d %B %Y %I:%M%p")
 
 	def _cmd(self):
-		logfile = os.path.join(self.output_dir, 'log.txt')
-		if self.verbose:
-			logging.basicConfig(filename = logfile, level=logging.INFO)
-		else:
-			print ' .... working .... '
-			logging.basicConfig(filename = logfile, level=logging.INFO)
+		# function is first element of tuple
 		self.STAGES[self.stage][0]()
 
 	def run(self):
-		if not os.path.isdir(self.output_dir):
-			os.mkdir(self.output_dir)
-		print '\nStage [{0}] started at [{1}]'.format(self.stage,
-			self._time_string())
-		self._cmd()
-		print 'Stage finished at [{0}]\n'.format(self._time_string())
+		self._prime() # add handlers to root logger
+		self._start() # log system info
+		self._cmd() # run stage
+		self._end() # log end time
+		self._second() # remove handlers from root logger
 
 	@classmethod
-	def run_all(klass, stage, verbose = True):
-		# print system info
-		print 'Running on [{0}] [{1}]'.format(platform.node(),
-				platform.platform())
-		# print python verion
-		print 'Python [{0}]'.format(sys.version)
+	def run_all(klass, stage, verbose = True, dev = False):
 		for s in sorted(Stager.STAGES.keys()[stage:]):
-			Stager(s, verbose).run()
+			if not verbose:
+				print 'Stage [{0}]'.format(Stager.STAGES[s][1])
+			Stager(s, verbose, dev).run()
 
 class TerminationPipe(object):
 	"""Adapted pG object : exectute background programs."""
@@ -91,7 +133,7 @@ class TerminationPipe(object):
 
 ## Functions
 def readArgs(args):
-	"""Safely read arguments write pickle files, return stage"""
+	"""Safely read arguments write pickle files, return stage and verbosity"""
 	if args.restart:
 		try:
 			stage = int(args.restart) - 1
@@ -99,7 +141,7 @@ def readArgs(args):
 			print "Restart must be numeric!"
 			sys.exit()
 		print "Restarting from stage: [{0}]\n".format(args.restart)
-		return stage,args.verbose
+		return stage,args.verbose,args.development
 	if args.names:
 		try:
 			terms = []
@@ -168,8 +210,6 @@ def readArgs(args):
 		genes = args.genes
 	else:
 		genes = 'DEFAULT'
-	print 'Input files ...'
-	print '.... [{0}] names'.format(args.names)
-	print '.... [{0}] parameters'.format(parameters)
-	print '.... [{0}] genes\n'.format(genes)
-	return 0,args.verbose
+	print 'Running with names [{0}], parameters [{1}] and gene \
+parameters [{2}]'.format(args.names, parameters, genes)
+	return 0,args.verbose,args.development
