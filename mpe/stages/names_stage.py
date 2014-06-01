@@ -37,12 +37,14 @@ def run():
 		parentid = int(paradict["parentid"])
 	except:
 		parentid = False
-	resolver = Resolver(terms = terms, datasource = "NCBI", taxon_id = parentid)
+	resolver = Resolver(terms = terms, datasource = "NCBI",\
+		taxon_id = parentid)
 	resolver.main()
 	logging.info("Generating names dictionary")
 	namesdict,allrankids = ntools.genNamesDict(resolver)
 	logging.info('Generating taxonomic tree')
-	taxontree,shared_lineages = ntools.genTaxTree(resolver, namesdict)
+	taxontree,shared_lineages = ntools.genTaxTree(resolver,\
+		namesdict)
 
 	## Output
 	shutil.rmtree("resolved_names")
@@ -51,7 +53,9 @@ def run():
 	with open(".allrankids.p", "wb") as file:
 		pickle.dump(allrankids, file)
 	headers = ["name", "unique_name", "rank", "NCBI_Taxids"]
-	with open(os.path.join(names_dir, 'resovled_names.csv'), 'wb') as file:
+	# TODO: move this write out to names tools
+	with open(os.path.join(names_dir, 'resolved_names.csv'), 'wb')\
+	as file:
 		writer = csv.writer(file)
 		writer.writerow(headers)
 		for key in namesdict.keys():
@@ -65,5 +69,7 @@ def run():
 				ids = temp["txids"][0]
 			row.append(ids)
 			writer.writerow(row)
-	ntools.Phylo.write(taxontree, os.path.join(phylogeny_dir, "taxontree.tre"), "newick")
-	logging.info('Stage finished. Resolved [{0}] names including outgroup.'.format(len(namesdict.keys())))
+	ntools.Phylo.write(taxontree, os.path.join(phylogeny_dir,\
+		"taxontree.tre"), "newick")
+	logging.info('Stage finished. Resolved [{0}] names \
+including outgroup.'.format(len(namesdict.keys())))

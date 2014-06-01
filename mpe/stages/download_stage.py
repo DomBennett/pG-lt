@@ -45,8 +45,8 @@ def run():
 
 	## Process
 	logging.info('Determining best genes')
-	genes = dtools.findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq, minpwithseq)
-	#genes = ['rbcl']
+	genes = dtools.findBestGenes(namesdict, genedict, thoroughness,\
+		allrankids, minnseq, minpwithseq)
 	statement = 'Using genes:'
 	for gene in genes:
 		statement += " " + gene
@@ -57,7 +57,8 @@ def run():
 	for gene in genes:
 		seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 		gene_names = genedict[gene]["names"]
-		logging.info('Downloading and outputting for [{0}]....'.format(gene))
+		logging.info('Downloading and outputting for [{0}]....'.\
+			format(gene))
 		gene_dir  = os.path.join(download_dir, str(gene))
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
@@ -69,7 +70,7 @@ def run():
 			sequences = downloader.run(taxids)
 			if not sequences:
 				noseqcounter_gene += 1
-				#print "No sequences found for [{0}].".format(name)
+				logging.info("No sequences found for [{0}].".format(name))
 				continue
 			gene_seqs = []
 			for seq in sequences:
@@ -87,9 +88,10 @@ def run():
 			os.rmdir(gene_dir)
 		else:
 			seqcounter += seqcounter_gene
-			logging.info("Downloaded [{0}] sequences for gene [{1}] representing [{2}] species".\
-				format(seqcounter_gene, gene, spcounter_gene))
-	with open("namesdict.p", "wb") as file:
+			logging.info("Downloaded [{0}] sequences for gene [{1}] representing \
+[{2}] species".format(seqcounter_gene, gene, spcounter_gene))
+	with open(".namesdict.p", "wb") as file:
 		pickle.dump(namesdict, file)
-	logging.info('\n\nStage finished. Downloaded [{0}] bases for [{1}] sequences for [{2}] species.'.\
-		format(basecounter, seqcounter, sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()])))
+	logging.info('\n\nStage finished. Downloaded [{0}] bases for [{1}] \
+sequences for [{2}] species.'.format(basecounter, seqcounter,\
+sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()])))
