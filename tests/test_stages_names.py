@@ -48,6 +48,7 @@ class NamesStageTestSuite(unittest.TestCase):
 		os.mkdir('resolved_names')
 
 	def tearDown(self):
+		# stub in
 		names_stage.Resolver = self.True_Resolver
 		names_stage.ntools.genNamesDict = self.true_genNamesDict
 		names_stage.ntools.genTaxTree = self.true_genTaxTree
@@ -55,9 +56,11 @@ class NamesStageTestSuite(unittest.TestCase):
 	def test_names_stage(self):
 		# run
 		res = names_stage.run()
-		# remove files and folders
+		# remove files and folders iteratively
 		os.remove('.paradict.p')
 		os.remove('.terms.p')
+		os.remove('.allrankids.p')
+		os.remove('.namesdict.p')
 		os.remove(os.path.join('1_names','resolved_names.csv'))
 		os.rmdir('1_names')
 		os.remove(os.path.join('4_phylogeny','taxontree.tre'))

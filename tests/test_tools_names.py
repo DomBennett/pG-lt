@@ -64,6 +64,7 @@ class NamesTestSuite(unittest.TestCase):
 		self.resolver._store = test_store
 
 	def tearDown(self):
+		os.rmdir('resolved_names')
 		tnr.gnr_tools.GnrDataSources = self.True_GnrDataSources
 		ntools.etools.eFetch = self.true_eFetch
 		ntools.etools.findChildren = self.true_findChildren
