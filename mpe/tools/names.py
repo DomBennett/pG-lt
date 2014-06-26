@@ -13,11 +13,7 @@ import entrez as etools
 
 ## Objects
 class TaxonomicRankError(Exception):
-	print 'It is likely that one or more names has \
-been resolved incorrectly, as such the parent taxonomic \
-group has been set to Eukaryotes which is too high a \
-taxonomic rank for phylogenetic analysis. Consider \
-adding a parent ID to the parameters.csv.'
+	pass
 
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):

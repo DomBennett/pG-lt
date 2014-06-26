@@ -6,9 +6,17 @@ MPE Stage 1: Names resolution
 """
 
 ## Packages
-import os,pickle,shutil,logging
+import os,pickle,shutil,logging,sys
 import mpe.tools.names as ntools
 from taxon_names_resolver import Resolver
+
+## Informative error msgs
+error_msg =  'It is likely that one or more names have \
+been resolved incorrectly, as such the parent taxonomic \
+group has been set to Eukaryotes which is too high a \
+taxonomic rank for phylogenetic analysis. Consider \
+adding a parent ID to the parameters.csv to prevent \
+incorrect names resolution.'
 
 def run():
 	## print stage
@@ -41,7 +49,11 @@ def run():
 		taxon_id = parentid)
 	resolver.main()
 	logging.info("Generating names dictionary")
-	namesdict,allrankids = ntools.genNamesDict(resolver)
+	try:
+		namesdict,allrankids = ntools.genNamesDict(resolver)
+	except ntools.TaxonomicRankError:
+		print error_msg
+		sys.exit()
 	logging.info('Generating taxonomic tree')
 	taxontree,shared_lineages = ntools.genTaxTree(resolver,\
 		namesdict)
