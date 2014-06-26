@@ -6,10 +6,18 @@ MPE names tools
 """
 
 ## Packages
-import collections,re,logging
+import collections,re,logging, csv, os
 from Bio import Phylo
 from cStringIO import StringIO
 import entrez as etools
+
+## Objects
+class TaxonomicRankError(Exception):
+	print 'It is likely that one or more names has \
+been resolved incorrectly, as such the parent taxonomic \
+group has been set to Eukaryotes which is too high a \
+taxonomic rank for phylogenetic analysis. Consider \
+adding a parent ID to the parameters.csv.'
 
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):
@@ -24,13 +32,15 @@ def genTaxTree(resolver, namesdict, draw = False):
 		  (Newick Tree Object, [shared lineage])"""
 	ranks = resolver.retrieve('classification_path_ranks')
 	qnames = resolver.retrieve('query_name')
-	qnames = [re.sub("\s", "_", e) for e in qnames]
 	lineages = resolver.retrieve('classification_path_ids')
+	# replace ' ' with '_' for taxon tree
+	qnames = [re.sub("\s", "_", e) for e in qnames]
 	resolved_names_bool = [e in namesdict.keys() for e in qnames]
 	ranks = [ranks[ei] for ei,e in enumerate(resolved_names_bool)\
 	if e]
 	lineages = [lineages[ei] for ei,e in enumerate(resolved_names_bool)\
 	if e]
+	# identify unresolved names
 	unresolved_names = [qnames[ei] for ei,e in\
 	enumerate(resolved_names_bool) if not e]
 	idents = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if e]
@@ -38,6 +48,7 @@ def genTaxTree(resolver, namesdict, draw = False):
 	for each in unresolved_names:
 		statement += " " + each
 	logging.debug(statement)
+	# reverse ranks and lineages
 	for i, lineage in enumerate(lineages):
 		lineage.reverse()
 		lineages[i] = lineage
@@ -142,6 +153,9 @@ def genNamesDict(resolver):
 			shared_bool.append(all([each in e for e in lineages]))
 		parentid = lineages[0][shared_bool.index(False) - 1]
 	above_id = etools.eFetch(str(parentid), db = "taxonomy")[0]['ParentTaxId']
+	# if above id or parent id are Cellular Orgs, likely name resolution error
+	if above_id == '131567' or parentid == '131567':
+		raise TaxonomicRankError()
 	temp_children = etools.findChildren(above_id, next = True)
 	temp_children = [int(e) for e in temp_children]
 	# if none are in allrankids, must be unique
@@ -149,3 +163,21 @@ def genNamesDict(resolver):
 	namesdict["outgroup"] = {"txids" : temp_children, "unique_name" :\
 	"outgroup", "rank" : "outgroup"}
 	return namesdict,allrankids
+
+def writeNamesDict(directory, namesdict):
+	headers = ["name", "unique_name", "rank", "NCBI_Taxids"]
+	with open(os.path.join(directory, 'resolved_names.csv'), 'wb')\
+	as file:
+		writer = csv.writer(file)
+		writer.writerow(headers)
+		for key in namesdict.keys():
+			temp = namesdict[key]
+			row = [key, temp["unique_name"], temp["rank"]]
+			if len(temp["txids"]) > 1:
+				ids = ""
+				for each in temp["txids"]:
+					ids += str(each) + "|"
+			else:
+				ids = temp["txids"][0]
+			row.append(ids)
+			writer.writerow(row)

@@ -6,7 +6,7 @@ MPE Stage 1: Names resolution
 """
 
 ## Packages
-import os,csv,pickle,shutil,logging
+import os,pickle,shutil,logging
 import mpe.tools.names as ntools
 from taxon_names_resolver import Resolver
 
@@ -47,29 +47,19 @@ def run():
 		namesdict)
 
 	## Output
+	# remove temp TNR folder
 	shutil.rmtree("resolved_names")
+	# write out changes to hidden pickled files
 	with open(".namesdict.p", "wb") as file:
 		pickle.dump(namesdict, file)
 	with open(".allrankids.p", "wb") as file:
 		pickle.dump(allrankids, file)
-	headers = ["name", "unique_name", "rank", "NCBI_Taxids"]
-	# TODO: move this write out to names tools
-	with open(os.path.join(names_dir, 'resolved_names.csv'), 'wb')\
-	as file:
-		writer = csv.writer(file)
-		writer.writerow(headers)
-		for key in namesdict.keys():
-			temp = namesdict[key]
-			row = [key, temp["unique_name"], temp["rank"]]
-			if len(temp["txids"]) > 1:
-				ids = ""
-				for each in temp["txids"]:
-					ids += str(each) + "|"
-			else:
-				ids = temp["txids"][0]
-			row.append(ids)
-			writer.writerow(row)
+	# write namesdict as csv
+	ntools.writeNamesDict(names_dir, namesdict)
+	# write taxon tree
 	ntools.Phylo.write(taxontree, os.path.join(phylogeny_dir,\
 		"taxontree.tre"), "newick")
+
+	## Finish message
 	logging.info('Stage finished. Resolved [{0}] names \
 including outgroup.'.format(len(namesdict.keys())))
