@@ -8,6 +8,7 @@ mpe Stage 1: Names resolution
 ## Packages
 import os,pickle,shutil,logging,sys
 import mpe.tools.names as ntools
+from mpe.tools.system import TooFewSpeciesError
 from taxon_names_resolver import Resolver
 
 ## Informative error msgs
@@ -38,6 +39,7 @@ def run(wd = os.getcwd()):
 
 	## Parameters
 	ntools.etools.Entrez.email = paradict["email"]
+	minspecies = 5
 
 	## Process
 	logging.info('Searching for taxids')
@@ -45,6 +47,8 @@ def run(wd = os.getcwd()):
 		parentid = int(paradict["parentid"])
 	except:
 		parentid = False
+	if len(terms) < minspecies:
+		raise TooFewSpeciesError
 	resolver = Resolver(terms = terms, datasource = "NCBI",\
 		taxon_id = parentid)
 	resolver.main()

@@ -13,6 +13,9 @@ from datetime import datetime
 class StageError(Exception):
 	pass
 
+class TooFewSpeciesError(Exception):
+	pass
+
 class Stager(object):
 	"""Stager class : runs each file in stage folder. Adapted from\
  code written by L. Hudson."""
