@@ -14,6 +14,8 @@ from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio import AlignIO
 import numpy as np
+from dendropy import treesum
+from dendropy import treesplit 
 from system import TerminationPipe
 
 ## Functions
@@ -184,3 +186,15 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 		return tree
 	else:
 		raise RuntimeError("Either phylogeny building program failed, or ran out of time")
+
+# def getConsensus(trees, min_freq = 0.5, is_rooted = True,\
+# 	trees_splits_encoded = False):
+# 	"""Generate a rooted consensus tree from a distribution"""
+# 	#https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
+# 	sd = treesplit.SplitDistribution(taxon_set=trees.taxon_set)
+# 	sd.is_rooted = is_rooted
+# 	tsum = treesum.TreeSummarizer()
+# 	tsum.count_splits_on_trees(trees,split_distribution=sd,\
+# 		trees_splits_encoded=trees_splits_encoded)
+# 	tree = tsum.tree_from_splits(sd, min_freq=min_freq)
+# 	return tree 
