@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE Stage 1: Names resolution
+mpe Stage 1: Names resolution
 """
 
 ## Packages
@@ -18,22 +18,22 @@ taxonomic rank for phylogenetic analysis. Consider \
 adding a parent ID to the parameters.csv to prevent \
 incorrect names resolution.'
 
-def run():
+def run(wd = os.getcwd()):
 	## print stage
-	logging.info("\nStage 1: names resolution\n")
+	logging.info("\nNames resolution\n")
 
 	## Dirs
-	names_dir = '1_names'
-	phylogeny_dir = '4_phylogeny'
+	names_dir = os.path.join(wd, '1_names')
+	phylogeny_dir = os.path.join(wd, '4_phylogeny')
 	if not os.path.isdir(names_dir):
 		os.mkdir(names_dir)
 	if not os.path.isdir(phylogeny_dir):
 		os.mkdir(phylogeny_dir)
 
 	## Input
-	with open(".paradict.p", "rb") as file:
+	with open(os.path.join(wd, ".paradict.p"), "rb") as file:
 		paradict = pickle.load(file)
-	with open(".terms.p", "rb") as file:
+	with open(os.path.join(wd, ".terms.p"), "rb") as file:
 		terms = pickle.load(file)
 
 	## Parameters
@@ -62,9 +62,9 @@ def run():
 	# remove temp TNR folder
 	shutil.rmtree("resolved_names")
 	# write out changes to hidden pickled files
-	with open(".namesdict.p", "wb") as file:
+	with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
 		pickle.dump(namesdict, file)
-	with open(".allrankids.p", "wb") as file:
+	with open(os.path.join(wd, ".allrankids.p"), "wb") as file:
 		pickle.dump(allrankids, file)
 	# write namesdict as csv
 	ntools.writeNamesDict(names_dir, namesdict)

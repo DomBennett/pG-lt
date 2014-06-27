@@ -12,20 +12,20 @@ from Bio import Phylo
 import dendropy as dp
 import mpe.tools.phylogeny as ptools
 
-def run():
+def run(wd = os.getcwd()):
 	## Print stage
-	logging.info("\nStage 4: phylogenies\n")
+	logging.info("\nGenerating phylogenies\n")
 
 	## Dirs
-	alignment_dir = '3_alignment'
-	phylogeny_dir = '4_phylogeny'
+	alignment_dir = os.path.join(wd, '3_alignment')
+	phylogeny_dir = os.path.join(wd,'4_phylogeny')
 
 	## Input
-	with open(".paradict.p", "rb") as file:
+	with open(os.path.join(wd, ".paradict.p"), "rb") as file:
 		paradict = pickle.load(file)
 
 	## Parameters
-	nphylos = int(paradict["nphylos"])
+	nphylos = int(paradict["ntrees"])
 	maxtrys = int(paradict["maxtrys"])
 	maxpedge = float(paradict["maxpedge"])
 	constraint = True

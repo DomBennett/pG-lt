@@ -11,22 +11,22 @@ import numpy
 from Bio import SeqIO
 import mpe.tools.alignment as atools
 
-def run():
+def run(wd = os.getcwd()):
 	## print stage
-	logging.info("\nStage 3: alignment\n")
+	logging.info("\nAlignment sequences\n")
 
 	## Dirs
-	download_dir = '2_download'
-	alignment_dir = '3_alignment'
+	download_dir = os.path.join(wd, '2_download')
+	alignment_dir = os.path.join(wd, '3_alignment')
 	if not os.path.isdir(alignment_dir):
 		os.mkdir(alignment_dir)
 
 	## Input
-	with open(".genedict.p", "rb") as file:
+	with open(os.path.join(wd, ".genedict.p"), "rb") as file:
 		genedict = pickle.load(file)
-	with open(".paradict.p", "rb") as file:
+	with open(os.path.join(wd, ".paradict.p"), "rb") as file:
 		paradict = pickle.load(file)
-	with open(".namesdict.p", "rb") as file:
+	with open(os.path.join(wd, ".namesdict.p"), "rb") as file:
 		namesdict = pickle.load(file)
 
 	## Parameters
@@ -102,7 +102,7 @@ def run():
 	namesdict[e]['genes'] > 0]
 	paligns_name = [len(naligns_name) * float(e)/aligncounter for e\
 	in naligns_name]
-	with open(".namesdict.p", "wb") as file:
+	with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
 		pickle.dump(namesdict, file)
 	logging.info('Stage finished. Generated [{n1}] alignments for mean \
 [{n2:.{d}f}](sd[{n3:.{d}f}]) species.'.format(n1 = aligncounter, n2 = \

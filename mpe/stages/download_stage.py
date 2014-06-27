@@ -9,23 +9,23 @@ MPE Stage 2: Sequence Download
 import os, pickle,logging
 import mpe.tools.download as dtools
 
-def run():
+def run(wd = os.getcwd()):
 	## Print stage
-	logging.info("\nStage 2: sequence download\n")
+	logging.info("\nSequence download\n")
 
 	## Dirs
-	download_dir = '2_download'
+	download_dir = os.path.join(wd, '2_download')
 	if not os.path.isdir(download_dir):
 		os.mkdir(download_dir)
 
 	## Input
-	with open(".genedict.p", "rb") as file:
+	with open(os.path.join(wd, ".genedict.p"), "rb") as file:
 		genedict = pickle.load(file)
-	with open(".paradict.p", "rb") as file:
+	with open(os.path.join(wd, ".paradict.p"), "rb") as file:
 		paradict = pickle.load(file)
-	with open(".namesdict.p", "rb") as file:
+	with open(os.path.join(wd, ".namesdict.p"), "rb") as file:
 		namesdict = pickle.load(file)
-	with open(".allrankids.p", "rb") as file:
+	with open(os.path.join(wd, ".allrankids.p"), "rb") as file:
 		allrankids = pickle.load(file)
 
 	## Parameters
@@ -90,7 +90,7 @@ def run():
 			seqcounter += seqcounter_gene
 			logging.info("Downloaded [{0}] sequences for gene [{1}] representing \
 [{2}] species".format(seqcounter_gene, gene, spcounter_gene))
-	with open(".namesdict.p", "wb") as file:
+	with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
 		pickle.dump(namesdict, file)
 	logging.info('\n\nStage finished. Downloaded [{0}] bases for [{1}] \
 sequences for [{2}] species.'.format(basecounter, seqcounter,\
