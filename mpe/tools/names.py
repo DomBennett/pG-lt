@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE names tools
+mpe names tools
 """
 
 ## Packages

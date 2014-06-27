@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 26/05/2014
 """
-MPE is a pipeline for the automated generation of phylogenies through 'Mass
+mpe is a pipeline for the automated generation of phylogenies through 'Mass
 Phylogeny Estimation'. This program is built on top of phyloGenerator (C) 2013
 and was written by D.J. Bennett with additional help from W.D. Pearse and L. Hudson.
 This program makes use of external programs for phylogeny generation and bioinformatics

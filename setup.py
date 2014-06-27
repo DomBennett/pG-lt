@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 26/05/2014
 """
-Setup.py for MPE
+Setup.py for mpe
 """
 import os,subprocess,re,sys
 from setuptools import setup, find_packages
@@ -59,9 +59,9 @@ setup(
 	packages = PACKAGES,
 	package_dir = dict(zip (PACKAGES, PACKAGE_DIRS)),
 	package_data = {'mpe':['parameters.csv','gene_parameters.csv']},
-	scripts = ['MPE.py'],
+	scripts = ['mpe.py'],
 	test_suite = 'tests',
-	long_description=read('README.md'),
+	long_description = read('README.md'),
 	classifiers=[
 		"Development Status :: 1 - Planning",
 		"Topic :: Scientific/Engineering :: Bio-Informatics",
