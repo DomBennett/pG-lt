@@ -34,6 +34,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 import argparse,pickle,sys,csv,os,re,logging,platform
 from datetime import datetime
 from mpe.tools.system import Stager
+from mpe.tools.system import TooFewSpeciesError
 from mpe import _PARS as default_pars_file
 from mpe import _GPARS as default_gpars_file
 
@@ -177,7 +178,7 @@ def readInPars(pars_file):
 	paradict = {'nseqs' : None, 'naligns' : None,\
 	'ntrees' : None, 'download_thoroughness' : None,\
 	'maxlen' : None, 'minlen' : None, 'maxtrys' : None,\
-	'maxpedge': None}
+	'maxpedge': None, 'parentid' : None}
 	# open file, read each row, extract value
 	paradict = _read(pars_file, paradict)
 	# if Nones remain, use default
@@ -270,7 +271,7 @@ def logEndFolder(directory):
 		datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
 
 def logStart(directories):
-	"""Log end"""
+	"""Log start"""
 	logging.info('\n' + '#' * 70)
 	logging.info(description)
 	logging.info('#' * 70 + '\n')
@@ -280,8 +281,15 @@ def logStart(directories):
 	logging.info('Working with the following directories:')
 	# convert dirs to string
 	print_dirs = ''
+	chars_counter = 0
 	for each in directories[:-1]:
-		print_dirs += each + ', '
+		chars_counter += len(each)
+		if chars_counter > 70:
+			# stop at 70 columns
+			print_dirs += each + ',\n'
+			chars_counter = 0
+		else:
+			print_dirs += each + ', '
 	print_dirs += directories[-1]
 	logging.info('[{0}]'.format(print_dirs))
 
@@ -313,9 +321,11 @@ def main():
 			prime(each, arguments)
 			# run Stager
 			Stager.run_all(each, stage = 0, verbose = args.verbose)
-		except:
+		except PrimingError:
 			logging.error('An error occurred for [{0}]! Check log \
 file for more details. Moving to next folder.'.format(each))
+		except TooFewSpeciesError:
+			logging.error('Too few species left. Moving to next folder')
 		logEndFolder(each)
 
 if __name__ == '__main__':
