@@ -34,7 +34,7 @@ def dummy_goodPhylogenyTest(phylogeny, maxpedge):
 with open(os.path.join(working_dir, 'data','test_alignment_ref.faa'), 'r') \
 as file:
 	alignment = AlignIO.read(file, 'fasta')
-paradict = {'nphylos':1,'maxtrys':1,'maxpedge':0.5}
+paradict = {'ntrees':1,'maxtrys':1,'maxpedge':0.5}
 
 
 class PhylogenyStageTestSuite(unittest.TestCase):
