@@ -59,7 +59,7 @@ setup(
 	packages = PACKAGES,
 	package_dir = dict(zip (PACKAGES, PACKAGE_DIRS)),
 	package_data = {'mpe':['parameters.csv','gene_parameters.csv']},
-	scripts = ['mpe.py'],
+	scripts = ['run_mpe.py'],
 	test_suite = 'tests',
 	long_description = read('README.md'),
 	classifiers=[
