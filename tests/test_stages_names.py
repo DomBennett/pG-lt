@@ -44,7 +44,7 @@ class NamesStageTestSuite(unittest.TestCase):
 		with open(".paradict.p", "wb") as file:
 			pickle.dump(paradict, file)
 		with open(".terms.p", "wb") as file:
-			pickle.dump({}, file)
+			pickle.dump(['t1', 't2', 't3', 't4', 't5'], file)
 		os.mkdir('resolved_names')
 
 	def tearDown(self):
@@ -52,6 +52,7 @@ class NamesStageTestSuite(unittest.TestCase):
 		names_stage.Resolver = self.True_Resolver
 		names_stage.ntools.genNamesDict = self.true_genNamesDict
 		names_stage.ntools.genTaxTree = self.true_genTaxTree
+		#TODO: always tear down files and folders
 
 	def test_names_stage(self):
 		# run
