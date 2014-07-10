@@ -31,7 +31,7 @@ def run(wd = os.getcwd()):
 
 	## Parameters
 	naligns = int(paradict["naligns"])
-	aligncounter = 0
+	all_counter = 0
 
 	## Process
 	# add alignments to namesdict
@@ -63,7 +63,7 @@ def run(wd = os.getcwd()):
 		maxseedtrys = int(genedict[gene]["maxseedtrys"])
 		aligner = atools.Aligner(seqstore, mingaps, minoverlap,\
 			minseedsize,maxtrys,maxseedtrys)
-		trys = 0
+		trys = each_counter = 0
 		i = 1
 		try:
 			while i <= naligns:
@@ -87,23 +87,26 @@ def run(wd = os.getcwd()):
 				with open(output_path, "w") as file:
 					count = SeqIO.write(alignment, file, "fasta")
 					del count
-				aligncounter += 1
+				each_counter += 1
 				trys = 0
 				i += 1
 		except atools.OutgroupError:
 			logging.info("... outgroup dropped")
 		except atools.MinSpeciesError:
 			logging.info("... too few species left in sequence pool")
-		if aligncounter < naligns:
+		if each_counter < naligns:
 			logging.info("... too few alignments generated")
 			os.rmdir(gene_dir)
 			continue
+		all_counter += each_counter
+	# the number of alignments per name in namesdict
 	naligns_name = [namesdict[e]['alignments'] for e in namesdict.keys() if\
 	namesdict[e]['genes'] > 0]
-	paligns_name = [len(naligns_name) * float(e)/aligncounter for e\
+	# the proportion of alignments each name has of all alignments
+	paligns_name = [len(naligns_name) * float(e)/all_counter for e\
 	in naligns_name]
 	with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
 		pickle.dump(namesdict, file)
 	logging.info('Stage finished. Generated [{n1}] alignments for mean \
-[{n2:.{d}f}](sd[{n3:.{d}f}]) species.'.format(n1 = aligncounter, n2 = \
+[{n2:.{d}f}](sd[{n3:.{d}f}]) species.'.format(n1 = all_counter, n2 = \
 	numpy.mean(paligns_name), n3 = numpy.std(paligns_name), d = 2))
