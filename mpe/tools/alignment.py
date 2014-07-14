@@ -169,9 +169,9 @@ class Aligner(object):
 		self.minoverlap = minoverlap
 		self.minseedsize = minseedsize
 		self.maxtrys = maxtrys
-		self.maxseedtrys = maxseedtrys
+		self.buffer = maxseedtrys
+		self.buffer_counter = 0 # seedsize buffer counter
 		self.seedsize = len(seqstore)
-		#self.seedsize = 5
 		self.timeout = 99999999
 		self.silent = False
 
@@ -200,16 +200,41 @@ presence of outgroup, number of species and length of alignment"""
 		max_i = lens.index(max(lens))
 		return store[max_i]
 
+	def calcSeedsize(self, success = True):
+		"""Calculate seedsize based on buffer and success of current seedsize.
+		Return 1 if trys must increase, else 0."""
+		# increase seedsize if successful buffer times in a row
+		# decrease seedsize if unsuccessful buffer times in a row
+		if success:
+			self.buffer_counter += 1
+		else:
+			self.buffer_counter -= 1
+		if self.buffer_counter >= self.buffer:
+			if self.seedsize < len(self.seqstore):
+				self.seedsize += 1
+		if self.buffer_counter <= (self.buffer * -1):
+			if self.seedsize > self.minseedsize:
+				self.seedsize -= 1
+			else:
+				# here seedsize must be reduced, but has hit
+				#  midseedsize, add 1 to trys
+				return 1
+		return 0
+
 	def run(self):
 		"""Incrementally build an alignment by adding sequences to a seed alignment"""
-		trys = seedtrys = 0
+		trys = 0
 		store = []
 		logging.info("........ seed phase: [{0}] seed size".format(self.seedsize))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
 			alignment = align(sequences)
-			if self._check(alignment):
+			success = self._check(alignment)
+			trys += self.calcSeedsize(success) # add to trys if seedsize is too small
+			if self.maxtrys < trys:
+				return None
+			if success: # if alignment is successful, return alignment or move to next stage
 				if len(self.seqstore.sppool) == 0:
 					return alignment
 				else:
@@ -218,15 +243,6 @@ presence of outgroup, number of species and length of alignment"""
 					if not sequence:
 						return self._return(store)
 				break
-			if self.seedsize > self.minseedsize:
-				seedtrys += 1
-				if self.maxseedtrys < seedtrys:
-					seedtrys = 0
-					self.seedsize -= 1
-			else:
-				trys += 1
-				if self.maxtrys < trys:
-					return None
 		trys = 0
 		logging.info("........ add phase : [{0}] species".format(len(alignment)))
 		while True:
