@@ -302,36 +302,39 @@ def main():
 	args = parser.parse_args()
 	if not args.email:
 		# stop if no email
-		print 'An email address MUST be provided. Use \'-e\'.'
+		print 'An email address must be provided. Use \'-e\'.'
 		sys.exit()
 	# set up logging
 	setUpLogging(args.verbose, args.debug)
 	# log exceptions if they occur:
-	try:
-		# search cwd for folders that contain names and parameter files
-		dirs = getDirs()
-		logStart(dirs)
-		# loop through each folder
-		for each in dirs:
-			if not args.verbose:
-				print 'Woking on [{0}]'.format(each)
-			logStartFolder(each)
-			try:
-				# get list of arguments
-				arguments = sortArgs(each, args.email)
-				# initialise hidden files
-				prime(each, arguments)
-				# run Stager
-				Stager.run_all(each, stage = 0, verbose = args.verbose)
-			except PrimingError:
-				logging.error('An error occurred for [{0}]! Check log \
-	file for more details. Moving to next folder.'.format(each))
-			except TooFewSpeciesError:
-				logging.error('Too few species left. Moving to next folder')
-			logEndFolder(each)
-	except:
-		# if any exceptions arise that cause the program to halt -- log them
-		logging.exception('\n\nFatal error!')
+	# search cwd for folders that contain names and parameter files
+	dirs = getDirs()
+	logStart(dirs)
+	# loop through each folder
+	for each in dirs:
+		if not args.verbose:
+			print 'Woking on [{0}]'.format(each)
+		logStartFolder(each)
+		try:
+			# get list of arguments
+			arguments = sortArgs(each, args.email)
+			# initialise hidden files
+			prime(each, arguments)
+			# run Stager
+			Stager.run_all(each, stage = 0, verbose = args.verbose)
+		except PrimingError:
+			logging.error('A priming error occurred for [{0}]! Check log \
+file for more details. Moving to next folder'.format(each))
+		except TooFewSpeciesError:
+			logging.error('Too few species left for [{0}]. Moving to \
+next folder'.format(each))
+		except KeyboardInterrupt:
+			logging.info('Execution halted by user')
+			sys.exit('Execution halted by user')
+		except:
+			logging.exception('Unexpected error occurred for [{0}]. \
+Moving to next folder'.format(each))
+		logEndFolder(each)
 
 if __name__ == '__main__':
 	main()
