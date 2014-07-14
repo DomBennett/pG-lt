@@ -6,7 +6,7 @@ MPE Stage 3: Aligning sequences
 """
 
 ## Packages
-import os,re,pickle,logging
+import os,re,pickle,logging,shutil
 import numpy
 from Bio import SeqIO
 import mpe.tools.alignment as atools
@@ -96,7 +96,7 @@ def run(wd = os.getcwd()):
 			logging.info("... too few species left in sequence pool")
 		if each_counter < naligns:
 			logging.info("... too few alignments generated")
-			os.rmdir(gene_dir)
+			shutil.rmtree(gene_dir)
 			continue
 		all_counter += each_counter
 	# the number of alignments per name in namesdict
