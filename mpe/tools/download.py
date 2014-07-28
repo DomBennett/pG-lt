@@ -194,15 +194,42 @@ searching features."""
 
 ## Functions
 def findBestGenes(namesdict, genedict, thoroughness, allrankids,\
-	minnseq = 1, minpwithseq = 0.5):
+	minnseq = 1, target = 'all', minnspp = 5):
 	"""Return suitable genes for phylogeny by searching for \
 matches in GenBank"""
+	def nextBest (searchlist, types):
+		# return best genes based on n and types
+		ns = [e[1] for e in searchlist]
+		# if types is None, ignore types and return gene with most n
+		if types is None:
+			gene_i = ns.index(max(ns))
+			types = None
+		# else find all types for each gene
+		else:
+			search_types = [genedict[e[0]]['type'] for e in searchlist]
+			# if no types or search types and types have same number as
+			#  unique types, return gene with max n
+			if len(types) == 0 or len(list(set(search_types))) ==\
+			len(list(set(types))):
+				gene_i = ns.index(max(ns))
+			# else, loop until the next type with the highest n is reached
+			else:
+				while True:
+					gene_i = ns.index(max(ns))
+					gene = searchlist[gene_i]
+					if genedict[gene]['type'] not in types:
+						break
+		# return gene, shrunk searchlist and types
+		gene = searchlist.pop(gene_i)
+		return gene[0], searchlist, types
 	alltipids = [namesdict[e]["txids"] for e in namesdict.keys()]
-	genes = []
+	searchlist = []
 	for gene in genedict.keys():
 		logging.info(" .... checking [{0}]".format(gene))
+		# first check if its suitable for this taxonomic group
 		taxid = genedict[gene]["taxid"]
 		if int(taxid) in allrankids:
+			# if it is search genbank
 			gene_bool = []
 			for tipids in alltipids:
 				downloader = Downloader(gene_names = genedict[gene]["names"],\
@@ -211,7 +238,20 @@ matches in GenBank"""
 					maxlen = 0, minlen = 0)
 				res = downloader._search(tipids)
 				gene_bool.append(len(res) >= minnseq)
-			pwithseq = float(sum(gene_bool))/len(alltipids)
-			if pwithseq > minpwithseq:
-				genes.append(gene)
+			nspp = sum(gene_bool)
+			if nspp > minnspp:
+				# if more than minnspp species, add it to searchlist
+				searchlist.append((gene,nspp))
+	if target == 'all' or target > len(searchlist):
+		return [e[0] for e in searchlist]
+	else:
+		if 'type' in genedict[genedict.keys()[0]].keys():
+			# only if types have been provided in gene parameters
+			types = []
+		else:
+			types = None
+		genes = []
+		while len(genes) < target:
+			gene,searchlist,types = nextBest(searchlist,types)
+			genes.append(gene)
 	return genes

@@ -39,14 +39,15 @@ def run(wd = os.getcwd()):
 	minoverlap = 200
 	maxtrys = 100
 	minnseq = 1
-	minpwithseq = 0.6
+	minnspp = 5
+	target = 5
 	maxpn = 0.1
 	seqcounter = basecounter = 0
 
 	## Process
 	logging.info('Determining best genes')
 	genes = dtools.findBestGenes(namesdict, genedict, thoroughness,\
-		allrankids, minnseq, minpwithseq)
+		allrankids, minnseq, target, minnspp)
 	statement = 'Using genes:'
 	for gene in genes:
 		statement += " " + gene

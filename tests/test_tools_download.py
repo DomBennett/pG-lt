@@ -101,7 +101,7 @@ minlen = 300
 # dictionary variables
 namesdict = {"species1":{'txids':['1','2']}}
 allrankids = [1, 2, 3]
-genedict = {'gene1':{'taxid':'3','names':['name1', 'name2']}}
+genedict = {'gene1':{'taxid':'3','names':['name1', 'name2'],'type':'deep'}}
 
 class DownloadTestSuite(unittest.TestCase):
 
@@ -196,7 +196,7 @@ class DownloadTestSuite(unittest.TestCase):
 
 	def test_findbestgenes(self):
 		res = dtools.findBestGenes(self.namesdict, self.genedict, 3,\
-		 self.allrankids, minnseq = 1, minpwithseq = 0.5)
+		 self.allrankids, minnseq = 1, target = 1, minnspp = 0)
 		self.assertEqual(res[0], 'gene1')
 
 if __name__ == '__main__':
