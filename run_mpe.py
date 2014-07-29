@@ -334,14 +334,14 @@ def main():
 	logMessage('begin', logger = base_logger, directory = dirs)
 	# loop through each folder
 	for i in range(len(dirs)):
+		# set up a root logger, so now default logging refers to this
+		logger = setUpLogging(args.verbose, args.debug, logname = '',\
+			directory = dirs[i])
 		if not args.verbose:
 			print 'Woking on [{0}]'.format(dirs[i])
 		logMessage('start', logger = base_logger, directory = dirs[i])
 		error_raised = False
 		try:
-			# set up a root logger, so now default logging refers to this
-			logger = setUpLogging(args.verbose, args.debug, logname = '',\
-				directory = dirs[i])
 			# get list of arguments
 			arguments = sortArgs(dirs[i], args.email, logger)
 			# initialise hidden files

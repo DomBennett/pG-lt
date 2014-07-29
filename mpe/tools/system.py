@@ -30,7 +30,7 @@ class Stager(object):
 			self.output_dir = os.path.join(wd, self.STAGES[stage][1])
 
 	def _start(self):
-		logging.info('\n#'*70)
+		logging.info('\n' + '#'*70)
 		logging.info('Stage [{0}] started at [{1}]\n'.format(self.stage,
 			self._time_string()))
 
