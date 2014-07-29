@@ -53,7 +53,7 @@ names through Mass Phylogeny Estimation."""
 class PrimingError(Exception):
 	pass
 
-## Functions
+## Root functions
 def printHeader():
 	"""Print a nice program description header"""
 	# use 70 cols as I think this is standard
@@ -61,20 +61,130 @@ def printHeader():
 	print description
 	print '#' * 70 + '\n'
 
-def logPars(paradict):
-	"""Print all mpe parameters"""
-	logging.info('\nUsing the following parameters:')
-	for key in paradict.keys():
-		logging.info('    [{0}] = [{1}]'.format(key, paradict[key]))
+def parseArgs():
+	"""Read command-line arguments"""
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-email", "-e", help="please provide email for NCBI")
+	parser.add_argument("-restart", "-r", help="restart from specified stage")
+	parser.add_argument("--verbose", help="increase output verbosity",
+					action="store_true")
+	parser.add_argument("--debug", help="log warnings (developer only)",
+					action="store_true")
+	return parser
 
-def logGpars(genedict):
-	"""Print gene parameters"""
-	logging.info('\nUsing the following genes and gene parameters:')
+def getDirs(logger):
+	"""Return folders in directory with names.txt files"""
+	# list all folders
+	unchecked_dirs = [f for f in os.listdir('.') if not\
+	os.path.isfile(f)]
+	# remove hidden folders
+	unchecked_dirs = [d for d in unchecked_dirs if not\
+	re.match('^\.', d)]
+	# loop through each and check they contain a names.txt
+	checked_dirs = []
+	for each in unchecked_dirs:
+		path = os.path.join (os.getcwd(), each)
+		files = os.listdir(path)
+		if 'names.txt' in files:
+			checked_dirs.append(each)
+	if len(checked_dirs) > 0:
+		return checked_dirs
+	else:
+		logger.error(nonamestxt_msg)
+		sys.exit()
+
+def setUpLogging(verbose, debug, logname = 'base',\
+	directory = os.getcwd()):
+	"""Set up logging : direct and control log statements"""
+	# get logger
+	logger = logging.getLogger(logname)
+	# if this logger already has handlers, remove them -- prevents propogation
+	if logger.handlers:
+		handlers = logger.handlers[:]
+		for h in handlers:
+			logger.removeHandler(h)
+	if debug:
+		# log all statements above DEBUG level
+		logger.setLevel(logging.DEBUG)
+	else:
+		# log all statements above INFO level
+		# (which is higher than DEBUG)
+		logger.setLevel(logging.INFO)
+	# add file hander to root
+	logfile = os.path.join(directory, 'log.txt')
+	loghandler = logging.FileHandler(logfile, 'a')
+	# set statement format -- I only want the message
+	loghandler.setFormatter(logging.Formatter('%(message)s'))
+	logger.addHandler(loghandler)
+	if verbose:
+		# if verbose, copy all info statements to console
+		console = logging.StreamHandler()
+		console.setFormatter(logging.Formatter('%(message)s'))
+		logger.addHandler(console)
+	return logger
+
+def logMessage(phase, logger, directory = None):
+	if phase == 'begin':
+		# begin running the program
+		# directory is list
+		logger.info('\n' + '#' * 70)
+		logger.info(description)
+		logger.info('#' * 70 + '\n')
+		logger.info('Running on [{0}] [{1}]'.format(platform.node(),
+					platform.platform()))
+		logger.info('Python [{0}]\n'.format(sys.version))
+		logger.info('Working with the following directories:')
+		# convert dirs to string
+		dir_string = ''
+		chars_counter = 0
+		for each in directory[:-1]:
+			chars_counter += len(each)
+			if chars_counter > 70:
+				# stop at 70 columns
+				dir_string += '[' + each + '],\n'
+				chars_counter = 0
+			else:
+				dir_string += '[' + each + '], '
+		dir_string += '[' + directory[-1] + ']'
+		logger.info('[{0}]'.format(dir_string))
+	elif phase == 'start':
+		# start for one folder
+		# directory is a string
+		logger.info('\n' + '#' * 70 + '\n')
+		logger.info('Folder [{0}] started at [{1}]'.format(directory,
+			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
+	elif phase == 'finish':
+		# when a folder is finished running
+		logger.info('Folder [{0}] finished at [{1}]'.format(directory,\
+			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
+	elif phase == 'folder-error':
+		# when a folder is unable to run
+		logger.info('Unfinished for folder [{0}] at [{1}]'.format(directory,\
+			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
+		logger.info('Check [{0}] for more details'.format(os.path.join(\
+			directory, 'log.txt')))
+	elif phase == 'end':
+		logger.info('\nFIN')
+	else:
+		raise(ValueError('Unrecognised phase'))
+
+## Folder functions
+def recordPars(paradict):
+	"""Return mpe parameters string"""
+	record = '\nUsing the following parameters:\n'
+	for key in paradict.keys():
+		record += '    [{0}] = [{1}]\n'.format(key, paradict[key])
+	return record
+
+def recordGpars(genedict):
+	"""Return gene parameters string"""
+	record = '\nUsing the following genes and gene parameters:\n'
 	for gene in genedict.keys():
-		logging.info('  Gene: [{0}]'.format(gene))
+		record += '  Gene: [{0}]\n'.format(gene)
 		for par in genedict[gene]:
-			logging.info('    [{0}] = [{1}]'.format(par,\
-				genedict[gene][par]))
+			record += '    [{0}] = [{1}]\n'.format(par,\
+				genedict[gene][par])
+	return record
 
 def prime(directory, arguments):
 	"""Write pickle files, print arguments"""
@@ -88,21 +198,12 @@ def prime(directory, arguments):
 	with open(os.path.join(directory,".terms.p"),\
 		"wb") as file:
 		pickle.dump(arguments['terms'], file)
-	# Print arguments
-	logging.info('Working with [{0}] names'.format(len(arguments['terms'])))
-	logPars(arguments['paradict'])
-	logGpars(arguments['genedict'])
-
-def parseArgs():
-	"""Read command-line arguments"""
-	parser = argparse.ArgumentParser()
-	parser.add_argument("-email", "-e", help="please provide email for NCBI")
-	parser.add_argument("-restart", "-r", help="restart from specified stage")
-	parser.add_argument("--verbose", help="increase output verbosity",
-					action="store_true")
-	parser.add_argument("--debug", help="log warnings (developer only)",
-					action="store_true")
-	return parser
+	# Print arguments and parameters to file
+	record = 'Working with [{0}] names\n'.format(len(arguments['terms']))
+	record += recordPars(arguments['paradict'])
+	record += recordGpars(arguments['genedict'])
+	with open(os.path.join(directory, 'info.txt'),'wd') as file:
+		file.write(record)
 
 def readInNames(directory):
 	"""Read names from text file in dir"""
@@ -191,107 +292,29 @@ def readInPars(pars_file):
 		paradict = _read(default_pars_file, paradict)
 	return paradict
 
-def sortArgs(directory, email):
+def sortArgs(directory, email, logger):
 	"""Search for relevant files in dir, return list of arguments"""
 	# find text file and read, raise error if fail
 	try:
 		terms = readInNames(directory)
 	except IOError:
-		logging.error(ioerror_msg.format('names.txt', directory))
+		logger.error(ioerror_msg.format('names.txt', directory))
 		raise PrimingError()
 	# find gene parameter file and read, raise error if fail
 	try:
 		genedict = readInGenePars(os.path.join(directory, 'gene_parameters.csv'))
 	except IOError:
-		logging.error(ioerror_msg.format('gene_parameters.csv', directory))
+		logger.error(ioerror_msg.format('gene_parameters.csv', directory))
 		raise PrimingError()
 	# find parameter file and read, raise error if fail
 	try:
 		paradict = readInPars(os.path.join(directory, 'parameters.csv'))
 	except IOError:
-		logging.error(ioerror_msg.format('parameters.csv', directory))
+		logger.error(ioerror_msg.format('parameters.csv', directory))
 		raise PrimingError()
 	# add email to paradict
 	paradict['email'] = email
 	return {'terms' : terms, 'genedict' : genedict, 'paradict' : paradict}
-
-def getDirs():
-	"""Return folders in directory with names.txt files"""
-	# list all folders
-	unchecked_dirs = [f for f in os.listdir('.') if not\
-	os.path.isfile(f)]
-	# remove hidden folders
-	unchecked_dirs = [d for d in unchecked_dirs if not\
-	re.match('^\.', d)]
-	# loop through each and check they contain a names.txt
-	checked_dirs = []
-	for each in unchecked_dirs:
-		path = os.path.join (os.getcwd(), each)
-		files = os.listdir(path)
-		if 'names.txt' in files:
-			checked_dirs.append(each)
-	if len(checked_dirs) > 0:
-		return checked_dirs
-	else:
-		logging.error(nonamestxt_msg)
-		sys.exit()
-
-def setUpLogging(verbose, debug):
-	"""Set up logging : direct and control log statements"""
-	# root logger
-	root_log = logging.getLogger()
-	if debug:
-		# log all statements above DEBUG level
-		root_log.setLevel(logging.DEBUG)
-	else:
-		# log all statements above INFO level
-		# (which is higher than DEBUG)
-		root_log.setLevel(logging.INFO)
-	# add file hander to root
-	logfile = os.path.join(os.getcwd(), 'log.txt')
-	loghandler = logging.FileHandler(logfile, 'a')
-	# set statement format -- I only want the message
-	loghandler.setFormatter(logging.Formatter('%(message)s'))
-	root_log.addHandler(loghandler)
-	if verbose:
-		# if verbose, copy all info statements to console
-		console = logging.StreamHandler()
-		console.setFormatter(logging.Formatter('%(message)s'))
-		root_log.addHandler(console)
-
-def logStartFolder(directory):
-	"""Log start of new folder"""
-	logging.info('\n' + '#' * 70 + '\n')
-	logging.info('Folder [{0}] started at [{1}]'.format(directory,
-		datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
-
-def logEndFolder(directory):
-	"""Log end of folder"""
-	logging.info('Folder [{0}] finished at [{1}]'.format(directory,
-		datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
-
-def logStart(directories):
-	"""Log start"""
-	logging.info('\n' + '#' * 70)
-	logging.info(description)
-	logging.info('#' * 70 + '\n')
-	logging.info('Running on [{0}] [{1}]'.format(platform.node(),
-				platform.platform()))
-	logging.info('Python [{0}]\n'.format(sys.version))
-	logging.info('Working with the following directories:')
-	# convert dirs to string
-	print_dirs = ''
-	chars_counter = 0
-	for each in directories[:-1]:
-		chars_counter += len(each)
-		if chars_counter > 70:
-			# stop at 70 columns
-			print_dirs += each + ',\n'
-			chars_counter = 0
-		else:
-			print_dirs += each + ', '
-	print_dirs += directories[-1]
-	logging.info('[{0}]'.format(print_dirs))
 
 def main():
 	"""Run mpe with user defined arguments from command-line"""
@@ -304,37 +327,48 @@ def main():
 		# stop if no email
 		print 'An email address must be provided. Use \'-e\'.'
 		sys.exit()
-	# set up logging
-	setUpLogging(args.verbose, args.debug)
-	# log exceptions if they occur:
+	# create base logger -- messages in parent folder log.txt
+	base_logger = setUpLogging(args.verbose, args.debug)
 	# search cwd for folders that contain names and parameter files
-	dirs = getDirs()
-	logStart(dirs)
+	dirs = getDirs(base_logger)
+	logMessage('begin', logger = base_logger, directory = dirs)
 	# loop through each folder
-	for each in dirs:
+	for i in range(len(dirs)):
 		if not args.verbose:
-			print 'Woking on [{0}]'.format(each)
-		logStartFolder(each)
+			print 'Woking on [{0}]'.format(dirs[i])
+		logMessage('start', logger = base_logger, directory = dirs[i])
+		error_raised = False
 		try:
+			# set up a root logger, so now default logging refers to this
+			logger = setUpLogging(args.verbose, args.debug, logname = '',\
+				directory = dirs[i])
 			# get list of arguments
-			arguments = sortArgs(each, args.email)
+			arguments = sortArgs(dirs[i], args.email, logger)
 			# initialise hidden files
-			prime(each, arguments)
+			prime(dirs[i], arguments)
 			# run Stager
-			Stager.run_all(each, stage = 0, verbose = args.verbose)
+			Stager.run_all(dirs[i], stage = 0, verbose = args.verbose)
 		except PrimingError:
-			logging.error('A priming error occurred for [{0}]! Check log \
-file for more details. Moving to next folder'.format(each))
+			error_raised = True
+			logger.error('A priming error occurred for [{0}]! Check log \
+file for more details. Moving to next folder'.format(dirs[i]))
 		except TooFewSpeciesError:
-			logging.error('Too few species left for [{0}]. Moving to \
-next folder'.format(each))
+			error_raised = True
+			logger.error('Too few species left for [{0}]. Moving to \
+next folder'.format(dirs[i]))
 		except KeyboardInterrupt:
-			logging.info('Execution halted by user')
+			error_raised = True
+			logger.info('Execution halted by user')
 			sys.exit('Execution halted by user')
 		except:
-			logging.exception('Unexpected error occurred for [{0}]. \
-Moving to next folder'.format(each))
-		logEndFolder(each)
+			error_raised = True
+			logger.exception('Unexpected error occurred for [{0}]. \
+Moving to next folder'.format(dirs[i]))
+		if error_raised:
+			logMessage('folder-error', logger = base_logger, directory = dirs[i])
+		else:
+			logMessage('finish', logger = base_logger, directory = dirs[i])
+	logMessage('end', logger = base_logger)
 
 if __name__ == '__main__':
 	main()
