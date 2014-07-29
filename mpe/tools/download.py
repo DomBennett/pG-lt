@@ -81,7 +81,7 @@ scaffold[TI] NOT assembly[TI] NOT unverified[TI]".format(taxids_term, gene_term)
 	def _filter(self, sequences):
 		"""Filter sequences by aligning sequences"""
 		def filterByAlignment(sequences):
-			alignment = atools.align(sequences)
+			alignment = atools.align('mafft --auto', sequences)
 			return atools.checkAlignment(alignment, self.mingaps, self.minoverlap, self.minlen)
 		filtered = []
 		trys = 0
