@@ -79,7 +79,7 @@ def dummy_eFetch(ncbi_id, db = "nucleotide"):
 		# return all as list
 		return [seq1, seq2, seq3]
 
-def dummy_align(sequences):
+def dummy_align(command, sequences):
 	return all (sequences)
 
 def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen):
