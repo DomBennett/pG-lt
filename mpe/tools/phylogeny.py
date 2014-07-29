@@ -6,7 +6,7 @@ MPE phylogeny tools
 """
 
 ## Packages
-import os,re,random,logging
+import os,re,random
 #from Bio import Phylo
 #from Bio.Seq import Seq
 from Bio.Align import MultipleSeqAlignment
@@ -14,11 +14,10 @@ from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio import AlignIO
 import numpy as np
-from dendropy import treesum
-from dendropy import treesplit 
+import dendropy as dp
 from system import TerminationPipe
 
-## Functions
+## Old functions
 # def renameTips(phylo, names):
 # 	for each in phylo.get_terminals():
 # 		try:
@@ -27,42 +26,22 @@ from system import TerminationPipe
 # 			pass
 # 	return phylo
 
-# def getRTTDists(phylo):
-# 	"""Calcualte root to tips distance"""
-# 	names = []
-# 	for terminal in phylo.get_terminals():
-# 		names.append(terminal.name)
-# 	rtt_dists = []
-# 	for name in names:
-# 		rtt_dists.append(phylo.distance(name))
-# 	return rtt_dists
-
-# def getTBP(phylo):
-# 	term_lens = []
-# 	for terminal in phylo.get_terminals():
-# 		term_lens.append(terminal.branch_length)
-# 	total_len = phylo.total_branch_length()
-# 	tbps = []
-# 	for term_len in term_lens:
-# 		tbps.append(term_len/total_len)
-# 	return tbps
-
-def getBranchLengths(phylo):
-	lens = []
-	depths =  phylo.depths(unit_branch_lengths = True)
-	for branch in depths.keys():
-		if branch.branch_length:
-			lens.append(branch.branch_length)
-	return lens
+# def getBranchLengths(phylo):
+# 	lens = []
+# 	depths =  phylo.depths(unit_branch_lengths = True)
+# 	for branch in depths.keys():
+# 		if branch.branch_length:
+# 			lens.append(branch.branch_length)
+# 	return lens
 	
-def goodPhylogenyTest(query, max_branch):
-	lens = getBranchLengths(query)
-	total_len = sum(lens)
-	lens_bool = [e/total_len > max_branch for e in lens]
-	if any(lens_bool):
-		return False
-	else:
-		return True
+# def goodPhylogenyTest(query, max_branch):
+# 	lens = getBranchLengths(query)
+# 	total_len = sum(lens)
+# 	lens_bool = [e/total_len > max_branch for e in lens]
+# 	if any(lens_bool):
+# 		return False
+# 	else:
+# 		return True
 
 # def phyloTest(query, ref_path, max_nsplits, max_branch):
 # 	lens = getBranchLengths(query)
@@ -94,7 +73,35 @@ def goodPhylogenyTest(query, max_branch):
 # 	else:
 # 		return True
 
+def consensus(distribution_dir, consensus_dir, min_freq = 0.5, is_rooted = True,\
+	trees_splits_encoded = False):
+	"""Generate a rooted consensus tree from a distribution filepath"""
+	trees = dp.TreeList()
+	trees.read_from_path(distribution_dir, "newick", as_rooted = True)
+	#https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
+	sd = dp.treesplit.SplitDistribution(taxon_set=trees.taxon_set)
+	sd.is_rooted = is_rooted
+	tsum = dp.treesum.TreeSummarizer()
+	tsum.count_splits_on_trees(trees,split_distribution=sd,\
+		trees_splits_encoded=trees_splits_encoded)
+	consensus = tsum.tree_from_splits(sd, min_freq = min_freq)
+	consensus.write_to_path(os.path.join(consensus_dir), "newick")
+
+def test(phylo, cutoff = 0.1):
+	"""Return true if std(rrt.dist) < cutoff"""
+	names = []
+	for terminal in phylo.get_terminals():
+		names.append(terminal.name)
+	rtt_dists = []
+	for name in names:
+		rtt_dists.append(phylo.distance(name))
+	if np.std(rtt_dists) < cutoff:
+		return True
+	else:
+		return False
+
 def genConstraintTree(alignment, taxontree_file):
+	"""Write a consensus tree to file. Return command for RAxML."""
 	tip_names = []
 	for record in alignment:
 		tip_names.append(record.id)
@@ -114,6 +121,8 @@ def genConstraintTree(alignment, taxontree_file):
 		return " -g .constraint.tre"
 
 def concatenateAlignments(alignments):
+	"""Take list of alignments for multiple genes.
+Return single alignment with partitions."""
 	if len(alignments) == 1:
 		return alignments[0],False
 	# Sort IDs
@@ -186,15 +195,3 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=99
 		return tree
 	else:
 		raise RuntimeError("Either phylogeny building program failed, or ran out of time")
-
-# def getConsensus(trees, min_freq = 0.5, is_rooted = True,\
-# 	trees_splits_encoded = False):
-# 	"""Generate a rooted consensus tree from a distribution"""
-# 	#https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
-# 	sd = treesplit.SplitDistribution(taxon_set=trees.taxon_set)
-# 	sd.is_rooted = is_rooted
-# 	tsum = treesum.TreeSummarizer()
-# 	tsum.count_splits_on_trees(trees,split_distribution=sd,\
-# 		trees_splits_encoded=trees_splits_encoded)
-# 	tree = tsum.tree_from_splits(sd, min_freq=min_freq)
-# 	return tree 

@@ -7,4 +7,4 @@ parentid,,Nothing in default
 maxlen,2000,Max sequence length
 minlen,300,Min sequence length
 maxtrys,1000,Max number of phylogeny attempts
-maxpedge,0.5,Max proportion of a tree a single branch can represent (between 0 and 1)
+maxrttsd,0.5,Max standard deviation of root to tip distances for a normal tree

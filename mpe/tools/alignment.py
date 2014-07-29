@@ -334,7 +334,7 @@ Return bool"""
 		return False
 	pintgaps = []
 	for each in alignment:
-		sequence = each.seq.tostring()
+		sequence = str(each.seq)
 		columns = [ei for ei,e in enumerate(sequence) if e != "-"]
 		totnucs = len(columns)
 		totgaps = alen - totnucs

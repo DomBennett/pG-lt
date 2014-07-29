@@ -9,7 +9,6 @@ MPE Stage 4: Phylogeny generation
 import os,re,random,pickle,logging
 from Bio import AlignIO
 from Bio import Phylo
-import dendropy as dp
 import mpe.tools.phylogeny as ptools
 
 def run(wd = os.getcwd()):
@@ -27,11 +26,12 @@ def run(wd = os.getcwd()):
 	## Parameters
 	nphylos = int(paradict["ntrees"])
 	maxtrys = int(paradict["maxtrys"])
-	maxpedge = float(paradict["maxpedge"])
+	maxrttsd = float(paradict["maxrttsd"])
 	constraint = True
 	phylocounter = 0
 
 	## Process
+	# alignments
 	genes = sorted(os.listdir(alignment_dir))
 	genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
 	logging.info("Reading in alignments")
@@ -47,6 +47,7 @@ def run(wd = os.getcwd()):
 			as file:
 				alignment = AlignIO.read(file, "fasta")
 			alignobj[gene].append((alignment, alignment_file))
+	# phylogenies
 	logging.info("Generating [{0}] phylogenies".format(nphylos))
 	phylogenies = []
 	trys = 0
@@ -68,18 +69,15 @@ def run(wd = os.getcwd()):
 			outgroup = "outgroup",partitions = partitions)
 		phylogeny.root_with_outgroup("outgroup")
 		phylogeny.prune("outgroup")
-		if ptools.goodPhylogenyTest(phylogeny, maxpedge):
+		if ptools.test(phylogeny, maxrttsd):
 			phylogenies.append(phylogeny)
 			phylocounter += 1
-	logging.info('Generating consensus.')
+	# saving
+	logging.info('Saving phylogenies ...')
 	filepath = os.path.join(phylogeny_dir, 'distribution.tre')
 	with open(filepath, "w") as file:
 		Phylo.write(phylogenies, file, 'newick')
-	phylos = dp.TreeList()
-	phylos.read_from_path(filepath, "newick", as_rooted = True)
-	consensus = phylos.consensus(min_freq = 0.5, suppress_edge_lengths = True,\
-		rooted = True)
-	consensus.write_to_path(os.path.join(phylogeny_dir, "consensus.tre"),\
-		"newick")
-	logging.info('\n\nStage finished. Generated [{0}] phylogenies.'.\
-		format(phylocounter))
+	logging.info('Generating consensus ...')
+	ptools.consensus(filepath, os.path.join(phylogeny_dir, 'consensus.tre'),
+		min_freq = 0.5, is_rooted = True, trees_splits_encoded = False)
+	logging.info('Generated [{0}] phylogenies.'.format(phylocounter))
