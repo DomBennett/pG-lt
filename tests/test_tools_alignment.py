@@ -58,14 +58,26 @@ class AlignmentTestSuite(unittest.TestCase):
 			minoverlap = 50)
 		self.aligner = atools.Aligner(self.dummy_store, mingaps = 0.5,\
 			minoverlap = 50, minseedsize = 3, maxtrys = 10,\
-			maxseedtrys = 10)
+			maxseedtrys = 10, gene_type = 'shallow')
 
 	def tearDown(self):
 		pass
 
+	def test_version(self):
+		# try different combinations of sequences
+		def genSequences(n, length):
+			s = 'A' * length
+			return [s for i in range(n)]
+		self.assertEqual(atools.version(genSequences(30, 800),'deep'),\
+		 'mafft-xinsi')
+		self.assertEqual(atools.version(genSequences(90, 800),'deep'),\
+		 'mafft-qinsi')
+		self.assertEqual(atools.version(genSequences(90, 2000),'deep'),\
+		 'mafft --auto')
+
 	def test_align(self):
 		# align and check if results exist
-		res = atools.align(test_seqs)
+		res = atools.align('mafft --auto', test_seqs)
 		self.assertTrue(res.__class__.__name__ ==\
 			'MultipleSeqAlignment')
 

@@ -163,7 +163,7 @@ determine if sequences overlap. Return indexes of overlapping sequences."""
 class Aligner(object):
 	"""Build alignments from seqstore"""
 	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
-		maxtrys, maxseedtrys):
+		maxtrys, maxseedtrys, gene_type):
 		self.seqstore = seqstore
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
@@ -174,6 +174,7 @@ class Aligner(object):
 		self.seedsize = len(seqstore)
 		self.timeout = 99999999
 		self.silent = False
+		self.type = gene_type
 
 	def _check(self, alignment):
 		return checkAlignment(alignment, self.mingaps, self.minoverlap,\
@@ -229,7 +230,8 @@ presence of outgroup, number of species and length of alignment"""
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
-			alignment = align(sequences)
+			command = version(sequences, self.type)
+			alignment = align(command, sequences)
 			success = self._check(alignment)
 			trys += self.calcSeedsize(success) # add to trys if seedsize is too small
 			if self.maxtrys < trys:
@@ -248,6 +250,7 @@ presence of outgroup, number of species and length of alignment"""
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			#print "Number of species: {0}".format(len(alignment))
+			#TODO: I assume I can't use qinsi or xinsi with --add
 			alignment = add(alignment, sequence)
 			if self._check(alignment):
 				trys = 0
@@ -272,11 +275,25 @@ presence of outgroup, number of species and length of alignment"""
 				return self._return(store)
 
 ## Functions
-def align(sequences):
+def version(sequences, gene_type):
+	"""Return command for best MAFFT version given sequences"""
+	# determine auto, qinsi or xinsi based on:
+	# http://mafft.cbrc.jp/alignment/software/source66.html
+	# always using default algorithms
+	if gene_type != 'deep' or len(sequences) > 250:
+		return 'mafft --auto'
+	seqlens = [len(s) for s in sequences]
+	if max(seqlens) > 1500:
+		return 'mafft --auto'
+	if len(sequences) > 60:
+		return 'mafft-qinsi'
+	return 'mafft-xinsi'
+
+def align(command, sequences):
 	"""Align sequences using mafft (external program)"""
 	input_file = ".sequences_in.fasta"
 	output_file = ".alignment_out.fasta"
-	command_line = '{0} --auto {1} > {2}'.format('mafft', input_file, output_file)
+	command_line = '{0} {1} > {2}'.format(command, input_file, output_file)
 	with open(input_file, "w") as file:
 		SeqIO.write(sequences, file, "fasta")
 	pipe = TerminationPipe(command_line)
@@ -298,7 +315,7 @@ def add(alignment, sequence):
 	alignment_file = ".alignment_in.fasta"
 	sequence_file = ".sequence_in.fasta"
 	output_file = "alignment_out.fasta" + '.fasta'
-	command_line = '{0} --auto --add {1} {2} > {3}'.format('mafft', sequence_file,\
+	command_line = 'mafft --auto --add {0} {1} > {2}'.format(sequence_file,\
 		alignment_file, output_file)
 	with open(sequence_file, "w") as file:
 		SeqIO.write(sequence, file, "fasta")
