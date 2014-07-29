@@ -12,7 +12,7 @@ from Bio.SeqRecord import SeqRecord
 
 ## Dummies
 def dummy_findBestGenes(namesdict, genedict, thoroughness,\
-	allrankids, minnseq, minpwithseq):
+	allrankids, minnseq, target, minnspp):
 	# return a list of genes
 	return ['rbcl', 'COI']
 
