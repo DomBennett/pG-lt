@@ -10,6 +10,7 @@ import collections,re,logging, csv, os
 from Bio import Phylo
 from cStringIO import StringIO
 import entrez as etools
+from system import TaxonomicRankError
 
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):
@@ -147,7 +148,7 @@ def genNamesDict(resolver):
 		parentid = lineages[0][shared_bool.index(False) - 1]
 	return namesdict,allrankids,parentid
 
-def getOutgroup(namesdict, parentid, minrecords = 1000):
+def getOutgroup(namesdict, parentid, outgroupid = None, minrecords = 1000):
 	"""Return namesdict with suitable outgroup"""
 	def findParent(parentid):
 		return etools.eFetch(parentid, db = "taxonomy")[0]['ParentTaxId']
@@ -158,28 +159,31 @@ def getOutgroup(namesdict, parentid, minrecords = 1000):
 	# assumptions:
 	#  1. NCBI taxonomy is not paraphyletic
 	# make sure parentid is string
-	parentid = str(parentid)
-	outgroup_ids = []
-	while not outgroup_ids:
-		# if parent id are Cellular Orgs, likely name resolution error
-		#  or names given are too diverse
-		if parentid == '131567':
-			raise TaxonomicRankError()
-		# get parent of parent
-		grandparentid = findParent(parentid)
-		# find all children
-		candidates = etools.findChildren(grandparentid, next = True)
-		# filter out children that are in ingroup
-		candidates = [e for e in candidates if e != parentid]
-		# search genbank for nuc records
-		for candidate in candidates:
-			term = 'txid' + str(candidate) + '[PORGN]'
-			nuc_record = etools.eSearch(term)
-			# there must be more than 1000 nuc records
-			if int(nuc_record['Count']) > minrecords:
-				outgroup_ids.append(candidate)
-		# make grandparentid the new parentid
-		parentid = grandparentid
+	if not outgroupid:
+		parentid = str(parentid)
+		outgroup_ids = []
+		while not outgroup_ids:
+			# if parent id are Cellular Orgs, likely name resolution error
+			#  or names given are too diverse
+			if parentid == '131567':
+				raise TaxonomicRankError()
+			# get parent of parent
+			grandparentid = findParent(parentid)
+			# find all children
+			candidates = etools.findChildren(grandparentid, next = True)
+			# filter out children that are in ingroup
+			candidates = [e for e in candidates if e != parentid]
+			# search genbank for nuc records
+			for candidate in candidates:
+				term = 'txid' + str(candidate) + '[PORGN]'
+				nuc_record = etools.eSearch(term)
+				# there must be more than 1000 nuc records
+				if int(nuc_record['Count']) > minrecords:
+					outgroup_ids.append(candidate)
+			# make grandparentid the new parentid
+			parentid = grandparentid
+	else:
+		outgroup_ids = [outgroupid]
 	# add outgroup_ids to namesdict
 	namesdict["outgroup"] = {"txids" : outgroup_ids, "unique_name" :\
 	"outgroup", "rank" : "outgroup"}

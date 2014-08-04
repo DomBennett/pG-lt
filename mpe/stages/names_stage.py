@@ -30,6 +30,7 @@ def run(wd = os.getcwd()):
 		terms = pickle.load(file)
 
 	## Parameters
+	outgroupid = paradict["email"]
 	ntools.etools.Entrez.email = paradict["email"]
 	minspecies = 5
 
@@ -43,13 +44,13 @@ def run(wd = os.getcwd()):
 	if len(terms) < minspecies:
 		raise TooFewSpeciesError
 	resolver = Resolver(terms = terms, datasource = "NCBI",\
-		taxon_id = parentid)
+		taxon_id = parentid) ## TODO: make tnr accept strings
 	resolver.main()
 	logging.info('\n------TaxonNamesResolver:End------\n')
 	logging.info("Generating names dictionary....")
 	namesdict,allrankids,parentid = ntools.genNamesDict(resolver)
 	logging.info("Finding an outgroup....")
-	namesdict = ntools.getOutgroup(namesdict, parentid)
+	namesdict = ntools.getOutgroup(namesdict, parentid, outgroupid)
 	# add outgroup ids to allrankids
 	allrankids.extend(namesdict['outgroup']['txids'])
 	logging.info('Generating taxonomic tree....')

@@ -219,7 +219,7 @@ def readInPars(pars_file):
 	paradict = {'nseqs' : None, 'naligns' : None,\
 	'ntrees' : None, 'download_thoroughness' : None,\
 	'maxlen' : None, 'minlen' : None, 'maxtrys' : None,\
-	'maxrttsd': None, 'parentid' : None}
+	'maxrttsd': None, 'parentid' : None, 'outgroupid' : None}
 	# open file, read each row, extract value
 	paradict = _read(pars_file, paradict)
 	# if Nones remain, use default

@@ -23,7 +23,7 @@ def dummy_genNamesDict(resolver):
 	"unique_name" : 'returned_name', "rank" : 'species'}
 	return namesdict, [], None
 
-def dummy_getOutgroup(namesdict, parentid):
+def dummy_getOutgroup(namesdict, parentid, outgroupid):
 	namesdict['outgroup'] = {"txids" : [3],\
 	"unique_name" : 'outgroup', "rank" : 'genus'}
 	return namesdict
