@@ -64,8 +64,6 @@ def run(wd = os.getcwd()):
 		gene_type = genedict[gene]['type']
 		aligner = atools.Aligner(seqstore, mingaps, minoverlap,\
 			minseedsize,maxtrys,maxseedtrys,gene_type)
-		seqstore, mingaps, minoverlap, minseedsize,\
-		maxtrys, maxseedtrys, gene_type
 		trys = each_counter = 0
 		i = 1
 		try:
