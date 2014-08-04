@@ -53,8 +53,7 @@ if getVersion(['blastn', '-h']) < 2.0:
 	print 'No Stand-alone BLAST detected -- requires BLAST suite v2+'
 	all_present = False
 if not all_present:
-	print 'Unable to install/test! Please install missing external programs'
-	sys.exit()
+	sys.exit('Unable to install/test! Please install missing external programs')
 
 ## Package info
 PACKAGES = find_packages()
@@ -73,7 +72,7 @@ setup(
 	packages = PACKAGES,
 	package_dir = dict(zip (PACKAGES, PACKAGE_DIRS)),
 	package_data = {'mpe':['parameters.csv','gene_parameters.csv']},
-	scripts = ['run_mpe.py', 'cleanup_mpe.py'],
+	scripts = ['run_mpe.py'],
 	test_suite = 'tests',
 	long_description = read('README.md'),
 	classifiers=[
