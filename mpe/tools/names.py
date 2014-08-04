@@ -91,6 +91,7 @@ def genTaxTree(resolver, namesdict, draw = False):
 	return tree, shared_lineage
 
 def genNamesDict(resolver):
+	"""Return a dictionary containtaining all names and metadata"""
 	q_names = resolver.retrieve('query_name')
 	q_names = [re.sub("\s", "_", e) for e in q_names]
 	r_names = resolver.retrieve('classification_path')
@@ -140,7 +141,7 @@ def genNamesDict(resolver):
 				"unique_name" : "Non-unique resolution",\
 					"rank" : nul_ranks[i]}
 			i += 1
-	# get outgroup
+	# if no parent id given, work one out
 	if resolver.taxon_id:
 		parentid = resolver.taxon_id
 	else:
@@ -148,17 +149,45 @@ def genNamesDict(resolver):
 		for each in lineages[0]:
 			shared_bool.append(all([each in e for e in lineages]))
 		parentid = lineages[0][shared_bool.index(False) - 1]
-	above_id = etools.eFetch(str(parentid), db = "taxonomy")[0]['ParentTaxId']
-	# if above id or parent id are Cellular Orgs, likely name resolution error
-	if above_id == '131567' or parentid == '131567':
-		raise TaxonomicRankError()
-	temp_children = etools.findChildren(above_id, next = True)
-	temp_children = [int(e) for e in temp_children]
-	# if none are in allrankids, must be unique
-	temp_children = [e for e in temp_children if e != parentid]
-	namesdict["outgroup"] = {"txids" : temp_children, "unique_name" :\
+	return namesdict,allrankids,parentid
+
+def getOutgroup(namesdict, parentid, minrecords = 1000):
+	"""Return namesdict with suitable outgroup"""
+	def findParent(parentid):
+		return etools.eFetch(parentid, db = "taxonomy")[0]['ParentTaxId']
+	# loop until a suitable outgroup is found. Criteria are:
+	#  1. ids returned must belong to a sister group of all ids of
+	#   names given
+	#  2. ids must have nucleotide data (i.e. avoid returning extinct organisms)
+	# assumptions:
+	#  1. NCBI taxonomy is not paraphyletic
+	# make sure parentid is string
+	parentid = str(parentid)
+	outgroup_ids = []
+	while not outgroup_ids:
+		# if parent id are Cellular Orgs, likely name resolution error
+		#  or names given are too diverse
+		if parentid == '131567':
+			raise TaxonomicRankError()
+		# get parent of parent
+		grandparentid = findParent(parentid)
+		# find all children
+		candidates = etools.findChildren(grandparentid, next = True)
+		# filter out children that are in ingroup
+		candidates = [e for e in candidates if e != parentid]
+		# search genbank for nuc records
+		for candidate in candidates:
+			term = 'txid' + str(candidate) + '[PORGN]'
+			nuc_record = etools.eSearch(term)
+			# there must be more than 1000 nuc records
+			if int(nuc_record['Count']) > minrecords:
+				outgroup_ids.append(candidate)
+		# make grandparentid the new parentid
+		parentid = grandparentid
+	# add outgroup_ids to namesdict
+	namesdict["outgroup"] = {"txids" : outgroup_ids, "unique_name" :\
 	"outgroup", "rank" : "outgroup"}
-	return namesdict,allrankids
+	return namesdict
 
 def writeNamesDict(directory, namesdict):
 	headers = ["name", "unique_name", "rank", "NCBI_Taxids"]

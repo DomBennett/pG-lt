@@ -43,7 +43,7 @@ def run(wd = os.getcwd()):
 
 	## Process
 	logging.info('Searching for taxids....')
-	logging.info('------TaxonNamesResolver:Start------')
+	logging.info('\n------TaxonNamesResolver:Start------')
 	try:
 		parentid = int(paradict["parentid"])
 	except:
@@ -53,13 +53,17 @@ def run(wd = os.getcwd()):
 	resolver = Resolver(terms = terms, datasource = "NCBI",\
 		taxon_id = parentid)
 	resolver.main()
-	logging.info('------TaxonNamesResolver:End------')
+	logging.info('\n------TaxonNamesResolver:End------\n')
 	logging.info("Generating names dictionary....")
+	namesdict,allrankids,parentid = ntools.genNamesDict(resolver)
+	logging.info("Finding an outgroup....")
 	try:
-		namesdict,allrankids = ntools.genNamesDict(resolver)
+		namesdict = ntools.getOutgroup(namesdict, parentid)
 	except ntools.TaxonomicRankError:
-		print error_msg
-		sys.exit()
+		logging.info(error_msg)
+		sys.exit(error_msg)
+	# add outgroup ids to allrankids
+	allrankids.extend(namesdict['outgroup']['txids'])
 	logging.info('Generating taxonomic tree....')
 	taxontree,shared_lineages = ntools.genTaxTree(resolver,\
 		namesdict)

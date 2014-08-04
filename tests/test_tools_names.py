@@ -23,17 +23,23 @@ with open(os.path.join(working_dir,\
 	'data','test_namesdict.p'),'r') as file:
 	exp_namesdict = pickle.load(file)
 
+# create one with and one without an outgroup
+exp_namesdict_wo = exp_namesdict.copy()
+del exp_namesdict['outgroup']
 terms = ['GenusA speciesA', 'GenusA speciesB', 'GenusA speciesC',\
 'GenusB speciesD','GenusB speciesE','GenusC speciesF','GenusD \
 speciesG','GenusE speciesH','GenusF speciesI','GenusG speciesJ']
 exp_allrankids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,\
 15, 16, 17, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 41, 42, 43,\
 44, 51]
+exp_parentid = 51
 
 ## Stubs
 def dummy_eFetch(taxid, db):
 	return [{'ParentTaxId':1}]
 
+def dummy_eSearch(term):
+	return {'Count':'10000'}
 
 def dummy_findChildren(taxid, next):
 	return [60]
@@ -53,9 +59,11 @@ class NamesTestSuite(unittest.TestCase):
 	def setUp(self):
 		self.True_GnrDataSources = tnr.gnr_tools.GnrDataSources
 		self.true_eFetch = ntools.etools.eFetch
+		self.true_eSearch = ntools.etools.eSearch
 		self.true_findChildren = ntools.etools.findChildren
 		tnr.gnr_tools.GnrDataSources = Dummy_GnrDataSources
 		ntools.etools.eFetch = dummy_eFetch
+		ntools.etools.eSearch = dummy_eSearch
 		ntools.etools.findChildren = dummy_findChildren
 		self.resolver = tnr.resolver.Resolver(terms = terms, taxon_id\
 			= 51)
@@ -68,11 +76,17 @@ class NamesTestSuite(unittest.TestCase):
 		tnr.gnr_tools.GnrDataSources = self.True_GnrDataSources
 		ntools.etools.eFetch = self.true_eFetch
 		ntools.etools.findChildren = self.true_findChildren
+		ntools.etools.eSearch = self.true_eSearch
 
 	def test_gennamesdict(self):
-		namesdict,allrankids = ntools.genNamesDict(self.resolver)
+		namesdict,allrankids,parentid = ntools.genNamesDict(self.resolver)
 		self.assertEqual(allrankids, exp_allrankids)
 		self.assertEqual(namesdict, exp_namesdict)
+		self.assertEqual(parentid, exp_parentid)
+
+	def test_getoutgroup(self):
+		namesdict = ntools.getOutgroup(exp_namesdict.copy(), exp_parentid)
+		self.assertEqual(namesdict, exp_namesdict_wo)
 
 	def test_gentaxtree(self):
 		tree,line = ntools.genTaxTree(self.resolver, exp_namesdict,\
