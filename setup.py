@@ -10,18 +10,22 @@ from setuptools import setup, find_packages
 ## Functions
 def getVersion(args):
 	"""Return version number of program"""
-	# run, read and kill
-	process = subprocess.Popen(args, stdout = subprocess.PIPE,
-		stderr=subprocess.STDOUT)
-	info = process.stdout.read()
-	process.kill()
-	# find version number, extract and strip of digits
-	pattern = '(v|version)?\s?[0-9]\.[0-9]+'
-	res = re.search(pattern, info)
-	version = info[res.span()[0]:res.span()[1]]
-	non_decimal = re.compile(r'[^\d.]+')
-	version = non_decimal.sub('', version)
-	return float(version)
+	# check if program exists
+	try:
+		# run, read and kill
+		process = subprocess.Popen(args, stdout = subprocess.PIPE,
+			stderr=subprocess.STDOUT)
+		info = process.stdout.read()
+		process.kill()
+		# find version number, extract and strip of digits
+		pattern = '(v|version)?\s?[0-9]\.[0-9]+'
+		res = re.search(pattern, info)
+		version = info[res.span()[0]:res.span()[1]]
+		non_decimal = re.compile(r'[^\d.]+')
+		version = non_decimal.sub('', version)
+		return float(version)
+	except OSError:
+		return False
 
 def read(fname):
 	return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -29,8 +33,18 @@ def read(fname):
 ## Check external programs
 # '-u' prevents printing to shell
 all_present = True
-if getVersion(['mafft', '-u']) < 7.0:
+if not getVersion(['mafft', '-u']):
 	print 'No MAFFT detected -- requires MAFFT v7+'
+	all_present = False
+if getVersion(['mafft', '-u']) < 7.0:
+	print 'MAFFT detected too old -- requires MAFFT v7+'
+if not getVersion(['mafft-xinsi', '-u']):
+	print 'No mafft-xinsi detected -- requires installation of\
+ mafft with RNA structural alignments'
+	all_present = False
+if not getVersion(['mafft-qinsi', '-u']):
+	print 'No mafft-qinsi detected -- requires installation of\
+ mafft with RNA structural alignments'
 	all_present = False
 if getVersion(['raxml', '-version']) < 7.0:
 	print 'No RAxML detected -- requires RAxML v7+'
