@@ -189,6 +189,7 @@ presence of outgroup, number of species and length of alignment"""
 					  [e.id for e in a._records]]
 		if len(store) == 0:
 			logging.info("No outgroup!")
+			return None
 		store = [e for e in store if len(e) >= 5]
 		if len(store) == 0:
 			return None

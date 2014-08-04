@@ -223,7 +223,9 @@ matches in GenBank"""
 		gene = searchlist.pop(gene_i)
 		return gene[0], searchlist, types
 	alltipids = [namesdict[e]["txids"] for e in namesdict.keys()]
+	outgroupids = namesdict['outgroup']['txids']
 	searchlist = []
+	outgroup_bool = [] # list of bools for number of genes w/o outgroup seqs
 	for gene in genedict.keys():
 		logging.info(" .... checking [{0}]".format(gene))
 		# first check if its suitable for this taxonomic group
@@ -237,11 +239,20 @@ matches in GenBank"""
 					seedsize = 0, maxtrys = 0, mingaps = 0, minoverlap = 0,\
 					maxlen = 0, minlen = 0)
 				res = downloader._search(tipids)
+				# if outgroupids do not have sequences, move to next gene
+				if tipids == outgroupids:
+					if len(res) < minnseq:
+						outgroup_bool.append(False)
+						continue
+					else:
+						outgroup_bool.append(True)
 				gene_bool.append(len(res) >= minnseq)
 			nspp = sum(gene_bool)
 			if nspp > minnspp:
 				# if more than minnspp species, add it to searchlist
 				searchlist.append((gene,nspp))
+	if not all(outgroup_bool):
+		raise atools.OutgroupError
 	if target == 'all' or target > len(searchlist):
 		return [e[0] for e in searchlist]
 	else:

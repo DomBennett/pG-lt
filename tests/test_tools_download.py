@@ -24,9 +24,10 @@ NOT assembly[TI] NOT unverified[TI]'
 t1_search_res = {'Count':0}
 t2_search_res = {'Count':2, 'IdList':['seq1', 'seq2']}
 t3_search_res = {'Count':3, 'IdList':['seq1', 'seq2', 'seq3']}
+outgroup_res = {'Count':3, 'IdList':['seq4', 'seq5', 'seq6']}
 
 # Example seqrecord for findgeneinseq
-with open(os.path.join(os.path.dirname(__file__),'data',\
+with open(os.path.join(working_dir,'data',\
 	"test_findgeneinseq_examplesequence.p"),"rb") as file:
 	sequence = pickle.load(file)
 
@@ -67,6 +68,8 @@ def dummy_eSearch(term, retStart=0, retMax=1, usehistory="n",\
 		return t2_search_res
 	if term == t3_term:
 		return t3_search_res
+	else:
+		return outgroup_res
 
 def dummy_eFetch(ncbi_id, db = "nucleotide"):
 	if ncbi_id == 'seq1':
@@ -99,7 +102,7 @@ maxlen = 2000
 minlen = 300
 
 # dictionary variables
-namesdict = {"species1":{'txids':['1','2']}}
+namesdict = {"species1":{'txids':['1','2']},'outgroup':{'txids':['4']}}
 allrankids = [1, 2, 3]
 genedict = {'gene1':{'taxid':'3','names':['name1', 'name2'],'type':'deep'}}
 
