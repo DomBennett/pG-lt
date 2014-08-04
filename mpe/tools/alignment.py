@@ -17,16 +17,10 @@ from Bio.Application import ApplicationError
 from Bio.Blast import NCBIXML
 from StringIO import StringIO
 from system import TerminationPipe
+from system import OutgroupError
+from system import TooFewSpeciesError
 
 ## Objects
-class OutgroupError(Exception):
-	"""Raised whenever an outgroup is dropped"""
-	pass
-
-class MinSpeciesError(Exception):
-	"""Raised whenever there are too few species for phylogeny generation"""
-	pass
-
 class SeqStore(dict):
 	"""Store species' gene sequences with functions for pulling sequences for \
 alignments and adding penalties for sequences that did not align"""
@@ -158,7 +152,7 @@ determine if sequences overlap. Return indexes of overlapping sequences."""
 					self.sppool = [e for e in self.sppool if e != sp]
 					del self[sp]
 		if len(self.keys()) < 5:
-			raise MinSpeciesError
+			raise TooFewSpeciesError
 
 class Aligner(object):
 	"""Build alignments from seqstore"""

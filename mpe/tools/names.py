@@ -11,10 +11,6 @@ from Bio import Phylo
 from cStringIO import StringIO
 import entrez as etools
 
-## Objects
-class TaxonomicRankError(Exception):
-	pass
-
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):
 	"""Generate Newick tree from TaxonNamesResolver class.

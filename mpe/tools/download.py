@@ -239,7 +239,7 @@ matches in GenBank"""
 					seedsize = 0, maxtrys = 0, mingaps = 0, minoverlap = 0,\
 					maxlen = 0, minlen = 0)
 				res = downloader._search(tipids)
-				# if outgroupids do not have sequences, move to next gene
+				# if outgroupids do not have sequences, move to next genes
 				if tipids == outgroupids:
 					if len(res) < minnseq:
 						outgroup_bool.append(False)

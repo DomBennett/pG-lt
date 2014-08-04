@@ -6,18 +6,10 @@ mpe Stage 1: Names resolution
 """
 
 ## Packages
-import os,pickle,shutil,logging,sys
+import os,pickle,shutil,logging
 import mpe.tools.names as ntools
 from mpe.tools.system import TooFewSpeciesError
 from taxon_names_resolver import Resolver
-
-## Informative error msgs
-error_msg =  'It is likely that one or more names have \
-been resolved incorrectly, as such the parent taxonomic \
-group has been set to Eukaryotes which is too high a \
-taxonomic rank for phylogenetic analysis. Consider \
-adding a parent ID to the parameters.csv to prevent \
-incorrect names resolution.'
 
 def run(wd = os.getcwd()):
 	## print stage
@@ -57,11 +49,7 @@ def run(wd = os.getcwd()):
 	logging.info("Generating names dictionary....")
 	namesdict,allrankids,parentid = ntools.genNamesDict(resolver)
 	logging.info("Finding an outgroup....")
-	try:
-		namesdict = ntools.getOutgroup(namesdict, parentid)
-	except ntools.TaxonomicRankError:
-		logging.info(error_msg)
-		sys.exit(error_msg)
+	namesdict = ntools.getOutgroup(namesdict, parentid)
 	# add outgroup ids to allrankids
 	allrankids.extend(namesdict['outgroup']['txids'])
 	logging.info('Generating taxonomic tree....')
