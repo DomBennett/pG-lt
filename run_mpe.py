@@ -49,28 +49,28 @@ A pipeline for the automated generation of phylogenies from taxonomic
 names through Mass Phylogeny Estimation."""
 
 ## Error messages
-nonamestxt_msg = 'No folders containing \'names.txt\' files found! \
+nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files found! \
 All taxonomic names should be placed in subdirectories and called: \
 \'names.txt\''
-priming_msg = 'The program was unable to start mpe due to a problem \
+priming_msg = '\nERROR: The program was unable to start mpe due to a problem \
 with the files and folders in the study directory. Check the parameters \
 and gene parameters .csv for any potential conflicts.'
-toofewspecies_msg = 'The program halted as there are too few species left of \
+toofewspecies_msg = '\nERROR: The program halted as there are too few species left of \
 phylogeny building -- five is the minimum. You may have started with too few names, \
 or names given could not be taxonomically \
 resolved or there may be too little sequence data available.'
-taxonomicrank_msg =  'It is likely that one or more names have \
+taxonomicrank_msg =  '\nERROR: It is likely that one or more names have \
 been resolved incorrectly, as such the parent taxonomic \
 group has been set to Eukaryotes which is too high a \
 taxonomic rank for phylogenetic analysis. Consider \
 adding a parent ID to the parameters.csv to prevent \
 incorrect names resolution or reducing the taxonomic diversity \
 of the analysis names.'
-outgroup_msg = 'The outgroup has been dropped. This may be due to too few \
+outgroup_msg = '\nERROR: The outgroup has been dropped. This may be due to too few \
 sequence data available for outgroup or a failure to align sequences that are \
 available. If outgroup has been automatically selected, consider manually choosing \
-and outgroup.'
-unexpected_msg = 'An unexpected error occurred. Unfortunately, this is not a professional \
+an outgroup.'
+unexpected_msg = '\nERROR: An unexpected error occurred. Unfortunately, this is not a professional \
 program and as such these errors are likely. Please email details to the program \
 maintainer for help.'
 
@@ -194,7 +194,7 @@ def logMessage(phase, logger, directory = None):
 def logError(msg, logger):
 	"""Return true when error raised, log informative message"""
 	logger.error(msg)
-	logger.info('\n\n Moving to the next folder')
+	logger.info('\n .... Moving to next folder')
 	return True
 
 def main():

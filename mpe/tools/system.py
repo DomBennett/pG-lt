@@ -264,7 +264,8 @@ def clean():
 
 	## Go through all subdirs and remove files in list
 	files_to_remove = ['info.txt', 'log.txt','.paradict.p','.allrankids.p',\
-	'.namesdict.p', '.genedict.p', '.terms.p']
+	'.namesdict.p', '.genedict.p', '.terms.p', '.constraint.tre', '.partitions.txt',\
+	'.phylogeny_in.phylip', '.alignment_out.fasta']
 	folders = os.listdir(os.getcwd())
 	while folders:
 		temp_folder = folders.pop()

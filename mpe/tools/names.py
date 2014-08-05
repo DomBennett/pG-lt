@@ -1,4 +1,4 @@
-#! /bin/usr/env python
+#! /usr/bin/env python
 ## D.J. Bennett
 ## 24/03/2014
 """
