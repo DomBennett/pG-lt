@@ -36,7 +36,8 @@ exp_parentid = 51
 
 ## Stubs
 def dummy_eFetch(taxid, db):
-	return [{'ParentTaxId':1}]
+	# rank and sci name for the outgroup when getmetadata in findbestgenes
+	return [{'ParentTaxId':'1','Rank':'outgroup','ScientificName':'outgroup'}]
 
 def dummy_eSearch(term):
 	return {'Count':'10000'}

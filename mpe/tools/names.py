@@ -152,6 +152,16 @@ def getOutgroup(namesdict, parentid, outgroupid = None, minrecords = 1000):
 	"""Return namesdict with suitable outgroup"""
 	def findParent(parentid):
 		return etools.eFetch(parentid, db = "taxonomy")[0]['ParentTaxId']
+	def getTaxIdMetaData(ncbi_id):
+		etal_bool = False
+		if len(ncbi_id) > 1:
+			ncbi_id = ncbi_id[0]
+			etal_bool = True
+		record = etools.eFetch(ncbi_id, db = "taxonomy")[0]
+		metadata = [record['Rank'], record['ScientificName']]
+		if etal_bool:
+			metadata = [e + ' et al.' for e in metadata]
+		return metadata[0], metadata[1]
 	# loop until a suitable outgroup is found. Criteria are:
 	#  1. ids returned must belong to a sister group of all ids of
 	#   names given
@@ -185,8 +195,9 @@ def getOutgroup(namesdict, parentid, outgroupid = None, minrecords = 1000):
 	else:
 		outgroup_ids = [outgroupid]
 	# add outgroup_ids to namesdict
+	rank,unique_name = getTaxIdMetaData(outgroup_ids)
 	namesdict["outgroup"] = {"txids" : outgroup_ids, "unique_name" :\
-	"outgroup", "rank" : "outgroup"}
+	unique_name, "rank" : rank}
 	return namesdict
 
 def writeNamesDict(directory, namesdict):
