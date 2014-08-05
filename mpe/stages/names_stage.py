@@ -13,7 +13,7 @@ from taxon_names_resolver import Resolver
 
 def run(wd = os.getcwd()):
 	## print stage
-	logging.info("Names resolution\n")
+	logging.info("Stage 1: Names resolution")
 
 	## Dirs
 	names_dir = os.path.join(wd, '1_names')
@@ -35,8 +35,8 @@ def run(wd = os.getcwd()):
 	minspecies = 5
 
 	## Process
-	logging.info('Searching for taxids....')
-	logging.info('\n------TaxonNamesResolver:Start------')
+	logging.info('Searching for taxids ....')
+	logging.info('------TaxonNamesResolver:Start------')
 	try:
 		parentid = int(paradict["parentid"])
 	except:
@@ -46,14 +46,14 @@ def run(wd = os.getcwd()):
 	resolver = Resolver(terms = terms, datasource = "NCBI",\
 		taxon_id = parentid) ## TODO: make tnr accept strings
 	resolver.main()
-	logging.info('\n------TaxonNamesResolver:End------\n')
-	logging.info("Generating names dictionary....")
+	logging.info('------TaxonNamesResolver:End------')
+	logging.info("Generating names dictionary ....")
 	namesdict,allrankids,parentid = ntools.genNamesDict(resolver)
-	logging.info("Finding an outgroup....")
+	logging.info("Finding an outgroup ....")
 	namesdict = ntools.getOutgroup(namesdict, parentid, outgroupid)
 	# add outgroup ids to allrankids
 	allrankids.extend(namesdict['outgroup']['txids'])
-	logging.info('Generating taxonomic tree....')
+	logging.info('Generating taxonomic tree ....')
 	taxontree,shared_lineages = ntools.genTaxTree(resolver,\
 		namesdict)
 
@@ -72,5 +72,5 @@ def run(wd = os.getcwd()):
 		"taxontree.tre"), "newick")
 
 	## Finish message
-	logging.info('Resolved [{0}] names \
+	logging.info('Stage finished. Resolved [{0}] names \
 including outgroup.'.format(len(namesdict.keys())))

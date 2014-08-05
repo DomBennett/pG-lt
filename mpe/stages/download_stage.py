@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE Stage 2: Sequence Download
+mpe Stage 2: Sequence Download
 """
 
 ## Packages
@@ -11,7 +11,7 @@ import mpe.tools.download as dtools
 
 def run(wd = os.getcwd()):
 	## Print stage
-	logging.info("Sequence download\n")
+	logging.info("Stage 2: Sequence download")
 
 	## Dirs
 	download_dir = os.path.join(wd, '2_download')
@@ -45,7 +45,7 @@ def run(wd = os.getcwd()):
 	seqcounter = basecounter = 0
 
 	## Process
-	logging.info('Determining best genes')
+	logging.info('Determining best genes ....')
 	genes = dtools.findBestGenes(namesdict, genedict, thoroughness,\
 		allrankids, minnseq, target, minnspp)
 	statement = 'Using genes:'
@@ -58,7 +58,7 @@ def run(wd = os.getcwd()):
 	for gene in genes:
 		seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 		gene_names = genedict[gene]["names"]
-		logging.info('Downloading and outputting for [{0}]....'.\
+		logging.info('Downloading and outputting for [{0}] ....'.\
 			format(gene))
 		gene_dir  = os.path.join(download_dir, str(gene))
 		if not os.path.isdir(gene_dir):
@@ -95,6 +95,6 @@ def run(wd = os.getcwd()):
 [{2}] species".format(seqcounter_gene, gene, spcounter_gene))
 	with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
 		pickle.dump(namesdict, file)
-	logging.info('In total, downloaded [{0}] bases for [{1}] \
+	logging.info('Stage finished. Downloaded [{0}] bases for [{1}] \
 sequences for [{2}] species.'.format(basecounter, seqcounter,\
 sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()])))

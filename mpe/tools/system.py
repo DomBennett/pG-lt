@@ -46,14 +46,16 @@ class Stager(object):
 			self.output_dir = os.path.join(wd, self.STAGES[stage][1])
 
 	def _start(self):
-		logging.info('\n' + '#'*70)
-		logging.info('Stage [{0}] started at [{1}]\n'.format(self.stage,
+		logging.info('-' * 70)
+		logging.info('Stage [{0}] started at [{1}]'.format(self.stage,
 			self._time_string()))
+		logging.info('-' * 70)
 
 	def _end(self):
-		logging.info('\nStage [{0}] finished at [{1}]'.format(self.stage,
+		logging.info('-' * 70)
+		logging.info('Stage [{0}] finished at [{1}]'.format(self.stage,
 			self._time_string()))
-		logging.info('#'*70)
+		logging.info('-' * 70 + '\n\n')
 
 	def _time_string(self):
 		return datetime.today().strftime("%A, %d %B %Y %I:%M%p")

@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE Stage 3: Aligning sequences
+mpe Stage 3: Aligning sequences
 """
 
 ## Packages
@@ -13,7 +13,7 @@ import mpe.tools.alignment as atools
 
 def run(wd = os.getcwd()):
 	## print stage
-	logging.info("\nAlignment sequences\n")
+	logging.info("Stage 3: Sequence alignment")
 
 	## Dirs
 	download_dir = os.path.join(wd, '2_download')
@@ -39,7 +39,7 @@ def run(wd = os.getcwd()):
 		namesdict[key]['alignments'] = 0
 	genes = sorted(os.listdir(download_dir))
 	genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
-	logging.info('Reading in sequences')
+	logging.info('Reading in sequences ....')
 	genestore = []
 	for gene in genes:
 		gene_dir = os.path.join(download_dir, gene)
@@ -49,12 +49,12 @@ def run(wd = os.getcwd()):
 			float(genedict[gene]["mingaps"]), minoverlap =\
 			int(genedict[gene]["minoverlap"]))
 		genestore.append((gene, seqstore))
-	logging.info("Running alignments")
+	logging.info("Running alignments ....")
 	for gene,seqstore in genestore:
 		gene_dir = os.path.join(alignment_dir, gene)
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
-		logging.info("Aligning gene [{0}] for [{1}] species ...".\
+		logging.info("Aligning gene [{0}] for [{1}] species ....".\
 			format(gene, len(seqstore)))
 		mingaps = float(genedict[gene]["mingaps"])
 		minoverlap = int(genedict[gene]["minoverlap"])
@@ -68,7 +68,7 @@ def run(wd = os.getcwd()):
 		i = 1
 		try:
 			while i <= naligns:
-				logging.info("...iteration [{0}]".format(i))
+				logging.info(".... iteration [{0}]".format(i))
 				alignment = aligner.run()
 				if alignment is None:
 					trys += 1
@@ -77,7 +77,7 @@ def run(wd = os.getcwd()):
 						break
 					else:
 						continue
-				logging.info("... alignment length [{0}] for [{1}] species".\
+				logging.info(".... alignment length [{0}] for [{1}] species".\
 					format(alignment.get_alignment_length(), len(alignment)))
 				for record in alignment:
 					namesdict[record.id]['alignments'] += 1
@@ -92,11 +92,11 @@ def run(wd = os.getcwd()):
 				trys = 0
 				i += 1
 		except atools.OutgroupError:
-			logging.info("... outgroup dropped")
+			logging.info(".... outgroup dropped")
 		except atools.MinSpeciesError:
-			logging.info("... too few species left in sequence pool")
+			logging.info(".... too few species left in sequence pool")
 		if each_counter < naligns:
-			logging.info("... too few alignments generated")
+			logging.info(".... too few alignments generated")
 			shutil.rmtree(gene_dir)
 			continue
 		all_counter += each_counter

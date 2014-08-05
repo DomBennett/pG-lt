@@ -150,12 +150,12 @@ def logMessage(phase, logger, directory = None):
 	if phase == 'begin':
 		# begin running the program
 		# directory is list
-		logger.info('\n' + '#' * 70)
+		logger.info('#' * 70)
 		logger.info(description)
 		logger.info('#' * 70 + '\n')
 		logger.info('Running on [{0}] [{1}]'.format(platform.node(),
 					platform.platform()))
-		logger.info('Python [{0}]\n'.format(sys.version))
+		logger.info('Python [{0}]'.format(sys.version))
 		logger.info('Working with the following directories:')
 		# convert dirs to string
 		dir_string = ''
@@ -173,7 +173,6 @@ def logMessage(phase, logger, directory = None):
 	elif phase == 'start':
 		# start for one folder
 		# directory is a string
-		logger.info('\n' + '#' * 70 + '\n')
 		logger.info('Folder [{0}] started at [{1}]'.format(directory,
 			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
 	elif phase == 'finish':
@@ -182,9 +181,9 @@ def logMessage(phase, logger, directory = None):
 			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
 	elif phase == 'folder-error':
 		# when a folder is unable to run
-		logger.info('Unfinished for folder [{0}] at [{1}]'.format(directory,\
+		logger.info('Unfinished for folder [{0}] at [{1}] ....'.format(directory,\
 			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
-		logger.info('Check [{0}] for more details'.format(os.path.join(\
+		logger.info(' .... Check [{0}] for more details'.format(os.path.join(\
 			directory, 'log.txt')))
 	elif phase == 'end':
 		logger.info('\nFIN')
@@ -222,13 +221,13 @@ def main():
 	logMessage('begin', logger = base_logger, directory = dirs)
 	# loop through each folder
 	for i in range(len(dirs)):
-		# set up a root logger, so now default logging refers to this
-		folder_logger = setUpLogging(args.verbose, args.debug, logname = '',\
-			directory = dirs[i])
 		if not args.verbose:
 			print 'Woking on [{0}]'.format(dirs[i])
 		logMessage('start', logger = base_logger, directory = dirs[i])
 		error_raised = False
+		# set up a root logger, so now default logging refers to this
+		folder_logger = setUpLogging(args.verbose, args.debug, logname = '',\
+			directory = dirs[i])
 		try:
 			# get list of arguments
 			arguments = sortArgs(dirs[i], args.email, folder_logger)

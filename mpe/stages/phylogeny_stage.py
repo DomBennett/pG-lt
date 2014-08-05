@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE Stage 4: Phylogeny generation
+mpe Stage 4: Phylogeny generation
 """
 
 ## Packages
@@ -13,7 +13,7 @@ import mpe.tools.phylogeny as ptools
 
 def run(wd = os.getcwd()):
 	## Print stage
-	logging.info("\nGenerating phylogenies\n")
+	logging.info("Stage 4: Phylogeny generation")
 
 	## Dirs
 	alignment_dir = os.path.join(wd, '3_alignment')
@@ -34,7 +34,7 @@ def run(wd = os.getcwd()):
 	# alignments
 	genes = sorted(os.listdir(alignment_dir))
 	genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
-	logging.info("Reading in alignments")
+	logging.info("Reading in alignments ....")
 	alignobj = {}
 	for gene in genes:
 		alignobj[gene] = []
@@ -48,19 +48,19 @@ def run(wd = os.getcwd()):
 				alignment = AlignIO.read(file, "fasta")
 			alignobj[gene].append((alignment, alignment_file))
 	# phylogenies
-	logging.info("Generating [{0}] phylogenies".format(nphylos))
+	logging.info("Generating [{0}] phylogenies ....".format(nphylos))
 	phylogenies = []
 	trys = 0
 	while phylocounter < nphylos:
-		logging.info("Iteration [{0}]".format(phylocounter))
+		logging.info(".... Iteration [{0}]".format(phylocounter))
 		if trys > maxtrys:
 			break
 		trys += 1
 		alignments,alignment_files = zip(*[random.sample(alignobj[e],\
 			1)[0] for e in genes])
-		logging.info("Using alignments.....")
+		logging.info("Using alignments ....")
 		for gene,alignment_file in zip(genes,alignment_files):
-			logging.info("....[{0}]:[{1}]".format(gene, alignment_file))
+			logging.info(".... [{0}]:[{1}]".format(gene, alignment_file))
 		alignment,partitions = ptools.concatenateAlignments(list(alignments))
 		if constraint:
 			constraint = ptools.genConstraintTree(alignment,\
@@ -73,11 +73,11 @@ def run(wd = os.getcwd()):
 			phylogenies.append(phylogeny)
 			phylocounter += 1
 	# saving
-	logging.info('Saving phylogenies ...')
+	logging.info('Saving phylogenies ....')
 	filepath = os.path.join(phylogeny_dir, 'distribution.tre')
 	with open(filepath, "w") as file:
 		Phylo.write(phylogenies, file, 'newick')
-	logging.info('Generating consensus ...')
+	logging.info('Generating consensus ....')
 	ptools.consensus(filepath, os.path.join(phylogeny_dir, 'consensus.tre'),
 		min_freq = 0.5, is_rooted = True, trees_splits_encoded = False)
-	logging.info('Generated [{0}] phylogenies.'.format(phylocounter))
+	logging.info('Stage finished. Generated [{0}] phylogenies.'.format(phylocounter))
