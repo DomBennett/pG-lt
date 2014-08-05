@@ -30,7 +30,7 @@ def run(wd = os.getcwd()):
 		terms = pickle.load(file)
 
 	## Parameters
-	outgroupid = paradict["email"]
+	outgroupid = paradict["outgroupid"]
 	ntools.etools.Entrez.email = paradict["email"]
 	minspecies = 5
 
