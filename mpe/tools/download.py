@@ -139,7 +139,7 @@ searching features."""
 			record = self._findGeneInSeq(record)
 		if self.maxlen > len(record) > self.minlen:
 			# find proportion of ambiguous bases
-			nn = len(self.pattern.findall(record.seq.tostring()))
+			nn = len(self.pattern.findall(str(record.seq)))
 			pn = float(len(record)) - float(nn)
 			pn = pn/float(len(record))
 			if pn < self.maxpn:
@@ -251,7 +251,8 @@ matches in GenBank"""
 			if nspp > minnspp:
 				# if more than minnspp species, add it to searchlist
 				searchlist.append((gene,nspp))
-	if not all(outgroup_bool):
+	# if all outgroup_bool are false, raise error
+	if not any(outgroup_bool):
 		raise atools.OutgroupError
 	if target == 'all' or target > len(searchlist):
 		return [e[0] for e in searchlist]
