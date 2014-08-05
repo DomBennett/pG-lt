@@ -35,7 +35,7 @@ with open(os.path.join(working_dir,'data',\
 class dummy_Seq(object):
 	def __init__(self):
 		pass
-	def tostring(self):
+	def __str__(self):
 		# Just for parsing
 		return "A" * 500
 
