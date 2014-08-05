@@ -195,6 +195,10 @@ def logError(msg, logger):
 	"""Return true when error raised, log informative message"""
 	logger.error(msg)
 	logger.info('\n .... Moving to next folder')
+	# set logger to high level -- prevent logging to root
+	# otherwise logs sent to base_logger continue appearing in this
+	# logger -- because it's the root
+	logger.setLevel(51) # Critical is 50
 	return True
 
 def main():
