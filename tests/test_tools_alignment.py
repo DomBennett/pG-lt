@@ -31,20 +31,15 @@ with open(os.path.join(working_dir,"data",\
 	real_alignment = pickle.load(file)
 
 ## Mock
-class Dummy_SeqStore(atools.SeqStore):
-	pass
-
-def dummy_blast(self, alignment, sequences):
-	# would normally return the seq indexes for sequences
-	#  that overlap with alignment according to BLAST.
-	#  Instead return all indexess.
-	return range(len(sequences))
-
-Dummy_SeqStore._blast = dummy_blast
+def dummy_blast(subj, query, minoverlap, mingaps):
+	# should return a list of bools for each seq in subj
+	return [True for e in subj]
 
 class AlignmentTestSuite(unittest.TestCase):
 
 	def setUp(self):
+		self.true_blast = atools.blast
+		atools.blast = dummy_blast
 		genedir = os.path.join(working_dir,'data',\
 			'test_sequences')
 		seqfiles = sorted(os.listdir(genedir))
@@ -53,15 +48,12 @@ class AlignmentTestSuite(unittest.TestCase):
 		self.store = atools.SeqStore(genedir=genedir,\
 			seqfiles=seqfiles, minfails = 10, mingaps = 0.5,\
 			minoverlap = 50)
-		self.dummy_store = Dummy_SeqStore(genedir=genedir,\
-			seqfiles=seqfiles, minfails = 10, mingaps = 0.5,\
-			minoverlap = 50)
-		self.aligner = atools.Aligner(self.dummy_store, mingaps = 0.5,\
+		self.aligner = atools.Aligner(self.store, mingaps = 0.5,\
 			minoverlap = 50, minseedsize = 3, maxtrys = 10,\
 			maxseedtrys = 10, gene_type = 'shallow')
 
 	def tearDown(self):
-		pass
+		atools.blast = self.true_blast
 
 	def test_version(self):
 		# try different combinations of sequences
@@ -87,6 +79,27 @@ class AlignmentTestSuite(unittest.TestCase):
 		res = atools.add(test_alignment, test_seqs[0])
 		self.assertTrue(res.__class__.__name__ ==\
 			'MultipleSeqAlignment')
+
+	def test_blast(self):
+		# real_alignment and real_sequences are identical
+		real_seqs = []
+		for i in range(len(real_alignment)):
+			real_seqs.append(real_alignment[i])
+		# choose sample of real seqs for speed
+		subjseqs = random.sample(real_seqs, 5)
+		queryseq = random.sample(real_seqs, 1)
+		res = self.true_blast(subj = subjseqs, query = queryseq,\
+			minoverlap = 50, mingaps = 0.5)
+		# all indexes should be returned
+		self.assertEqual(sum(res), len(subjseqs))
+		bad_seq = 'T' * 100
+		bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
+		subjseqs_w_bad = subjseqs[:]
+		subjseqs_w_bad.append(bad_seq)
+		res = self.true_blast(subj = subjseqs_w_bad, query = queryseq,\
+			minoverlap = 50, mingaps = 0.5)
+		# bad seq should not be returned
+		self.assertFalse(res[-1])
 
 	def test_checkalignment_arg_mingaps(self):
 		# check mingaps argument (proportion of internal gaps)
@@ -150,8 +163,7 @@ class AlignmentTestSuite(unittest.TestCase):
 		self.assertEqual(len(res), 3)
 
 	def test_seqstore_private_blastadd(self):
-		# use dummy store to avoid blasting
-		store = copy.deepcopy(self.dummy_store)
+		store = copy.deepcopy(self.store)
 		before_seqs = store.start(5)
 		del before_seqs
 		res = store._blastAdd(test_alignment)
@@ -172,8 +184,7 @@ class AlignmentTestSuite(unittest.TestCase):
 		self.assertEqual(sum(res), 1)
 
 	def test_seqstore_next(self):
-		# use dummy store to avoid blasting
-		store = copy.deepcopy(self.dummy_store)
+		store = copy.deepcopy(self.store)
 		before_seqs = store.start(5)
 		# add a mock penalty to seqs in alignment
 		seqs = store.sequences_in_alignment
@@ -191,25 +202,6 @@ class AlignmentTestSuite(unittest.TestCase):
 		seqs = store.sequences_in_alignment
 		res = [e[1] == 0 for e in seqs]
 		self.assertTrue(all(res))
-
-	def test_seqstore_private_blast(self):
-		# real_alignment and real_sequences are identical
-		real_seqs = []
-		for i in range(len(real_alignment)):
-			real_seqs.append(real_alignment[i])
-		# choose sample of real seqs for speed
-		real_seqs = random.sample(real_seqs, 4)
-		res = self.store._blast(real_alignment, real_seqs)
-		# all indexes should be returned
-		self.assertEqual(res, range(len(real_seqs)))
-		bad_seq = 'T' * 100
-		bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
-		real_seqs_w_bad = real_seqs[:]
-		real_seqs_w_bad.append(bad_seq)
-		res = self.store._blast(real_alignment,\
-			real_seqs_w_bad)
-		# bad seq should not be returned
-		self.assertFalse(len(real_seqs_w_bad) in res)
 
 	def test_seqstore_private_check_dropseqeunce(self):
 		# add maxfails to a sequence

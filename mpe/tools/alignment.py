@@ -19,17 +19,20 @@ from StringIO import StringIO
 from system import TerminationPipe
 from system import OutgroupError
 from system import TooFewSpeciesError
+from system import SeedError
 
 ## Objects
 class SeqStore(dict):
 	"""Store species' gene sequences with functions for pulling sequences for \
 alignments and adding penalties for sequences that did not align"""
-	def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap):
+	def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap,\
+		runtime = 10000):
 		self.minfails = minfails # minimum number of fails in a row
 		self.dspp = [] # species dropped
 		self.nseqs = 0 # counter for seqs
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
+		self.runtime = runtime # limit to the number of loops a while loop can make
 		for i, seqfile in enumerate(seqfiles):
 			name = re.sub('\.fasta$', '', seqfile)
 			seqdir = os.path.join(genedir, seqfile)
@@ -45,6 +48,7 @@ alignments and adding penalties for sequences that did not align"""
 				self[name] = [seqs, np.min(lengths)]
 
 	def _add(self):
+		"""Add a random sequence to sequneces_in_alignment"""
 		rand_int = random.randint(0, (len(self.sppool)-1))
 		self.next_sp = self.sppool.pop(rand_int)
 		next_seq = random.sample(self[self.next_sp][0], 1)[0]
@@ -54,18 +58,34 @@ alignments and adding penalties for sequences that did not align"""
 		"""Return n starting random sp sequences, update sppool"""
 		self.sppool = self.keys()
 		self.sequences_in_alignment = []
-		for i in range(n):
+		# add a random seq to sequences_in_alignment
+		self._add()
+		iteration = 0
+		while len(self.sequences_in_alignment) < n:
+			# add
 			self._add()
+			subjseqs = [e[0] for e in self.sequences_in_alignment[:-1]]
+			queryseq = self.sequences_in_alignment[-1][0]
+			# blast all against last
+			blast_bool = blast(subj = subjseqs, query = queryseq,\
+				minoverlap = self.minoverlap, mingaps = self.mingaps)
+			# if blast failed, remove it from the list
+			if not all(blast_bool):
+				del self.sequences_in_alignment[-1]
+				self.sppool.append(self.next_sp)
+			iteration += 1
+			if iteration > self.runtime:
+				raise SeedError
 		return [e[0] for e in self.sequences_in_alignment]
 
 	def _blastAdd(self, alignment):
-		"""Add new random species' sequence"""
+		"""Add new random species' sequence ensuring overlap with BLAST"""
 		rand_ints = range(len(self.sppool))
 		random.shuffle(rand_ints)
 		for i in rand_ints:
 			sp = self.sppool[i]
 			next_seqs = [e[0] for e in self[sp][0]]
-			next_seq_is = self._blast(alignment, next_seqs)
+			next_seq_is = self._blastAlignment(alignment, next_seqs)
 			if next_seq_is:
 				next_seq_i = random.sample(next_seq_is, 1)[0]
 				break
@@ -97,40 +117,17 @@ alignments and adding penalties for sequences that did not align"""
 		else:
 			return False
 
-	def _blast(self, alignment, sequences):
+	def _blastAlignment(self, alignment, sequences):
 		"""Match a sequence to an alignment with stand-alone blast to \
 determine if sequences overlap. Return indexes of overlapping sequences."""
+		# convert alignment into a consensus
 		summary_align = AlignInfo.SummaryInfo(alignment)
 		consensus = SeqRecord(summary_align.gap_consensus(ambiguous = \
 			'N', threshold = 0.5), id = "con", name = "Alignment consensus",\
 		description = "ambiguous = N, threshold = 0.5")
-		#print consensus.format("fasta")
-		#AlignIO.write(alignment, "subj.fasta", "fasta")
-		SeqIO.write(consensus, ".query.fasta", "fasta")
-		SeqIO.write(sequences, ".subj.fasta", "fasta")
-		sresults = []
-		try:
-			output = NcbiblastnCommandline(query = ".query.fasta",\
-				subject = ".subj.fasta", outfmt = 5)()[0]
-		except ApplicationError:
-			logging.warn("BLAST error")
-			return False
-		finally:
-			os.remove(".query.fasta")
-			os.remove(".subj.fasta")
-		bresults = NCBIXML.parse(StringIO(output)) # BLAST records for each sequence
-		i = 0
-		for record in bresults:
-			if record.alignments:
-				ns = record.alignments[0].hsps[0].query.count("N")
-				length = record.alignments[0].hsps[0].align_length - ns
-				if length > self.minoverlap:
-					identities = record.alignments[0].hsps[0].identities
-					pgaps = 1 - float(length)/identities
-					if pgaps < self.mingaps:
-						sresults.append(i)
-			i += 1
-		return sresults
+		results = blast (subj = sequences, query = consensus, minoverlap = \
+			self.minoverlap, mingaps = self.mingaps)
+		return [i for i,e in enumerate(results) if e]
 		
 	def _check(self):
 		"""Check nfails, drop sequences and species"""
@@ -331,6 +328,42 @@ def add(alignment, sequence):
 	else:
 		raise RuntimeError("MAFFT alignment not complete in time allowed")
 	return res
+
+def blast(subj, query, minoverlap, mingaps):
+	"""Return True or False for each sequence in subj that overlaps with
+sequences in query given set parameters using NCBI's BLAST"""
+	SeqIO.write(query, ".query.fasta", "fasta")
+	SeqIO.write(subj, ".subj.fasta", "fasta")
+	output = NcbiblastnCommandline(query = ".query.fasta",\
+	subject = ".subj.fasta", outfmt = 5)()[0]
+	try:
+		output = NcbiblastnCommandline(query = ".query.fasta",\
+			subject = ".subj.fasta", outfmt = 5)()[0]
+	except ApplicationError:
+		logging.warn("---- BLAST Error ----")
+		return False
+	finally:
+		os.remove(".query.fasta")
+		os.remove(".subj.fasta")
+	bools = []
+	bresults = NCBIXML.parse(StringIO(output)) # BLAST records for each sequence
+	for record in bresults:
+		# if there is a hit....
+		if record.alignments:
+			# work out how long it is ignoring Ns
+			ns = record.alignments[0].hsps[0].query.count("N")
+			length = record.alignments[0].hsps[0].align_length - ns
+			if length > minoverlap:
+				# if it's above the minoverlap
+				identities = record.alignments[0].hsps[0].identities
+				pgaps = 1 - float(length)/identities
+				if pgaps < mingaps:
+					# and it has more identities than mingaps give it a True
+					bools.append(True)
+					continue
+		bools.append(False)
+	# return True if all in query overlap with subj
+	return bools
 
 def checkAlignment(alignment, mingaps, minoverlap, minlen):
 	"""Determine if an alignment is good or not based on given parameters.
