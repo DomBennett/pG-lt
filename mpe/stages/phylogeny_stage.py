@@ -58,9 +58,9 @@ def run(wd = os.getcwd()):
 		trys += 1
 		alignments,alignment_files = zip(*[random.sample(alignobj[e],\
 			1)[0] for e in genes])
-		logging.info("Using alignments ....")
+		logging.info(".... Using alignments:")
 		for gene,alignment_file in zip(genes,alignment_files):
-			logging.info(".... [{0}]:[{1}]".format(gene, alignment_file))
+			logging.info("........ [{0}]:[{1}]".format(gene, alignment_file))
 		alignment,partitions = ptools.concatenateAlignments(list(alignments))
 		if constraint:
 			constraint = ptools.genConstraintTree(alignment,\
