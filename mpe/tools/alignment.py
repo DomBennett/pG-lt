@@ -221,6 +221,7 @@ presence of outgroup, number of species and length of alignment"""
 		"""Incrementally build an alignment by adding sequences to a seed alignment"""
 		trys = 0
 		store = []
+		self.buffer_counter = 0 # seedsize buffer counterstart at 0
 		logging.info("........ seed phase: [{0}] seed size".format(self.seedsize))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
@@ -264,7 +265,7 @@ presence of outgroup, number of species and length of alignment"""
 				alignment = store[-1]
 				trys += 1
 			else:
-				logging.info("Maxtrys hit!")
+				logging.info("............ maxtrys hit")
 				# when the maximum number of species is not reached...
 				# ... return the best alignment in the alignment store
 				return self._return(store)
