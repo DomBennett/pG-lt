@@ -7,7 +7,7 @@ mpe Stage 2: Sequence Download
 
 ## Packages
 import os, pickle,logging
-import mpe.tools.download as dtools
+import mpe.tools.download_tools as dtools
 
 def run(wd = os.getcwd()):
 	## Print stage

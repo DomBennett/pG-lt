@@ -6,7 +6,7 @@ Tests for download tools.
 """
 
 import unittest,pickle,os
-import mpe.tools.download as dtools
+import mpe.tools.download_tools as dtools
 
 ## Dirs
 working_dir = os.path.dirname(__file__)

@@ -38,5 +38,5 @@ _GPARS = os.path.join(_ROOT,'gene_parameters.csv')
 import tools
 import stages
 # add stages -- a dictionary of stage functions -- to Stager
-tools.system.Stager.STAGES = stages.STAGES
+tools.system_tools.Stager.STAGES = stages.STAGES
 del os

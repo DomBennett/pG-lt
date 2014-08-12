@@ -9,7 +9,7 @@ mpe Stage 3: Aligning sequences
 import os,re,pickle,logging,shutil
 import numpy
 from Bio import SeqIO
-import mpe.tools.alignment as atools
+import mpe.tools.alignment_tools as atools
 
 def run(wd = os.getcwd()):
 	## print stage

@@ -7,8 +7,8 @@ MPE download tools
 
 ## Packages
 import re,random,logging
-import entrez as etools
-import alignment as atools
+import entrez_tools as etools
+import alignment_tools as atools
 from Bio.SeqFeature import SeqFeature
 
 ## Objects

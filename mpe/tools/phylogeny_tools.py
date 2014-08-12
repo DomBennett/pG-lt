@@ -15,7 +15,7 @@ from Bio import Phylo
 from Bio import AlignIO
 import numpy as np
 import dendropy as dp
-from system import TerminationPipe
+from system_tools import TerminationPipe
 
 ## Old functions
 # def renameTips(phylo, names):

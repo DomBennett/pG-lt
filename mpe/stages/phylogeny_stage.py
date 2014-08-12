@@ -9,7 +9,7 @@ mpe Stage 4: Phylogeny generation
 import os,re,random,pickle,logging
 from Bio import AlignIO
 from Bio import Phylo
-import mpe.tools.phylogeny as ptools
+import mpe.tools.phylogeny_tools as ptools
 
 def run(wd = os.getcwd()):
 	## Print stage

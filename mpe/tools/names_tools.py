@@ -9,8 +9,8 @@ mpe names tools
 import collections,re,logging, csv, os
 from Bio import Phylo
 from cStringIO import StringIO
-import entrez as etools
-from system import TaxonomicRankError
+import entrez_tools as etools
+from system_tools import TaxonomicRankError
 
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):

@@ -6,7 +6,7 @@ Tests for alignment tools.
 """
 
 import unittest,os,re,copy,pickle,random
-import mpe.tools.alignment as atools
+import mpe.tools.alignment_tools as atools
 from Bio import SeqIO
 from Bio import AlignIO
 from Bio.SeqRecord import SeqRecord

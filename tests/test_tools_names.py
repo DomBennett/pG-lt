@@ -6,7 +6,7 @@ Tests for names tools.
 """
 
 import unittest,pickle,os,json
-import mpe.tools.names as ntools
+import mpe.tools.names_tools as ntools
 import taxon_names_resolver as tnr
 
 ntools.etools.Entrez.email = "python.unittests@mpe.program"

@@ -149,6 +149,7 @@ def prime(directory, arguments):
 	record += recordGpars(arguments['genedict'])
 	with open(os.path.join(directory, 'info.txt'),'wd') as file:
 		file.write(record)
+	# return the starting stage, create other functions for creating hidden files
 
 def readInNames(directory):
 	"""Read names from text file in dir"""

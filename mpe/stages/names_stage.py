@@ -7,8 +7,8 @@ mpe Stage 1: Names resolution
 
 ## Packages
 import os,pickle,shutil,logging
-import mpe.tools.names as ntools
-from mpe.tools.system import TooFewSpeciesError
+import mpe.tools.names_tools as ntools
+from mpe.tools.system_tools import TooFewSpeciesError
 from taxon_names_resolver import Resolver
 
 def run(wd = os.getcwd()):

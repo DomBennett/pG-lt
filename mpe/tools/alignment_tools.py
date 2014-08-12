@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE alignment tools
+mpe alignment tools
 """
 
 ## Packages
@@ -16,10 +16,10 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Application import ApplicationError
 from Bio.Blast import NCBIXML
 from StringIO import StringIO
-from system import TerminationPipe
-from system import OutgroupError
-from system import TooFewSpeciesError
-from system import SeedError
+from system_tools import TerminationPipe
+from system_tools import OutgroupError
+from system_tools import TooFewSpeciesError
+from system_tools import SeedError
 
 ## Objects
 class SeqStore(dict):

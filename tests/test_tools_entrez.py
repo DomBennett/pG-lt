@@ -6,7 +6,7 @@ Tests for Entrez tools.
 """
 
 import unittest
-import mpe.tools.entrez as etools
+import mpe.tools.entrez_tools as etools
 
 etools.Entrez.email = "python.unittests@mpe.program"
 

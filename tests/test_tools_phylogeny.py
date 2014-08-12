@@ -7,7 +7,7 @@ Tests for phylogeny tools.
 
 import unittest,pickle,os
 from Bio import Phylo
-import mpe.tools.phylogeny as ptools
+import mpe.tools.phylogeny_tools as ptools
 
 ## Dirs
 working_dir = os.path.dirname(__file__)

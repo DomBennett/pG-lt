@@ -2,12 +2,12 @@
 ## D.J. Bennett
 ## 26/05/2014
 """
-MPE tools
+mpe tools
 """
 
-import names
-import alignment
-import entrez
-import download
-import phylogeny
-import system
+import names_tools
+import alignment_tools
+import entrez_tools
+import download_tools
+import phylogeny_tools
+import system_tools

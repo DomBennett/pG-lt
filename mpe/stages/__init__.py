@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 26/04/2014
 """
-MPE stages
+mpe stages
 """
 # populate STAGES dictionary with run stage functions
 #  and output dirs

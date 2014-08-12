@@ -2,6 +2,7 @@
 ## D.J. Bennett
 ## 26/05/2014
 ##TODO: bring back restart
+##TODO: run demos
 """
 mpe is a pipeline for the automated generation of phylogenies through 'Mass
 Phylogeny Estimation'. This program is built on top of phyloGenerator (C) 2013
@@ -33,14 +34,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 ## Packages
 import argparse,sys,os,re,logging,platform
 from datetime import datetime
-from mpe.tools.system import clean
-from mpe.tools.system import Stager
-from mpe.tools.system import sortArgs
-from mpe.tools.system import prime
-from mpe.tools.system import TooFewSpeciesError
-from mpe.tools.system import PrimingError
-from mpe.tools.system import TaxonomicRankError
-from mpe.tools.system import OutgroupError
+from mpe.tools.system_tools import clean
+from mpe.tools.system_tools import Stager
+from mpe.tools.system_tools import sortArgs
+from mpe.tools.system_tools import prime
+from mpe.tools.system_tools import TooFewSpeciesError
+from mpe.tools.system_tools import PrimingError
+from mpe.tools.system_tools import TaxonomicRankError
+from mpe.tools.system_tools import OutgroupError
 
 ## Description
 description = """MPE D.J. Bennett (C) 2014
@@ -110,6 +111,7 @@ def getDirs(logger):
 		files = os.listdir(path)
 		if 'names.txt' in files:
 			checked_dirs.append(each)
+		#TODO: change this to have folders with any of the stage folders too
 	if len(checked_dirs) > 0:
 		return checked_dirs
 	else:
@@ -232,9 +234,9 @@ def main():
 			# get list of arguments
 			arguments = sortArgs(dirs[i], args.email, folder_logger)
 			# initialise hidden files
-			prime(dirs[i], arguments)
+			stage = prime(dirs[i], arguments)
 			# run Stager
-			Stager.run_all(dirs[i], stage = 0, verbose = args.verbose)
+			Stager.run_all(dirs[i], stage = stage, verbose = args.verbose)
 		# if error raised handle it accordingly ...
 		except PrimingError:
 			error_raised = logError(priming_msg, folder_logger)
