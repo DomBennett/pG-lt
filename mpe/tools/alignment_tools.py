@@ -19,7 +19,6 @@ from StringIO import StringIO
 from system_tools import TerminationPipe
 from system_tools import OutgroupError
 from system_tools import TooFewSpeciesError
-from system_tools import SeedError
 
 ## Objects
 class SeqStore(dict):
@@ -56,12 +55,24 @@ alignments and adding penalties for sequences that did not align"""
 
 	def start(self, n):
 		"""Return n starting random sp sequences, update sppool"""
+		def countSeqsLeft(overlap, available):
+			# counts number of sequences that could be used in alignment
+			if overlap:
+				# note, this only calcs an esimtate, the seq may be sampled multiple times
+				available = sum([len(self[e][0]) for e in self.sppool])
+			else:
+				# if blast overlap fails, minus 1 from current available
+				available -= 1
+			return available
+		# pool starts with all species
 		self.sppool = self.keys()
+		# list of seqs in alignments is empty at first
 		self.sequences_in_alignment = []
 		# add a random seq to sequences_in_alignment
 		self._add()
-		iteration = 0
-		while len(self.sequences_in_alignment) < n:
+		# calc availble
+		available = countSeqsLeft(True, 0)
+		while True:
 			# add
 			self._add()
 			subjseqs = [e[0] for e in self.sequences_in_alignment[:-1]]
@@ -69,13 +80,16 @@ alignments and adding penalties for sequences that did not align"""
 			# blast all against last
 			blast_bool = blast(subj = subjseqs, query = queryseq,\
 				minoverlap = self.minoverlap, mingaps = self.mingaps)
-			# if blast failed, remove it from the list
-			if not all(blast_bool):
+			# did majority overlap?
+			overlap = (float(sum(blast_bool))/len(blast_bool)) > 0.5
+			# if the majority didn't overlap
+			if not overlap:
 				del self.sequences_in_alignment[-1]
 				self.sppool.append(self.next_sp)
-			iteration += 1
-			if iteration > self.runtime:
-				raise SeedError
+			available = countSeqsLeft(overlap, available)
+			# break from loop if all seqs have been tried or n is hit
+			if available == 0 or len(self.sequences_in_alignment) == n:
+				break
 		return [e[0] for e in self.sequences_in_alignment]
 
 	def _blastAdd(self, alignment):
@@ -193,7 +207,7 @@ presence of outgroup, number of species and length of alignment"""
 		max_i = lens.index(max(lens))
 		return store[max_i]
 
-	def calcSeedsize(self, success = True):
+	def _calcSeedsize(self, success = True):
 		"""Calculate seedsize based on buffer and success of current seedsize.
 		Return 1 if trys must increase, else 0."""
 		# increase seedsize if successful buffer times in a row
@@ -226,10 +240,10 @@ presence of outgroup, number of species and length of alignment"""
 			command = version(sequences, self.type)
 			alignment = align(command, sequences)
 			success = self._check(alignment)
-			trys += self.calcSeedsize(success) # add to trys if seedsize is too small
+			trys += self._calcSeedsize(success) # add to trys if seedsize is too small
 			if self.maxtrys < trys:
 				return None
-			if success: # if alignment is successful, return alignment or move to next stage
+			if success: # if alignment is successful, return alignment or move to next phase
 				if len(self.seqstore.sppool) == 0:
 					return alignment
 				else:

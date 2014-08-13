@@ -95,8 +95,6 @@ def run(wd = os.getcwd()):
 			logging.info(".... outgroup dropped")
 		except atools.MinSpeciesError:
 			logging.info(".... too few species left in sequence pool")
-		except atools.SeedError:
-			logging.info(".... unable to make seed, too few overlapping sequences")
 		if each_counter < naligns:
 			logging.info(".... too few alignments generated")
 			shutil.rmtree(gene_dir)

@@ -31,9 +31,6 @@ class PrimingError(Exception):
 class OutgroupError(Exception):
 	pass
 
-class SeedError(Exception):
-	pass
-
 ## Other classes
 class Stager(object):
 	"""Stager class : runs each file in stage folder. Adapted from\
