@@ -250,6 +250,7 @@ def main():
 			folder_logger.info('Execution halted by user')
 			sys.exit('Execution halted by user')
 		except:
+			raise
 			error_raised = logError(unexpected_msg, folder_logger)
 		if error_raised:
 			logMessage('folder-error', logger = base_logger, directory = dirs[i])
