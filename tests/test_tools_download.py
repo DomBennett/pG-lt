@@ -82,8 +82,9 @@ def dummy_eFetch(ncbi_id, db = "nucleotide"):
 		# return all as list
 		return [seq1, seq2, seq3]
 
-def dummy_align(command, sequences):
-	return all (sequences)
+def dummy_blast(subj, query, minoverlap, mingaps):
+	# return all trues
+	return [True for e in subj]
 
 def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen):
 	return alignment
@@ -111,11 +112,11 @@ class DownloadTestSuite(unittest.TestCase):
 	def setUp(self):
 		self.true_eSearch = dtools.etools.eSearch
 		self.true_eFetch = dtools.etools.eFetch
-		self.true_align = dtools.atools.align
+		self.true_blast = dtools.atools.blast
 		self.true_checkAlignment = dtools.atools.checkAlignment
 		dtools.etools.eSearch = dummy_eSearch
 		dtools.etools.eFetch = dummy_eFetch
-		dtools.atools.align = dummy_align
+		dtools.atools.blast = dummy_blast
 		dtools.atools.checkAlignment = dummy_checkAlignment
 		# mock Downloader instance
 		self.downloader = dtools.Downloader (gene_names = gene_names,\
@@ -142,7 +143,7 @@ class DownloadTestSuite(unittest.TestCase):
 		#repatch
 		dtools.etools.eSearch = self.true_eSearch
 		dtools.etools.eFetch = self.true_eFetch
-		dtools.atools.align = self.true_align
+		dtools.atools.blast = self.true_blast
 		dtools.atools.checkAlignment = self.true_checkAlignment
 
 	def test_downloader_private_buildsearchterm_thoroughness1(self):
@@ -168,7 +169,8 @@ class DownloadTestSuite(unittest.TestCase):
 		# weeds out Falses from sequences, should not be any Falses
 		sequences = self.sequences[:]
 		res_filtered,res_downloaded = self.downloader._filter(sequences)
-		self.assertTrue(all(res_filtered))
+		self.assertEqual(len(res_filtered), len(sequences))
+		self.assertEqual(len(res_downloaded), 0)
 
 	def test_downloader_private_findgeneinseq(self):
 		# change gene names for test
