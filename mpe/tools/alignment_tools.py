@@ -19,6 +19,7 @@ from StringIO import StringIO
 from system_tools import TerminationPipe
 from system_tools import OutgroupError
 from system_tools import TooFewSpeciesError
+from system_tools import MafftError
 
 ## Objects
 class SeqStore(dict):
@@ -193,10 +194,11 @@ presence of outgroup, number of species and length of alignment"""
 		store = [a for a in store if "outgroup" in\
 					  [e.id for e in a._records]]
 		if len(store) == 0:
-			logging.info("No outgroup!")
+			logging.info("........ no outgroup")
 			return None
 		store = [e for e in store if len(e) >= 5]
 		if len(store) == 0:
+			logging.info("........ too few species")
 			return None
 		# keep only alignments with lots of records
 		nrecords = [len(e._records) for e in store]
@@ -219,9 +221,11 @@ presence of outgroup, number of species and length of alignment"""
 		if self.buffer_counter >= self.buffer:
 			if self.seedsize < len(self.seqstore):
 				self.seedsize += 1
+				self.buffer_counter = 0# reset every time seedsize changes
 		if self.buffer_counter <= (self.buffer * -1):
 			if self.seedsize > self.minseedsize:
 				self.seedsize -= 1
+				self.buffer_counter = 0
 			else:
 				# here seedsize must be reduced, but has hit
 				#  midseedsize, add 1 to trys
@@ -232,13 +236,15 @@ presence of outgroup, number of species and length of alignment"""
 		"""Incrementally build an alignment by adding sequences to a seed alignment"""
 		trys = 0
 		store = []
-		self.buffer_counter = 0 # seedsize buffer counterstart at 0
 		logging.info("........ seed phase: [{0}] seed size".format(self.seedsize))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
 			command = version(sequences, self.type)
-			alignment = align(command, sequences)
+			try:
+				alignment = align(command, sequences)
+			except MafftError:
+				pass
 			success = self._check(alignment)
 			trys += self._calcSeedsize(success) # add to trys if seedsize is too small
 			if self.maxtrys < trys:
@@ -247,18 +253,20 @@ presence of outgroup, number of species and length of alignment"""
 				if len(self.seqstore.sppool) == 0:
 					return alignment
 				else:
-					store.append(alignment)
 					sequence = self.seqstore.next(alignment)
-					if not sequence:
-						return self._return(store)
-				break
+					if sequence:
+						store.append(alignment)
+						break
 		trys = 0
 		logging.info("........ add phase : [{0}] species".format(len(alignment)))
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			#print "Number of species: {0}".format(len(alignment))
 			#TODO: I assume I can't use qinsi or xinsi with --add
-			alignment = add(alignment, sequence)
+			try:
+				alignment = add(alignment, sequence)
+			except MafftError:
+				pass
 			if self._check(alignment):
 				trys = 0
 				if len(self.seqstore.sppool) == 0:
@@ -310,7 +318,8 @@ def align(command, sequences):
 		try:
 			res = AlignIO.read(output_file, 'fasta')
 		except:
-			raise RuntimeError("No MAFFT output.")
+			logging.info(pipe.output)
+			raise MafftError()
 		else:
 			os.remove(output_file)
 	else:
@@ -336,7 +345,8 @@ def add(alignment, sequence):
 		try:
 			res = AlignIO.read(output_file, 'fasta')
 		except:
-			raise RuntimeError("No MAFFT output.")
+			logging.info(pipe.output)
+			raise MafftError()
 		else:
 			os.remove(output_file)
 	else:
@@ -385,7 +395,7 @@ Return bool"""
 	def calcOverlap(columns):
 		pcolgaps = []
 		for i in columns:
-			ith =  float(alignment[:,i].count("-"))/(len(alignment) - 1)
+			ith = float(alignment[:,i].count("-"))/(len(alignment) - 1)
 			pcolgaps.append(ith)
 		overlap = len(columns) - (len(columns) * np.mean(pcolgaps))
 		return overlap
