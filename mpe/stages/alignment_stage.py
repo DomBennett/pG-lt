@@ -73,7 +73,7 @@ def run(wd = os.getcwd()):
 				if alignment is None:
 					trys += 1
 					if trys > maxtrys:
-						logging.info("Max trys with no alignments hit!")
+						logging.info(".... max trys with no alignments")
 						break
 					else:
 						continue
@@ -93,7 +93,7 @@ def run(wd = os.getcwd()):
 				i += 1
 		except atools.OutgroupError:
 			logging.info(".... outgroup dropped")
-		except atools.MinSpeciesError:
+		except atools.TooFewSpeciesError:
 			logging.info(".... too few species left in sequence pool")
 		if each_counter < naligns:
 			logging.info(".... too few alignments generated")
