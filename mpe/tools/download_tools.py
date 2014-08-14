@@ -79,24 +79,23 @@ scaffold[TI] NOT assembly[TI] NOT unverified[TI]".format(taxids_term, gene_term)
 		return list(set(seqids))
 
 	def _filter(self, sequences):
-		"""Filter sequences by aligning sequences"""
-		def filterByAlignment(sequences):
-			alignment = atools.align('mafft --auto', sequences)
-			return atools.checkAlignment(alignment, self.mingaps, self.minoverlap, self.minlen)
-		filtered = []
-		trys = 0
-		seedsize = self.seedsize
-		while seedsize < len(sequences) and trys < self.maxtrys:
-			temp = []
-			for i in range(seedsize):
-				randn = random.randint(0, len(sequences)-1)
-				temp.append(sequences.pop(randn))
-			if filterByAlignment(temp):
-				filtered.extend(temp)
-			else:
-				sequences.extend(temp)
-				trys += 1
-		return filtered,sequences
+		"""Filter sequences by BLASTing"""
+		# choose random species for query
+		randn = random.randint(0, len(sequences)-1)
+		query = [sequences[randn]]
+		subj = sequences
+		# blast rand seq against all other seqs
+		blast_bool = atools.blast(subj, query, self.minoverlap, self.mingaps)
+		# filtered are all sequences that are true
+		filtered = [sequences[i] for i,e in enumerate(blast_bool) if e]
+		# sequence pool are all sequences that are false
+		seqpool = [sequences[i] for i,e in enumerate(blast_bool) if not e]
+		# return filtered if there are more than 5 sequences in filtered
+		if len(filtered) > self.seedsize:
+			return filtered,seqpool
+		# else return empty list of filtered and the sequences
+		else:
+			return [],sequences
 
 	def _findGeneInSeq(self, record):
 		"""Extract gene sequence from larger sequence (e.g. genomes) by \
