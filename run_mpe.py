@@ -4,15 +4,17 @@
 ##TODO: bring back restart
 ##TODO: run demos
 """
-mpe is a pipeline for the automated generation of phylogenies through 'Mass
-Phylogeny Estimation'. This program is built on top of phyloGenerator (C) 2013
-and was written by D.J. Bennett with additional help from W.D. Pearse and L. Hudson.
-This program makes use of external programs for phylogeny generation and bioinformatics
-these are: RAxML (Copyright (C) Stamatakis 2013) , MAFFT (Copyright (C) 2013 Kazutaka
-Katoh) the NCBI's standalone BLAST suite 2.2.29+ and online API services
- (Copyright NCBI (C) 2009). It also uses the following python packages:
- Biopython (Copyright Cook (C) 2009), Dendropy (Copyright Sukumaran and Holder (C)
- 2010) and Taxon Names Resovler (Copyright (C) Bennett 2014).
+mpe is a pipeline for the automated generation of phylogenies through
+'Mass Phylogeny Estimation'. This program is built on top of 
+phyloGenerator (C) 2013 and was written by D.J. Bennett with
+additional help from W.D. Pearse and L. Hudson. This program makes
+use of external programs for phylogeny generation and bioinformatics
+these are: RAxML (Copyright (C) Stamatakis 2013) , MAFFT (Copyright 
+(C) 2013 Kazutaka Katoh) the NCBI's standalone BLAST suite 2.2.29+ and
+online API services (Copyright NCBI (C) 2009). It also uses the
+following python packages: Biopython (Copyright Cook (C) 2009),
+Dendropy (Copyright Sukumaran and Holder (C) 2010) and Taxon Names
+Resovler (Copyright (C) Bennett 2014).
 
 Copyright (C) 2014  Dominic John Bennett
 
@@ -50,30 +52,29 @@ A pipeline for the automated generation of phylogenies from taxonomic
 names through Mass Phylogeny Estimation."""
 
 ## Error messages
-nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files found! \
-All taxonomic names should be placed in subdirectories and called: \
-\'names.txt\''
-priming_msg = '\nERROR: The program was unable to start mpe due to a problem \
-with the files and folders in the study directory. Check the parameters \
-and gene parameters .csv for any potential conflicts.'
-toofewspecies_msg = '\nERROR: The program halted as there are too few species left of \
-phylogeny building -- five is the minimum. You may have started with too few names, \
-or names given could not be taxonomically \
-resolved or there may be too little sequence data available.'
-taxonomicrank_msg =  '\nERROR: It is likely that one or more names have \
-been resolved incorrectly, as such the parent taxonomic \
-group has been set to Eukaryotes which is too high a \
-taxonomic rank for phylogenetic analysis. Consider \
-adding a parent ID to the parameters.csv to prevent \
-incorrect names resolution or reducing the taxonomic diversity \
-of the analysis names.'
-outgroup_msg = '\nERROR: The outgroup has been dropped. This may be due to too few \
-sequence data available for outgroup or a failure to align sequences that are \
-available. If outgroup has been automatically selected, consider manually choosing \
-an outgroup.'
-unexpected_msg = '\nERROR: An unexpected error occurred. Unfortunately, this is not a professional \
-program and as such these errors are likely. Please email details to the program \
-maintainer for help.'
+nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files \
+found! All taxonomic names should be placed in subdirectories and \
+called: \'names.txt\''
+priming_msg = '\nERROR: The program was unable to start mpe due to a \
+problem with the files and folders in the study directory. Check the \
+parameters and gene parameters .csv for any potential conflicts.'
+toofewspecies_msg = '\nERROR: The program halted as there are too few \
+species left of phylogeny building -- five is the minimum. You may \
+have started with too few names, or names given could not be \
+taxonomically resolved or there may be too little sequence data \
+available.'
+taxonomicrank_msg =  '\nERROR: It is likely that one or more names \
+have been resolved incorrectly, as such the parent taxonomic group \
+has been set to Eukaryotes which is too high a taxonomic rank for \
+phylogenetic analysis. Consider adding a parent ID to the \
+parameters.csv to prevent incorrect names resolution or reducing the \
+taxonomic diversity of the analysis names.'
+outgroup_msg = '\nERROR: The outgroup has been dropped. This may be \
+due to too few sequence data available for outgroup or a failure to \
+align sequences that are available. If outgroup has been \
+automatically selected, consider manually choosing an outgroup.'
+unexpected_msg = '\nERROR: The following unexpected error occurred \
+[{0}] Please email details to the program maintainer for help.'
 
 ## Functions
 def printHeader():
@@ -86,14 +87,16 @@ def printHeader():
 def parseArgs():
 	"""Read command-line arguments"""
 	parser = argparse.ArgumentParser()
-	parser.add_argument("-email", "-e", help="please provide email for NCBI")
-	parser.add_argument("-restart", "-r", help="restart from specified stage")
+	parser.add_argument("-email", "-e", help="please provide email \
+for NCBI")
+	parser.add_argument("-restart", "-r", help="restart from \
+specified stage")
 	parser.add_argument("--verbose", help="increase output verbosity",
 					action="store_true")
 	parser.add_argument("--debug", help="log warnings (developer only)",
 					action="store_true")
-	parser.add_argument("--clean", help="remove all mpe files and folders (developer only)",
-					action="store_true")
+	parser.add_argument("--clean", help="remove all mpe files and \
+folders (developer only)", action="store_true")
 	return parser
 
 def getDirs(logger):
@@ -179,13 +182,16 @@ def logMessage(phase, logger, directory = None):
 			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
 	elif phase == 'finish':
 		# when a folder is finished running
-		logger.info('Folder [{0}] finished at [{1}]'.format(directory,\
-			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
+		logger.info('Folder [{0}] finished at [{1}]'.format(\
+			directory, datetime.today().strftime(\
+				"%A, %d %B %Y %I:%M%p")))
 	elif phase == 'folder-error':
 		# when a folder is unable to run
-		logger.info('Unfinished for folder [{0}] at [{1}] ....'.format(directory,\
+		logger.info('Unfinished for folder [{0}] at [{1}] ....'.\
+			format(directory,\
 			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
-		logger.info(' .... Check [{0}] for more details'.format(os.path.join(\
+		logger.info(' .... Check [{0}] for more details'.format(\
+			os.path.join(\
 			directory, 'log.txt')))
 	elif phase == 'end':
 		logger.info('\nFIN')
@@ -228,15 +234,16 @@ def main():
 		logMessage('start', logger = base_logger, directory = dirs[i])
 		error_raised = False
 		# set up a root logger, so now default logging refers to this
-		folder_logger = setUpLogging(args.verbose, args.debug, logname = '',\
-			directory = dirs[i])
+		folder_logger = setUpLogging(args.verbose, args.debug,\
+			logname = '', directory = dirs[i])
 		try:
 			# get list of arguments
 			arguments = sortArgs(dirs[i], args.email, folder_logger)
 			# initialise hidden files
 			stage = prime(dirs[i], arguments)
 			# run Stager
-			Stager.run_all(dirs[i], stage = stage, verbose = args.verbose)
+			Stager.run_all(dirs[i], stage = stage, verbose = \
+				args.verbose)
 		# if error raised handle it accordingly ...
 		except PrimingError:
 			error_raised = logError(priming_msg, folder_logger)
@@ -250,12 +257,15 @@ def main():
 			folder_logger.info('Execution halted by user')
 			sys.exit('Execution halted by user')
 		except:
-			raise
-			error_raised = logError(unexpected_msg, folder_logger)
+			unexpected_error = sys.last_value
+			error_raised = logError(unexpected_msg.format(\
+				unexpected_error), folder_logger)
 		if error_raised:
-			logMessage('folder-error', logger = base_logger, directory = dirs[i])
+			logMessage('folder-error', logger = base_logger,\
+				directory = dirs[i])
 		else:
-			logMessage('finish', logger = base_logger, directory = dirs[i])
+			logMessage('finish', logger = base_logger, directory =\
+				dirs[i])
 	logMessage('end', logger = base_logger)
 
 if __name__ == '__main__':
