@@ -23,10 +23,11 @@ from system_tools import MafftError
 
 ## Objects
 class SeqStore(dict):
-	"""Store species' gene sequences with functions for pulling sequences for \
-alignments and adding penalties for sequences that did not align"""
-	def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap,\
-		runtime = 10000):
+	"""Store species' gene sequences with functions for pulling \
+sequences for alignments and adding penalties for sequences that did \
+not align"""
+	def __init__(self, genedir, seqfiles, minfails, mingaps, \
+minoverlap, runtime = 10000):
 		self.minfails = minfails # minimum number of fails in a row
 		self.dspp = [] # species dropped
 		self.nseqs = 0 # counter for seqs
@@ -94,7 +95,8 @@ alignments and adding penalties for sequences that did not align"""
 		return [e[0] for e in self.sequences_in_alignment]
 
 	def _blastAdd(self, alignment):
-		"""Add new random species' sequence ensuring overlap with BLAST"""
+		"""Add new random species' sequence ensuring overlap with \
+BLAST"""
 		rand_ints = range(len(self.sppool))
 		random.shuffle(rand_ints)
 		for i in rand_ints:
@@ -108,11 +110,13 @@ alignments and adding penalties for sequences that did not align"""
 			return False
 		self.next_sp = self.sppool.pop(i)
 		#print self.next_sp
-		self.sequences_in_alignment.append(self[self.next_sp][0][next_seq_i])
+		self.sequences_in_alignment.append(self[self.next_sp][0][\
+next_seq_i])
 		return True
 		
 	def back(self):
-		"""Add to nfails for random species, return new random species"""
+		"""Add to nfails for random species, return new random \
+species"""
 		self.sequences_in_alignment[-1][1] += 1
 		del self.sequences_in_alignment[-1]
 		self.sppool.append(self.next_sp)
@@ -133,15 +137,17 @@ alignments and adding penalties for sequences that did not align"""
 			return False
 
 	def _blastAlignment(self, alignment, sequences):
-		"""Match a sequence to an alignment with stand-alone blast to \
-determine if sequences overlap. Return indexes of overlapping sequences."""
+		"""Match a sequence to an alignment with stand-alone blast \
+to determine if sequences overlap. Return indexes of overlapping \
+sequences."""
 		# convert alignment into a consensus
 		summary_align = AlignInfo.SummaryInfo(alignment)
-		consensus = SeqRecord(summary_align.gap_consensus(ambiguous = \
-			'N', threshold = 0.5), id = "con", name = "Alignment consensus",\
-		description = "ambiguous = N, threshold = 0.5")
-		results = blast (subj = sequences, query = consensus, minoverlap = \
-			self.minoverlap, mingaps = self.mingaps)
+		consensus = SeqRecord(summary_align.gap_consensus(ambiguous \
+			= 'N', threshold = 0.5), id = "con", name = \
+		"Alignment consensus", description = \
+		"ambiguous = N, threshold = 0.5")
+		results = blast (subj = sequences, query = consensus, \
+			minoverlap = self.minoverlap, mingaps = self.mingaps)
 		return [i for i,e in enumerate(results) if e]
 		
 	def _check(self):
@@ -183,8 +189,8 @@ class Aligner(object):
 		self.type = gene_type
 
 	def _check(self, alignment):
-		return checkAlignment(alignment, self.mingaps, self.minoverlap,\
-			self.minlen)
+		return checkAlignment(alignment, self.mingaps, \
+			self.minoverlap, self.minlen)
 
 	def _return(self, store):
 		"""Return best alignment from a list of alignments based on:\
@@ -210,8 +216,8 @@ presence of outgroup, number of species and length of alignment"""
 		return store[max_i]
 
 	def _calcSeedsize(self, success = True):
-		"""Calculate seedsize based on buffer and success of current seedsize.
-		Return 1 if trys must increase, else 0."""
+		"""Calculate seedsize based on buffer and success of current \
+seedsize. Return 1 if trys must increase, else 0."""
 		# increase seedsize if successful buffer times in a row
 		# decrease seedsize if unsuccessful buffer times in a row
 		if success:
@@ -233,12 +239,15 @@ presence of outgroup, number of species and length of alignment"""
 		return 0
 
 	def run(self):
-		"""Incrementally build an alignment by adding sequences to a seed alignment"""
+		"""Incrementally build an alignment by adding sequences to a \
+seed alignment"""
 		trys = 0
 		store = []
-		logging.info("........ seed phase: [{0}] seed size".format(self.seedsize))
+		logging.info("........ seed phase: [{0}] seed size".format(\
+			self.seedsize))
 		while True:
-			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
+			self.minlen = min([self.seqstore[e][1] for e in self.\
+				seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
 			if len(sequences) >= self.minseedsize: # make sure there are enough seqs for alignment
 				command = version(sequences, self.type)
@@ -261,9 +270,11 @@ presence of outgroup, number of species and length of alignment"""
 						store.append(alignment)
 						break
 		trys = 0
-		logging.info("........ add phase : [{0}] species".format(len(alignment)))
+		logging.info("........ add phase : [{0}] species".format(len(\
+			alignment)))
 		while True:
-			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
+			self.minlen = min([self.seqstore[e][1] for e in self.\
+				seqstore.keys()])
 			#print "Number of species: {0}".format(len(alignment))
 			#TODO: I assume I can't use qinsi or xinsi with --add
 			try:
@@ -311,7 +322,8 @@ def align(command, sequences):
 	"""Align sequences using mafft (external program)"""
 	input_file = ".sequences_in.fasta"
 	output_file = ".alignment_out.fasta"
-	command_line = '{0} {1} > {2}'.format(command, input_file, output_file)
+	command_line = '{0} {1} > {2}'.format(command, input_file, \
+		output_file)
 	with open(input_file, "w") as file:
 		SeqIO.write(sequences, file, "fasta")
 	pipe = TerminationPipe(command_line)
@@ -326,7 +338,8 @@ def align(command, sequences):
 		else:
 			os.remove(output_file)
 	else:
-		raise RuntimeError("MAFFT alignment not complete in time allowed")
+		raise RuntimeError("MAFFT alignment not complete in time \
+allowed")
 	return res
 
 def add(alignment, sequence):
@@ -334,8 +347,8 @@ def add(alignment, sequence):
 	alignment_file = ".alignment_in.fasta"
 	sequence_file = ".sequence_in.fasta"
 	output_file = "alignment_out.fasta" + '.fasta'
-	command_line = 'mafft --auto --add {0} {1} > {2}'.format(sequence_file,\
-		alignment_file, output_file)
+	command_line = 'mafft --auto --add {0} {1} > {2}'.format(\
+		sequence_file, alignment_file, output_file)
 	with open(sequence_file, "w") as file:
 		SeqIO.write(sequence, file, "fasta")
 	with open(alignment_file, "w") as file:
@@ -357,8 +370,8 @@ def add(alignment, sequence):
 	return res
 
 def blast(subj, query, minoverlap, mingaps):
-	"""Return True or False for each sequence in subj that overlaps with
-sequences in query given set parameters using NCBI's BLAST"""
+	"""Return True or False for each sequence in subj that overlaps \
+with sequences in query given set parameters using NCBI's BLAST"""
 	SeqIO.write(query, ".query.fasta", "fasta")
 	SeqIO.write(subj, ".subj.fasta", "fasta")
 	output = NcbiblastnCommandline(query = ".query.fasta",\
@@ -393,12 +406,12 @@ sequences in query given set parameters using NCBI's BLAST"""
 	return bools
 
 def checkAlignment(alignment, mingaps, minoverlap, minlen):
-	"""Determine if an alignment is good or not based on given parameters.
-Return bool"""
+	"""Determine if an alignment is good or not based on given \
+parameters. Return bool"""
 	def calcOverlap(columns):
 		pcolgaps = []
 		for i in columns:
-			ith = float(alignment[:,i].count("-"))/(len(alignment) - 1)
+			ith = float(alignment[:,i].count("-"))/(len(alignment)-1)
 			pcolgaps.append(ith)
 		overlap = len(columns) - (len(columns) * np.mean(pcolgaps))
 		return overlap
