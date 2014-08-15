@@ -240,11 +240,14 @@ presence of outgroup, number of species and length of alignment"""
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
-			command = version(sequences, self.type)
-			try:
-				alignment = align(command, sequences)
-			except MafftError:
-				pass
+			if len(sequences) >= self.minseedsize: # make sure there are enough seqs for alignment
+				command = version(sequences, self.type)
+				try:
+					alignment = align(command, sequences)
+				except MafftError:
+					pass
+			else:
+				success = False
 			success = self._check(alignment)
 			trys += self._calcSeedsize(success) # add to trys if seedsize is too small
 			if self.maxtrys < trys:
