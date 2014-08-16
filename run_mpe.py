@@ -73,8 +73,9 @@ outgroup_msg = '\nERROR: The outgroup has been dropped. This may be \
 due to too few sequence data available for outgroup or a failure to \
 align sequences that are available. If outgroup has been \
 automatically selected, consider manually choosing an outgroup.'
-unexpected_msg = '\nERROR: The following unexpected error occurred \
-[{0}] Please email details to the program maintainer for help.'
+unexpected_msg = '\nERROR: The following unexpected error occurred:\n\
+\"{0}\" \n\
+Please email details to the program maintainer for help.'
 
 ## Functions
 def printHeader():
@@ -126,11 +127,6 @@ def setUpLogging(verbose, debug, logname = 'base',\
 	"""Set up logging : direct and control log statements"""
 	# get logger
 	logger = logging.getLogger(logname)
-	# if this logger already has handlers, remove them -- prevents propogation
-	if logger.handlers:
-		handlers = logger.handlers[:]
-		for h in handlers:
-			logger.removeHandler(h)
 	if debug:
 		# log all statements above DEBUG level
 		logger.setLevel(logging.DEBUG)
@@ -151,6 +147,15 @@ def setUpLogging(verbose, debug, logname = 'base',\
 		logger.addHandler(console)
 	return logger
 
+def tearDownLogging(logname):
+	"""Remove a logger"""
+	# get logger
+	logger = logging.getLogger(logname)
+	# remove handlers
+	handlers = logger.handlers[:]
+	for h in handlers:
+		logger.removeHandler(h)
+
 def logMessage(phase, logger, directory = None):
 	if phase == 'begin':
 		# begin running the program
@@ -158,6 +163,7 @@ def logMessage(phase, logger, directory = None):
 		logger.info('#' * 70)
 		logger.info(description)
 		logger.info('#' * 70 + '\n')
+		logger.info('-' * 28 + ' Run details ' + '-' * 29)
 		logger.info('Running on [{0}] [{1}]'.format(platform.node(),
 					platform.platform()))
 		logger.info('Python [{0}]'.format(sys.version))
@@ -169,43 +175,42 @@ def logMessage(phase, logger, directory = None):
 			chars_counter += len(each)
 			if chars_counter > 70:
 				# stop at 70 columns
-				dir_string += '[' + each + '],\n'
+				dir_string += each + ',\n'
 				chars_counter = 0
 			else:
-				dir_string += '[' + each + '], '
-		dir_string += '[' + directory[-1] + ']'
+				dir_string += each + ', '
+		dir_string += directory[-1]
 		logger.info('[{0}]'.format(dir_string))
+		logger.info('-' * 70 + '\n')
+		logger.info('-' * 31 + ' Start ' + '-' * 32)
 	elif phase == 'start':
 		# start for one folder
 		# directory is a string
-		logger.info('Folder [{0}] started at [{1}]'.format(directory,
-			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
+		logger.info('Folder [{0}] started at [{1}]'.format(\
+			directory, datetime.today().strftime(\
+				"%A, %d %B %Y %I:%M%p")))
 	elif phase == 'finish':
 		# when a folder is finished running
-		logger.info('Folder [{0}] finished at [{1}]'.format(\
+		logger.info('.... finished at [{1}]'.format(\
 			directory, datetime.today().strftime(\
 				"%A, %d %B %Y %I:%M%p")))
 	elif phase == 'folder-error':
 		# when a folder is unable to run
-		logger.info('Unfinished for folder [{0}] at [{1}] ....'.\
+		logger.info('.... unfinished at [{1}]'.\
 			format(directory,\
 			datetime.today().strftime("%A, %d %B %Y %I:%M%p")))
-		logger.info(' .... Check [{0}] for more details'.format(\
+		logger.info('.... check [{0}] for details'.format(\
 			os.path.join(\
 			directory, 'log.txt')))
 	elif phase == 'end':
-		logger.info('\nFIN')
+		logger.info('-' * 32 + ' End ' + '-' * 33)
 	else:
 		raise(ValueError('Unrecognised phase'))
 
 def logError(msg, logger):
 	"""Return true when error raised, log informative message"""
 	logger.error(msg)
-	logger.info('\n .... Moving to next folder')
-	# set logger to high level -- prevent logging to root
-	# otherwise logs sent to base_logger continue appearing in this
-	# logger -- because it's the root
-	logger.setLevel(51) # Critical is 50
+	logger.info('.... Moving to next folder')
 	return True
 
 def main():
@@ -256,10 +261,11 @@ def main():
 		except KeyboardInterrupt:
 			folder_logger.info('Execution halted by user')
 			sys.exit('Execution halted by user')
-		except:
-			unexpected_error = sys.last_value
+		except Exception as unexpected_error:
 			error_raised = logError(unexpected_msg.format(\
 				unexpected_error), folder_logger)
+		# disable folder_logger
+		tearDownLogging('')
 		if error_raised:
 			logMessage('folder-error', logger = base_logger,\
 				directory = dirs[i])
