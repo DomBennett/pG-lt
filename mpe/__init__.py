@@ -2,15 +2,17 @@
 ## D.J. Bennett
 ## 26/05/2014
 """
-mpe is a pipeline for the automated generation of phylogenies through 'Mass
-Phylogeny Estimation'. This program is built on top of phyloGenerator (C) 2013
-and was written by D.J. Bennett with additional help from W.D. Pearse and L. Hudson.
-This program makes use of external programs for phylogeny generation and bioinformatics
-these are: RAxML (Copyright (C) Stamatakis 2013) , MAFFT (Copyright (C) 2013 Kazutaka
-Katoh) the NCBI's standalone BLAST suite 2.2.29+ and online API services
- (Copyright NCBI (C) 2009). It also uses a variety of python packages including:
- Biopython (Copyright Cook (C) 2009) and Dendropy (Copyright Sukumaran and Holder (C)
- 2010).
+mpe is a pipeline for the automated generation of phylogenies through
+'Mass Phylogeny Estimation'. This program is built on top of 
+phyloGenerator (C) 2013 and was written by D.J. Bennett with
+additional help from W.D. Pearse and L. Hudson. This program makes
+use of external programs for phylogeny generation and bioinformatics
+these are: RAxML (Copyright (C) Stamatakis 2013) , MAFFT (Copyright 
+(C) 2013 Kazutaka Katoh) the NCBI's standalone BLAST suite 2.2.29+ and
+online API services (Copyright NCBI (C) 2009). It also uses the
+following python packages: Biopython (Copyright Cook (C) 2009),
+Dendropy (Copyright Sukumaran and Holder (C) 2010) and Taxon Names
+Resovler (Copyright (C) Bennett 2014).
 
 Copyright (C) 2014  Dominic John Bennett
 

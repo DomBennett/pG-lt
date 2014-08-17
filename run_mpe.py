@@ -46,7 +46,7 @@ from mpe.tools.system_tools import TaxonomicRankError
 from mpe.tools.system_tools import OutgroupError
 
 ## Description
-description = """MPE D.J. Bennett (C) 2014
+description = """mpe D.J. Bennett (C) 2014
 
 A pipeline for the automated generation of phylogenies from taxonomic
 names through Mass Phylogeny Estimation."""
