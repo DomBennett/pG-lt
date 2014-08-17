@@ -254,10 +254,11 @@ seed alignment"""
 				try:
 					alignment = align(command, sequences)
 				except MafftError:
-					pass
+					continue
+				else:
+					success = self._check(alignment)
 			else:
 				success = False
-			success = self._check(alignment)
 			trys += self._calcSeedsize(success) # add to trys if seedsize is too small
 			if self.maxtrys < trys:
 				return None
