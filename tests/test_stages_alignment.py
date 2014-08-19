@@ -22,7 +22,7 @@ class Dummy_SeqStore(object):
 
 class Dummy_Aligner(object):
 	def __init__(self,seqstore, mingaps, minoverlap,\
-			minseedsize, maxtrys,maxseedtrys,gene_type):
+			minseedsize, maxtrys,maxseedtrys,gene_type,outgroup):
 		pass
 	def run(self):
 		return alignment

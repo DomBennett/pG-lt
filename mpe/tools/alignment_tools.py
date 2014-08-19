@@ -175,7 +175,7 @@ sequences."""
 class Aligner(object):
 	"""Build alignments from seqstore"""
 	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
-		maxtrys, maxseedtrys, gene_type):
+		maxtrys, maxseedtrys, gene_type, outgroup = True):
 		self.seqstore = seqstore
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
@@ -187,6 +187,7 @@ class Aligner(object):
 		self.timeout = 99999999
 		self.silent = False
 		self.type = gene_type
+		self.outgroup = outgroup # bool for whether outgroup is necessary
 
 	def _check(self, alignment):
 		return checkAlignment(alignment, self.mingaps, \
@@ -195,13 +196,14 @@ class Aligner(object):
 	def _return(self, store):
 		"""Return best alignment from a list of alignments based on:\
 presence of outgroup, number of species and length of alignment"""
-		# keep alignments with outgroups
-		# keep alignments with more than 5 species
-		store = [a for a in store if "outgroup" in\
-					  [e.id for e in a._records]]
-		if len(store) == 0:
-			logging.info("........ no outgroup")
-			return None
+		if self.outgroup:
+			# keep alignments with outgroups
+			# keep alignments with more than 5 species
+			store = [a for a in store if "outgroup" in\
+						  [e.id for e in a._records]]
+			if len(store) == 0:
+				logging.info("........ no outgroup")
+				return None
 		store = [e for e in store if len(e) >= 5]
 		if len(store) == 0:
 			logging.info("........ too few species")

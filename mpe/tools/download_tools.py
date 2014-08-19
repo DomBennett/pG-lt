@@ -229,6 +229,7 @@ matches in GenBank"""
 		logging.info(" .... checking [{0}]".format(gene))
 		# first check if its suitable for this taxonomic group
 		taxid = genedict[gene]["taxid"]
+		gene_type = genedict[gene]["type"]
 		if int(taxid) in allrankids:
 			# if it is search genbank
 			gene_bool = []
@@ -238,13 +239,15 @@ matches in GenBank"""
 					seedsize = 0, maxtrys = 0, mingaps = 0, minoverlap = 0,\
 					maxlen = 0, minlen = 0)
 				res = downloader._search(tipids)
-				# if outgroupids do not have sequences, move to next genes
-				if tipids == outgroupids:
-					if len(res) < minnseq:
-						outgroup_bool.append(False)
-						continue
-					else:
-						outgroup_bool.append(True)
+				# if gene is deep or both, then make sure it has outgroup
+				if gene_type != 'shallow':
+					# if outgroupids do not have sequences, move to next genes
+					if tipids == outgroupids:
+						if len(res) < minnseq:
+							outgroup_bool.append(False)
+							continue
+						else:
+							outgroup_bool.append(True)
 				gene_bool.append(len(res) >= minnseq)
 			nspp = sum(gene_bool)
 			if nspp > minnspp:
@@ -252,6 +255,7 @@ matches in GenBank"""
 				searchlist.append((gene,nspp))
 	# if all outgroup_bool are false, raise error
 	if not any(outgroup_bool):
+		# TODO: allow the program to run without an outgroup?
 		raise atools.OutgroupError
 	if target == 'all' or target > len(searchlist):
 		return [e[0] for e in searchlist]

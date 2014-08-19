@@ -62,8 +62,9 @@ def run(wd = os.getcwd()):
 		minseedsize = int(genedict[gene]["minseedsize"])
 		maxseedtrys = int(genedict[gene]["maxseedtrys"])
 		gene_type = genedict[gene]['type']
+		outgroup = gene_type != 'shallow' # if gene type is deep or both, must have an outgroup
 		aligner = atools.Aligner(seqstore, mingaps, minoverlap,\
-			minseedsize,maxtrys,maxseedtrys,gene_type)
+			minseedsize,maxtrys,maxseedtrys,gene_type,outgroup)
 		trys = each_counter = 0
 		i = 1
 		try:
