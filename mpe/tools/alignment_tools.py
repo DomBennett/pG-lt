@@ -27,13 +27,12 @@ class SeqStore(dict):
 sequences for alignments and adding penalties for sequences that did \
 not align"""
 	def __init__(self, genedir, seqfiles, minfails, mingaps, \
-minoverlap, runtime = 10000):
+minoverlap):
 		self.minfails = minfails # minimum number of fails in a row
 		self.dspp = [] # species dropped
 		self.nseqs = 0 # counter for seqs
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
-		self.runtime = runtime # limit to the number of loops a while loop can make
 		for i, seqfile in enumerate(seqfiles):
 			name = re.sub('\.fasta$', '', seqfile)
 			seqdir = os.path.join(genedir, seqfile)
@@ -261,7 +260,9 @@ seed alignment"""
 					success = self._check(alignment)
 			else:
 				success = False
-			trys += self._calcSeedsize(success) # add to trys if seedsize is too small
+			# add to trys if unsuccessful or sequences are fewer than seedsize
+			trys += self._calcSeedsize(success and len(sequences) == \
+				self.seedsize)
 			if self.maxtrys < trys:
 				return None
 			if success: # if alignment is successful, return alignment or move to next phase
