@@ -378,11 +378,10 @@ def blast(subj, query, minoverlap, mingaps):
 with sequences in query given set parameters using NCBI's BLAST"""
 	SeqIO.write(query, ".query.fasta", "fasta")
 	SeqIO.write(subj, ".subj.fasta", "fasta")
-	output = NcbiblastnCommandline(query = ".query.fasta",\
-	subject = ".subj.fasta", outfmt = 5)()[0]
 	try:
-		output = NcbiblastnCommandline(query = ".query.fasta",\
-			subject = ".subj.fasta", outfmt = 5)()[0]
+		cline = NcbiblastnCommandline(query = ".query.fasta",\
+			subject = ".subj.fasta", outfmt = 5)
+		output = cline()[0]
 	except ApplicationError:
 		logging.warn("---- BLAST Error ----")
 		return False
