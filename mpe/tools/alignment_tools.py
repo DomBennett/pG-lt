@@ -81,9 +81,9 @@ minoverlap):
 			# blast all against last
 			blast_bool = blast(subj = subjseqs, query = queryseq,\
 				minoverlap = self.minoverlap, mingaps = self.mingaps)
-			# did majority overlap?
-			overlap = (float(sum(blast_bool))/len(blast_bool)) > 0.5
-			# if the majority didn't overlap
+			# do they all overlap?
+			overlap = all(blast_bool)
+			# ... if not
 			if not overlap:
 				del self.sequences_in_alignment[-1]
 				self.sppool.append(self.next_sp)
