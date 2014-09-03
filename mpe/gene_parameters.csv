@@ -1,11 +1,11 @@
 gene,names,group,taxid,notes,mingaps,minoverlap,minfails,maxtrys,minseedsize,maxseedtrys,type
 COI,COI:CO1:COX1:COXI,eukaryotes,2759,,0.01,300,10,100,5,10,shallow
 CYTB,cytb:cytochrome b,eukaryotes,2759,,0.01,300,10,100,5,10,both
-16S,16S:16S ribosomal RNA,eukaryotes,2759,,0.5,300,10,100,5,10,deep
-18S,18S:18S ribosomal RNA,eukaryotes,2759,,0.5,300,10,100,5,10,deep
+16S,16S:16S ribosomal RNA,eukaryotes,2759,,0.05,300,10,100,5,10,deep
+18S,18S:18S ribosomal RNA,eukaryotes,2759,,0.05,300,10,100,5,10,deep
 COII,COII:CO2:COXII:COX2,eukaryotes,2759,,0.01,300,10,100,5,10,shallow
-rbcl,rbcl,viridiplantae,33090,,0.01,200,10,300,5,10,both
-matk,matk,viridiplantae,33090,,0.05,200,10,300,5,10,shallow
+rbcl,rbcl,viridiplantae,33090,,0.01,200,10,100,5,10,both
+matk,matk,viridiplantae,33090,,0.05,200,10,100,5,10,shallow
 NADHs1,NADH subunit 1:NADH dehydrogenase subunit 1:ND1:NAD1,eukaryotes,2759,,0.01,300,10,100,5,10,shallow
 NADHs2,NADH subunit 2:NADH dehydrogenase subunit 2:ND2:NAD2,eukaryotes,2759,,0.01,300,10,100,5,10,shallow
 NADHs3,NADH subunit 3:NADH dehydrogenase subunit 3:ND3:NAD3,eukaryotes,2759,,0.01,300,10,100,5,10,shallow
