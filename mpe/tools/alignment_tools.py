@@ -360,7 +360,7 @@ parameters using NCBI's BLAST"""
 			output = cline()[0]
 		except ApplicationError:
 			logging.warn("---- BLAST Error ----")
-			return False
+			return [],[]
 		finally:
 			os.remove(".query.fasta")
 			os.remove(".subj.fasta")
