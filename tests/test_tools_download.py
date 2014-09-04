@@ -84,8 +84,8 @@ def dummy_eFetch(ncbi_id, db = "nucleotide"):
 		return [seq1, seq2, seq3]
 
 def dummy_blast(subj, query, minoverlap, mingaps):
-	# return all trues
-	return [True for e in subj]
+	# should return indexes of subjects and their sequences
+	return range(len(subj)),subj
 
 def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen):
 	return alignment

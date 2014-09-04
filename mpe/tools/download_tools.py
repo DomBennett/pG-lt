@@ -104,14 +104,13 @@ fewer matches than target nseqs"""
 		query = [sequences[randn]]
 		subj = sequences
 		# blast rand seq against all other seqs
-		blast_bool = atools.blast(subj, query, self.minoverlap,\
+		bresults = atools.blast(subj, query, self.minoverlap,\
 			self.mingaps)
-		# filtered are all sequences that are true
-		filtered = [sequences[i] for i,e in enumerate(blast_bool) if\
-		e]
-		# sequence pool are all sequences that are false
-		seqpool = [sequences[i] for i,e in enumerate(blast_bool) if\
-		not e]
+		# get successfully aligned sequences and create seqpool
+		filtered = [sequences[i] for i,e in enumerate(sequences) if\
+		i in bresults[0]]
+		seqpool = [sequences[i] for i,e in enumerate(sequences) if\
+		i not in bresults[0]]
 		# return filtered if there are more than 5 sequences in
 		#  filtered
 		if len(filtered) > self.seedsize:
@@ -149,6 +148,7 @@ by searching features."""
 					return record
 				else:
 					return found_seq
+		return record
 
 	def _parse(self, record):
 		"""Parse record returned from GenBank"""
@@ -194,12 +194,12 @@ by searching features."""
 
 	def run(self, taxids):
 		"""Dynamic sequence download"""
+		sequences = []
 		while self.thoroughness < self.max_thoroughness:
 			seqids = self._search(taxids)
 			# filter if there are 10 times target nseqs
 			if len(seqids) >= self.nseqs*10:
 				logging.info("........ filtering")
-				sequences = []
 				downloaded = []
 				lower = 0
 				while len(sequences) < self.nseqs and lower != \
@@ -259,7 +259,6 @@ matches in GenBank"""
 	# list of bools for number of genes w/o outgroup seqs
 	outgroup_bool = []
 	for gene in genedict.keys():
-		logging.info(" .... checking [{0}]".format(gene))
 		# first check if its suitable for this taxonomic group
 		taxid = genedict[gene]["taxid"]
 		gene_type = genedict[gene]["type"]
