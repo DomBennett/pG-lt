@@ -92,7 +92,7 @@ def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen):
 # downloader init variables
 taxids = ['1', '2']
 gene_names = ['name1', 'name2']
-nseqs = 100
+nseqs = 2
 thoroughness = 3
 maxpn = 0.1
 seedsize = 3
@@ -159,7 +159,11 @@ class DownloadTestSuite(unittest.TestCase):
 		self.assertEqual(res, self.t3_term)
 
 	def test_downloader_private_search(self):
-		# expect to only find 2, 3 and 0 sequences
+		# expect to only find 2, 1 and 0 sequences
+		# it should search until it finds two sequences (nseqs = 2),
+		#  and then on the next search after raising its thoroughness
+		#  it should find the last sequence. Searching again will
+		#  find no more.
 		res1 = self.downloader._search(self.taxids)
 		res2 = self.downloader._search(self.taxids)
 		res3 = self.downloader._search(self.taxids)
