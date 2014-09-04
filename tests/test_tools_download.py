@@ -44,6 +44,7 @@ class dummy_SeqRecord(object):
 		self.description = description
 		self.length = length
 		self.seq = dummy_Seq()
+		self.features = None
 	def __len__(self):
 		return self.length
 

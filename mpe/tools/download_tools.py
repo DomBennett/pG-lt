@@ -109,30 +109,32 @@ matches than target nseqs"""
 			return [],sequences
 
 	def _findGeneInSeq(self, record):
-		"""Extract gene sequence from larger sequence (e.g. genomes) by \
-searching features."""
-		try:
-			if record.features:
-				for feature in record.features:
-					feature_names = []
-					if 'gene' in feature.qualifiers.keys():
-						feature_names.extend(feature.qualifiers['gene'])
-					if 'gene_synonym' in feature.qualifiers.keys():
-						feature_names.extend(feature.qualifiers['gene_synonym'])
-					if 'product' in feature.qualifiers.keys():
-						feature_names.extend(feature.qualifiers['product'])
-					gene_names = [e.lower() for e in self.gene_names]
-					feature_names = [e.lower() for e in feature_names]
-					if set(gene_names) & set(feature_names):
-						extractor = SeqFeature(feature.location)
-						found_seq = extractor.extract(record)
-						return found_seq
-				else:
+		"""Extract gene sequence from larger sequence (e.g. genomes)
+by searching features."""
+		if not record.features:
+			# if there aren't any features, just return the record
+			return record
+		for feature in record.features:
+			feature_names = []
+			if 'gene' in feature.qualifiers.keys():
+				feature_names.extend(feature.qualifiers['gene'])
+			if 'gene_synonym' in feature.qualifiers.keys():
+				feature_names.extend(feature.qualifiers[\
+					'gene_synonym'])
+			if 'product' in feature.qualifiers.keys():
+				feature_names.extend(feature.qualifiers['product'])
+			gene_names = [e.lower() for e in self.gene_names]
+			feature_names = [e.lower() for e in feature_names]
+			if set(gene_names) & set(feature_names):
+				try:
+					extractor = SeqFeature(feature.location)
+					found_seq = extractor.extract(record)
+				except ValueError:
+					# catch value errors raised for sequences
+					#  with "fuzzy" positions
 					return ()
-			else:
-				return ()
-		except ValueError: # catch value errors raised for sequences with "fuzzy" positions
-			return ()
+				else:
+					return found_seq
 
 	def _parse(self, record):
 		"""Parse record returned from GenBank"""
@@ -145,8 +147,8 @@ searching features."""
 						break
 		if isinstance(record, list):
 			return None
-		if len(record) > self.maxlen:
-			record = self._findGeneInSeq(record)
+		# Always search through features for gene
+		record = self._findGeneInSeq(record)
 		if self.maxlen > len(record) > self.minlen:
 			# find proportion of ambiguous bases
 			nn = len(self.pattern.findall(str(record.seq)))
