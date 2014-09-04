@@ -63,15 +63,26 @@ scaffold[TI] NOT assembly[TI] NOT unverified[TI]".format(taxids_term, gene_term)
 		return search_term
 
 	def _search(self, taxids):
-		"""Search GenBank for matches, increasing thoroughness if no matches"""
+		"""Search GenBank for matches, increasing thoroughness if fewer
+matches than target nseqs"""
+		# record seqids of all sequences that match query
+		# move to next thoroughness if too few sequences
+		# if _search is run again, will not return seqids of sequences
+		#  that have already been found -- self.deja_vues records seen
+		#  sequences
 		seqids = []
-		while len(seqids) == 0:
+		while len(seqids) < self.nseqs:
 			if self.thoroughness > self.max_thoroughness:
-				return ()
+				# keep searching until enough sequences have been
+				#  found or until the max thoroughness has been hit
+				break
 			search_term = self._buildSearchTerm(taxids, self.thoroughness)
 			seqcount = etools.eSearch(search_term)['Count']
 			if int(seqcount) >= 1:
-				seqids.extend(etools.eSearch(search_term, retMax = seqcount)['IdList'])
+				# return ALL matching seqids if more than 0
+				seqids.extend(etools.eSearch(search_term,\
+					retMax = seqcount)['IdList'])
+				# filter those that have already been seen
 				seqids = [e for e in seqids if not e in self.deja_vues]
 			self.thoroughness += 1
 		self.deja_vues.extend(seqids)
@@ -169,7 +180,8 @@ searching features."""
 		"""Dynamic sequence download"""
 		while self.thoroughness < self.max_thoroughness:
 			seqids = self._search(taxids)
-			if len(seqids) >= 1000:
+			# filter if there are 10 times target nseqs
+			if len(seqids) >= self.nseqs*10:
 				logging.info("........ filtering")
 				sequences = []
 				downloaded = []
@@ -234,10 +246,11 @@ matches in GenBank"""
 			# if it is search genbank
 			gene_bool = []
 			for tipids in alltipids:
-				downloader = Downloader(gene_names = genedict[gene]["names"],\
-					nseqs = 0, thoroughness = thoroughness, maxpn = 0,\
-					seedsize = 0, maxtrys = 0, mingaps = 0, minoverlap = 0,\
-					maxlen = 0, minlen = 0)
+				downloader = Downloader(gene_names =\
+				genedict[gene]["names"], nseqs = minnseq + 1,\
+				thoroughness = thoroughness, maxpn = 0,\
+				seedsize = 0, maxtrys = 0, mingaps = 0,\
+				minoverlap = 0, maxlen = 0, minlen = 0)
 				res = downloader._search(tipids)
 				# if gene is deep or both, then make sure it has outgroup
 				if gene_type != 'shallow':
