@@ -10,8 +10,6 @@ import os,re,random,logging
 import numpy as np
 from Bio import SeqIO
 from Bio import AlignIO
-from Bio.Align import AlignInfo
-from Bio.SeqRecord import SeqRecord
 from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Application import ApplicationError
 from Bio.Blast import NCBIXML
@@ -47,74 +45,63 @@ minoverlap):
 			if len(seqs) > 0:
 				self[name] = [seqs, np.min(lengths)]
 
-	def _add(self):
-		"""Add a random sequence to sequneces_in_alignment"""
-		rand_int = random.randint(0, (len(self.sppool)-1))
-		self.next_sp = self.sppool.pop(rand_int)
-		next_seq = random.sample(self[self.next_sp][0], 1)[0]
-		self.sequences_in_alignment.append(next_seq)
+	def _add(self, sequences = None):
+		"""Return a random sequence for alignment"""
+		if self.sequences_in_alignment:
+			rand_ints = range(len(self.sppool))
+			random.shuffle(rand_ints)
+			for i in rand_ints:
+				sp = self.sppool[i]
+				next_seqs = [e[0] for e in self[sp][0]]
+				# blast its sequences against consensus alignment
+				next_seq_is,next_seqs = blast(subj = next_seqs,\
+					query = sequences, minoverlap = self.minoverlap,\
+					mingaps = self.mingaps)
+				# if any overlap, break
+				if next_seq_is:
+					break
+			else:
+				return None
+			self.next_sp = self.sppool.pop(i)
+			# choose next_seq at random
+			next_seq_i = random.sample(next_seq_is, 1)[0]
+			# get blasted next_seq
+			next_seq = next_seqs[next_seq_is.index(next_seq_i)]
+			# record sequence + nfails in sequence_in_alignment
+			self.sequences_in_alignment.append(self[self.next_sp][0]\
+				[next_seq_i])
+		else:
+			# without any sequences in alignment
+			#  simply return a random seq
+			rand_int = random.randint(0, (len(self.sppool)-1))
+			self.next_sp = self.sppool.pop(rand_int)
+			result = random.sample(self[self.next_sp][0], 1)[0]
+			# record sequence + nfails in sequence_in_alignment
+			self.sequences_in_alignment.append(result)
+			next_seq = result[0]
+		return next_seq
 
 	def start(self, n):
 		"""Return n starting random sp sequences, update sppool"""
-		def countSeqsLeft(overlap, available):
-			# counts number of sequences that could be used in alignment
-			if overlap:
-				# note, this only calcs an esimtate, the seq may be sampled multiple times
-				available = sum([len(self[e][0]) for e in self.sppool])
-			else:
-				# if blast overlap fails, minus 1 from current available
-				available -= 1
-			return available
 		# pool starts with all species
 		self.sppool = self.keys()
-		# list of seqs in alignments is empty at first
+		# sequences + nfails used in alignment
 		self.sequences_in_alignment = []
-		# add a random seq to sequences_in_alignment
-		self._add()
-		# calc availble
-		available = countSeqsLeft(True, 0)
+		# actual sequences for alignment
+		sequences = []
+		# add a random seq to sequences_in_alignment and sequences
+		sequences.append(self._add())
 		while True:
-			# add
-			self._add()
-			subjseqs = [e[0] for e in self.sequences_in_alignment[:-1]]
-			queryseq = self.sequences_in_alignment[-1][0]
-			# blast all against last
-			blast_bool = blast(subj = subjseqs, query = queryseq,\
-				minoverlap = self.minoverlap, mingaps = self.mingaps)
-			# did majority overlap?
-			overlap = (float(sum(blast_bool))/len(blast_bool)) > 0.5
-			# if the majority didn't overlap
-			if not overlap:
-				del self.sequences_in_alignment[-1]
-				self.sppool.append(self.next_sp)
-			available = countSeqsLeft(overlap, available)
-			# break from loop if all seqs have been tried or n is hit
-			if available == 0 or len(self.sequences_in_alignment) == n:
+			sequence = self._add(sequences)
+			if sequence:
+				sequences.append(sequence)
+			# break from loop if  n is hit or sequence is None
+			if not sequence or len(self.sequences_in_alignment) == n:
 				break
-		return [e[0] for e in self.sequences_in_alignment]
-
-	def _blastAdd(self, alignment):
-		"""Add new random species' sequence ensuring overlap with \
-BLAST"""
-		rand_ints = range(len(self.sppool))
-		random.shuffle(rand_ints)
-		for i in rand_ints:
-			sp = self.sppool[i]
-			next_seqs = [e[0] for e in self[sp][0]]
-			next_seq_is = self._blastAlignment(alignment, next_seqs)
-			if next_seq_is:
-				next_seq_i = random.sample(next_seq_is, 1)[0]
-				break
-		else:
-			return False
-		self.next_sp = self.sppool.pop(i)
-		#print self.next_sp
-		self.sequences_in_alignment.append(self[self.next_sp][0][\
-next_seq_i])
-		return True
+		return sequences
 		
 	def back(self):
-		"""Add to nfails for random species, return new random \
+		"""Add to nfails for random sequence, return new random \
 species"""
 		self.sequences_in_alignment[-1][1] += 1
 		del self.sequences_in_alignment[-1]
@@ -130,24 +117,8 @@ species"""
 		"""Set nfails to 0, add additional random species"""
 		for i in range(len(self.sequences_in_alignment)):
 			self.sequences_in_alignment[i][1] = 0
-		if self._blastAdd(alignment):
-			return self.sequences_in_alignment[-1][0]
-		else:
-			return False
-
-	def _blastAlignment(self, alignment, sequences):
-		"""Match a sequence to an alignment with stand-alone blast \
-to determine if sequences overlap. Return indexes of overlapping \
-sequences."""
-		# convert alignment into a consensus
-		summary_align = AlignInfo.SummaryInfo(alignment)
-		consensus = SeqRecord(summary_align.gap_consensus(ambiguous \
-			= 'N', threshold = 0.5), id = "con", name = \
-		"Alignment consensus", description = \
-		"ambiguous = N, threshold = 0.5")
-		results = blast (subj = sequences, query = consensus, \
-			minoverlap = self.minoverlap, mingaps = self.mingaps)
-		return [i for i,e in enumerate(results) if e]
+		sequences = [e for e in alignment]
+		return self._add(sequences)
 		
 	def _check(self):
 		"""Check nfails, drop sequences and species"""
@@ -250,7 +221,8 @@ seed alignment"""
 			self.minlen = min([self.seqstore[e][1] for e in self.\
 				seqstore.keys()])
 			sequences = self.seqstore.start(self.seedsize)
-			if len(sequences) >= self.minseedsize: # make sure there are enough seqs for alignment
+			# make sure there are enough seqs for alignment
+			if len(sequences) >= self.minseedsize:
 				command = version(sequences, self.type)
 				try:
 					alignment = align(command, sequences)
@@ -260,12 +232,15 @@ seed alignment"""
 					success = self._check(alignment)
 			else:
 				success = False
-			# add to trys if unsuccessful or sequences are fewer than seedsize
+			# add to trys if unsuccessful or sequences are fewer than
+			#  seedsize
 			trys += self._calcSeedsize(success and len(sequences) == \
 				self.seedsize)
 			if self.maxtrys < trys:
 				return None
-			if success: # if alignment is successful, return alignment or move to next phase
+			# if alignment is successful, return alignment or move to
+			#  next phase
+			if success:
 				if len(self.seqstore.sppool) == 0:
 					return alignment
 				else:
@@ -279,8 +254,6 @@ seed alignment"""
 		while True:
 			self.minlen = min([self.seqstore[e][1] for e in self.\
 				seqstore.keys()])
-			#print "Number of species: {0}".format(len(alignment))
-			#TODO: I assume I can't use qinsi or xinsi with --add
 			try:
 				alignment = add(alignment, sequence)
 			except MafftError:
@@ -297,14 +270,15 @@ seed alignment"""
 			elif trys < self.maxtrys:
 				sequence = self.seqstore.back()
 				if not sequence:
-					# here a species has been dropped and now all species are present
+					# here a species has been dropped and now all
+					#  species are present
 					return self._return(store)
 				alignment = store[-1]
 				trys += 1
 			else:
 				logging.info("............ maxtrys hit")
-				# when the maximum number of species is not reached...
-				# ... return the best alignment in the alignment store
+				# when the maximum number of species is not reached
+				#  return the best alignment in the alignment store
 				return self._return(store)
 
 ## Functions
@@ -373,40 +347,66 @@ def add(alignment, sequence):
 		raise RuntimeError("MAFFT alignment not complete in time allowed")
 	return res
 
-def blast(subj, query, minoverlap, mingaps):
-	"""Return True or False for each sequence in subj that overlaps \
-with sequences in query given set parameters using NCBI's BLAST"""
-	SeqIO.write(query, ".query.fasta", "fasta")
-	SeqIO.write(subj, ".subj.fasta", "fasta")
-	try:
-		cline = NcbiblastnCommandline(query = ".query.fasta",\
-			subject = ".subj.fasta", outfmt = 5)
-		output = cline()[0]
-	except ApplicationError:
-		logging.warn("---- BLAST Error ----")
-		return False
-	finally:
-		os.remove(".query.fasta")
-		os.remove(".subj.fasta")
-	bools = []
-	bresults = NCBIXML.parse(StringIO(output)) # BLAST records for each sequence
-	for record in bresults:
-		# if there is a hit....
-		if record.alignments:
-			# work out how long it is ignoring Ns
-			ns = record.alignments[0].hsps[0].query.count("N")
-			length = record.alignments[0].hsps[0].align_length - ns
-			if length > minoverlap:
-				# if it's above the minoverlap
-				identities = record.alignments[0].hsps[0].identities
-				pgaps = 1 - float(length)/identities
-				if pgaps < mingaps:
-					# and it has more identities than mingaps give it a True
-					bools.append(True)
-					continue
-		bools.append(False)
-	# return True if all in query overlap with subj
-	return bools
+def blast(subj, query, minoverlap, mingaps, prop = 0.5):
+	"""Return indexes and overlapping sequences for each sequence in
+subj that overlaps with more than prop sequences in query given set
+parameters using NCBI's BLAST"""
+	def _blast(subj):
+		SeqIO.write(query, ".query.fasta", "fasta")
+		SeqIO.write(subj, ".subj.fasta", "fasta")
+		try:
+			cline = NcbiblastnCommandline(query = ".query.fasta",\
+				subject = ".subj.fasta", outfmt = 5)
+			output = cline()[0]
+		except ApplicationError:
+			logging.warn("---- BLAST Error ----")
+			return False
+		finally:
+			os.remove(".query.fasta")
+			os.remove(".subj.fasta")
+		# list of T or F for success of alignment between queries and
+		#  subject
+		bools = []
+		# record start and end position to avoid composite sequence
+		#  problems
+		positions = []
+		# BLAST records for each query sequence matched against subj
+		bresults = NCBIXML.parse(StringIO(output))
+		for record in bresults:
+			# if there is a hit....
+			if record.alignments:
+				res = record.alignments[0].hsps[0]
+				# work out how long it is ignoring Ns
+				ns = res.query.count("N")
+				length = res.align_length - ns
+				if length > minoverlap:
+					# if it's above the minoverlap
+					identities = res.identities
+					pgaps = 1 - float(length)/identities
+					if pgaps < mingaps:
+						# and it has more identities than mingaps give
+						#  it a True
+						bools.append(True)
+						positions.append(res.sbjct_start)
+						positions.append(res.sbjct_end)
+						continue
+			bools.append(False)
+		# return True if all in query overlap with subj
+		return bools,positions
+	# return subject i and overlapping sequences if blast successful
+	subj_is = []
+	sequences = []
+	# loop through each sequence in subject
+	for i in range(len(subj)):
+		bools,positions = _blast(subj[i])
+		# if more than prop overlap
+		overlap = (float(sum(bools))/len(bools)) > prop
+		if overlap:
+			subj_is.append(i)
+			# determine overlap as the max and min for all successful
+			#  blast results
+			sequences.append(subj[i][min(positions):max(positions)])
+	return subj_is,sequences
 
 def checkAlignment(alignment, mingaps, minoverlap, minlen):
 	"""Determine if an alignment is good or not based on given \

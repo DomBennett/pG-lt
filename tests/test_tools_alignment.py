@@ -32,8 +32,8 @@ with open(os.path.join(working_dir,"data",\
 
 ## Mock
 def dummy_blast(subj, query, minoverlap, mingaps):
-	# should return a list of bools for each seq in subj
-	return [True for e in subj]
+	# should return indexes of subjects and their sequences
+	return range(len(subj)),subj
 
 class AlignmentTestSuite(unittest.TestCase):
 
@@ -82,24 +82,31 @@ class AlignmentTestSuite(unittest.TestCase):
 
 	def test_blast(self):
 		# real_alignment and real_sequences are identical
-		real_seqs = []
-		for i in range(len(real_alignment)):
-			real_seqs.append(real_alignment[i])
+		real_seqs = [e for e in real_alignment]
 		# choose sample of real seqs for speed
 		subjseqs = random.sample(real_seqs, 5)
-		queryseq = random.sample(real_seqs, 1)
-		res = self.true_blast(subj = subjseqs, query = queryseq,\
+		queryseqs = random.sample(real_seqs, 5)
+		res = self.true_blast(subj = subjseqs, query = queryseqs,\
 			minoverlap = 50, mingaps = 0.5)
 		# all indexes should be returned
-		self.assertEqual(sum(res), len(subjseqs))
+		self.assertEqual(res[0], range(len(subjseqs)))
 		bad_seq = 'T' * 100
 		bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
 		subjseqs_w_bad = subjseqs[:]
 		subjseqs_w_bad.append(bad_seq)
-		res = self.true_blast(subj = subjseqs_w_bad, query = queryseq,\
-			minoverlap = 50, mingaps = 0.5)
+		res = self.true_blast(subj = subjseqs_w_bad, query = \
+			queryseqs, minoverlap = 50, mingaps = 0.5)
 		# bad seq should not be returned
-		self.assertFalse(res[-1])
+		self.assertFalse(5 in res[0])
+		corrected_seq = bad_seq + random.sample(real_seqs, 1)[0]
+		subjseqs_w_corrected = subjseqs[:]
+		subjseqs_w_corrected.append(corrected_seq)
+		res = self.true_blast(subj = subjseqs_w_corrected, query = \
+			queryseqs, minoverlap = 50, mingaps = 0.5)
+		# corrected seq should now be returned
+		self.assertTrue(5 in res[0])
+		# and its returned sequence shouldn't have the bad sequence
+		self.assertFalse(str(res[1][-1])[:100] == str(bad_seq[:100]))
 
 	def test_checkalignment_arg_mingaps(self):
 		# check mingaps argument (proportion of internal gaps)
@@ -146,11 +153,6 @@ class AlignmentTestSuite(unittest.TestCase):
 		res = store.sequences_in_alignment[0]
 		# the species should no longer be in the pool
 		self.assertFalse(res[0].id in store.sppool)
-		## Additional if I implement popping 26/05/2014
-		# the seq should no longer be in the species' seqs
-		#spseqs = store[res[0].id][0]
-		#spseqnames = [e[0].name for e in spseqs]
-		#self.assertFalse(res[0].name in spseqnames)
 
 	def test_seqstore_start(self):
 		store = copy.deepcopy(self.store)
@@ -161,15 +163,6 @@ class AlignmentTestSuite(unittest.TestCase):
 		# each sequence returned should be from different species
 		res = list(set([e.id for e in seqs]))
 		self.assertEqual(len(res), 3)
-
-	def test_seqstore_private_blastadd(self):
-		store = copy.deepcopy(self.store)
-		before_seqs = store.start(5)
-		del before_seqs
-		res = store._blastAdd(test_alignment)
-		# should be true, all sequence indexes are
-		#  returned with dummy
-		self.assertTrue(res)
 
 	def test_seqstore_back(self):
 		store = copy.deepcopy(self.store)
@@ -203,7 +196,7 @@ class AlignmentTestSuite(unittest.TestCase):
 		res = [e[1] == 0 for e in seqs]
 		self.assertTrue(all(res))
 
-	def test_seqstore_private_check_dropseqeunce(self):
+	def test_seqstore_private_check_dropsequence(self):
 		# add maxfails to a sequence
 		store = copy.deepcopy(self.store)
 		seq_to_drop = store['sp1'][0][0][0].name
