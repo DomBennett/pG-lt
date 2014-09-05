@@ -100,7 +100,7 @@ minoverlap):
 				break
 		return sequences
 		
-	def back(self):
+	def back(self, alignment):
 		"""Add to nfails for random sequence, return new random \
 species"""
 		self.sequences_in_alignment[-1][1] += 1
@@ -108,10 +108,10 @@ species"""
 		self.sppool.append(self.next_sp)
 		self._check()
 		if len(self.sppool) != 0:
-			self._add()
-			return self.sequences_in_alignment[-1][0]
+			sequences = [e for e in alignment]
+			return self._add(sequences)
 		else:
-			return False
+			return None
 			
 	def next(self, alignment):
 		"""Set nfails to 0, add additional random species"""
@@ -268,12 +268,12 @@ seed alignment"""
 					if not sequence:
 						return self._return(store)
 			elif trys < self.maxtrys:
-				sequence = self.seqstore.back()
+				alignment = store[-1]
+				sequence = self.seqstore.back(alignment)
 				if not sequence:
 					# here a species has been dropped and now all
 					#  species are present
 					return self._return(store)
-				alignment = store[-1]
 				trys += 1
 			else:
 				logging.info("............ maxtrys hit")

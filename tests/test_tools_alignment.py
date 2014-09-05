@@ -167,7 +167,7 @@ class AlignmentTestSuite(unittest.TestCase):
 	def test_seqstore_back(self):
 		store = copy.deepcopy(self.store)
 		before_seqs = store.start(5)
-		after_seq = store.back()
+		after_seq = store.back(before_seqs[:-1])
 		# after_seq sp should not be in before_seqs
 		res = [after_seq.id == e.id for e in before_seqs]
 		self.assertFalse(all(res))
