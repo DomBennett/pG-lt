@@ -31,9 +31,13 @@ with open(os.path.join(working_dir,"data",\
 	real_alignment = pickle.load(file)
 
 ## Mock
-def dummy_blast(subj, query, minoverlap, mingaps):
-	# should return indexes of subjects and their sequences
-	return range(len(subj)),subj
+def dummy_blast(query, subj, minoverlap, mingaps):
+	# should return bools and positions
+	bools = [True for e in subj]
+	positions = [0 for e in subj]
+	max_positions = [len(e) for e in subj]
+	positions.extend(max_positions)
+	return bools, positions
 
 class AlignmentTestSuite(unittest.TestCase):
 
@@ -85,28 +89,31 @@ class AlignmentTestSuite(unittest.TestCase):
 		real_seqs = [e for e in real_alignment]
 		# choose sample of real seqs for speed
 		subjseqs = random.sample(real_seqs, 5)
-		queryseqs = random.sample(real_seqs, 5)
-		res = self.true_blast(subj = subjseqs, query = queryseqs,\
+		queryseqs = random.sample(real_seqs, 1)
+		res,_ = self.true_blast(query = queryseqs, subj = subjseqs,\
 			minoverlap = 50, mingaps = 0.5)
-		# all indexes should be returned
-		self.assertEqual(res[0], range(len(subjseqs)))
-		bad_seq = 'T' * 100
-		bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
-		subjseqs_w_bad = subjseqs[:]
-		subjseqs_w_bad.append(bad_seq)
-		res = self.true_blast(subj = subjseqs_w_bad, query = \
-			queryseqs, minoverlap = 50, mingaps = 0.5)
-		# bad seq should not be returned
-		self.assertFalse(5 in res[0])
-		corrected_seq = bad_seq + random.sample(real_seqs, 1)[0]
-		subjseqs_w_corrected = subjseqs[:]
-		subjseqs_w_corrected.append(corrected_seq)
-		res = self.true_blast(subj = subjseqs_w_corrected, query = \
-			queryseqs, minoverlap = 50, mingaps = 0.5)
-		# corrected seq should now be returned
-		self.assertTrue(5 in res[0])
-		# and its returned sequence shouldn't have the bad sequence
-		self.assertFalse(str(res[1][-1])[:100] == str(bad_seq[:100]))
+		# all true
+		self.assertTrue(all(res))
+
+	#TODO.
+	#def test_seqstore_private_alignmentblast(self):
+	#	bad_seq = 'T' * 100
+	#	bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
+	#	subjseqs_w_bad = subjseqs[:]
+	#	subjseqs_w_bad.append(bad_seq)
+	#	res = self.true_blast(subj = subjseqs_w_bad, query = \
+	#		queryseqs, minoverlap = 50, mingaps = 0.5)
+	#	# bad seq should not be returned
+	#	self.assertFalse(5 in res[0])
+	#	corrected_seq = bad_seq + random.sample(real_seqs, 1)[0]
+	#	subjseqs_w_corrected = subjseqs[:]
+	#	subjseqs_w_corrected.append(corrected_seq)
+	#	res = self.true_blast(subj = subjseqs_w_corrected, query = \
+	#		queryseqs, minoverlap = 50, mingaps = 0.5)
+	#	# corrected seq should now be returned
+	#	self.assertTrue(5 in res[0])
+	#	# and its returned sequence shouldn't have the bad sequence
+	#	self.assertFalse(str(res[1][-1])[:100] == str(bad_seq[:100]))
 
 	def test_checkalignment_arg_mingaps(self):
 		# check mingaps argument (proportion of internal gaps)

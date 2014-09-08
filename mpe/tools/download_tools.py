@@ -104,13 +104,14 @@ fewer matches than target nseqs"""
 		query = [sequences[randn]]
 		subj = sequences
 		# blast rand seq against all other seqs
-		bresults = atools.blast(subj, query, self.minoverlap,\
+		blast_bool,_ = atools.blast(query, subj, self.minoverlap,\
 			self.mingaps)
-		# get successfully aligned sequences and create seqpool
-		filtered = [sequences[i] for i,e in enumerate(sequences) if\
-		i in bresults[0]]
-		seqpool = [sequences[i] for i,e in enumerate(sequences) if\
-		i not in bresults[0]]
+		# filtered are all sequences that are true
+		filtered = [sequences[i] for i,e in enumerate(blast_bool) if\
+		e]
+		# sequence pool are all sequences that are false
+		seqpool = [sequences[i] for i,e in enumerate(blast_bool) if\
+		not e]
 		# return filtered if there are more than 5 sequences in
 		#  filtered
 		if len(filtered) > self.seedsize:
