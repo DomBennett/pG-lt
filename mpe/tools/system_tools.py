@@ -34,6 +34,9 @@ class OutgroupError(Exception):
 class MafftError(Exception):
 	pass
 
+class TrysError(Exception):
+	pass
+
 ## Other classes
 class Stager(object):
 	"""Stager class : runs each file in stage folder. Adapted from\
@@ -41,7 +44,8 @@ class Stager(object):
 
 	def __init__(self, wd, stage):
 		if stage not in self.STAGES:
-			raise StageError('Stage [{0}] not recognised'.format(stage))
+			raise StageError('Stage [{0}] not recognised'.\
+				format(stage))
 		else:
 			self.wd = wd
 			self.stage = stage
@@ -56,8 +60,8 @@ class Stager(object):
 
 	def _end(self):
 		logging.info('-' * 70)
-		logging.info('Stage [{0}] finished at [{1}]'.format(self.stage,
-			self._time_string()))
+		logging.info('Stage [{0}] finished at [{1}]'.format(\
+			self.stage, self._time_string()))
 		logging.info('-' * 70 + '\n\n')
 
 	def _time_string(self):
