@@ -100,8 +100,19 @@ def test(phylo, cutoff = 0.1):
 	else:
 		return False
 
+def getConstraintArg(constraint):
+	"""Return constaint arg for RAxML"""
+	# first write file
+	with open(".constraint.tre", "w") as file:
+		Phylo.write(constraint, file, "newick")
+	# then return arg based on whether it bifurcates
+	if constraint.is_bifurcating():
+		return " -r .constraint.tre"
+	else:
+		return " -g .constraint.tre"
+
 def genConstraintTree(alignment, taxontree_file):
-	"""Write a consensus tree to file. Return command for RAxML."""
+	"""Return constraint tree based on taxon tree"""
 	tip_names = []
 	for record in alignment:
 		tip_names.append(record.id)
@@ -113,12 +124,7 @@ def genConstraintTree(alignment, taxontree_file):
 	tips_to_drop = [e for e in constraint_tips if not e in tip_names]
 	for tip in tips_to_drop:
 		constraint.prune(tip)
-	with open(".constraint.tre", "w") as file:
-		Phylo.write(constraint, file, "newick")
-	if constraint.is_bifurcating():
-		return " -r .constraint.tre"
-	else:
-		return " -g .constraint.tre"
+	return constraint
 
 def concatenateAlignments(alignments):
 	"""Take list of alignments for multiple genes.
@@ -144,7 +150,8 @@ Return single alignment with partitions."""
 				sequence += gene[alignment_ids[i].index(txid)].seq
 			else:
 				sequence += "-" * gene.get_alignment_length()
-		sequence = SeqRecord(sequence, id = txid, description = "multigene sequence")
+		sequence = SeqRecord(sequence, id = txid, description =\
+			"multigene sequence")
 		alignment.append(sequence)
 	# Get partitions
 	lengths = [e.get_alignment_length() for e in alignments]
@@ -152,8 +159,22 @@ Return single alignment with partitions."""
 	partitions.extend(list(np.cumsum(lengths)))
 	return alignment,partitions
 
-def RAxML(alignment, outgroup=None, partitions=None, constraint=None, timeout=999999999):
-	"""Adapted pG function: Generate phylogeny from alignment using RAxML (external program)."""
+def getOutgroup(alignment, constraint):
+	""""""
+	spp = [e.id for e in alignment]
+	if 'outgroup' in spp:
+		return 'outgroup'
+	# otherwise find the species(s) with the fewest shared taxonomic
+	#  groups
+	distances = [constraint.distance(e) for e in spp]
+	index = [i for i,e in enumerate(distances) if e == min(distances)]
+	# always choose the first, even if multiple species are.
+	return spp[index[0]]
+
+def RAxML(alignment, outgroup=None, partitions=None, constraint=None,\
+	timeout=999999999):
+	"""Adapted pG function: Generate phylogeny from alignment using 
+RAxML (external program)."""
 	input_file = '.phylogeny_in.phylip'
 	output_file = '.phylogeny_out'
 	file_line = ' -s ' + input_file + ' -n ' + output_file
