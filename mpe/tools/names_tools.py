@@ -82,7 +82,9 @@ def genTaxTree(resolver, namesdict, draw = False):
 				line_obj.append(new_node)
 		if len(line_obj) < 1:
 			break
-	tree = Phylo.read(StringIO(line_obj[0][0] + ';'), "newick")
+	# add outgroup
+	tree = '(outgroup,' + line_obj[0][0] + ')'
+	tree = Phylo.read(StringIO(tree + ';'), "newick")
 	if draw:
 		Phylo.draw_ascii(tree)
 	return tree, shared_lineage
