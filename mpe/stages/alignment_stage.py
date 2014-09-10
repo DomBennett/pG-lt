@@ -11,8 +11,26 @@ import numpy
 from Bio import SeqIO
 import mpe.tools.alignment_tools as atools
 
+## Functions
+def writeAlignment(alignment, i, namesdict, gene_dir):
+	# log alignment details
+	logging.info(".... alignment length [{0}] for [{1}] species".\
+		format(alignment.get_alignment_length(), len(alignment)))
+	# record records in alignment
+	for record in alignment:
+		namesdict[record.id]['alignments'] += 1
+	# write out
+	align_len = alignment.get_alignment_length()
+	output_file = "{0}_nspp{1}_len{2}.faa".format(i,len(alignment),\
+		align_len)
+	output_path = os.path.join(gene_dir, output_file)
+	with open(output_path, "w") as file:
+		count = SeqIO.write(alignment, file, "fasta")
+		del count
+	return namesdict, None
+
 def run(wd = os.getcwd()):
-	## print stage
+	## Print stage
 	logging.info("Stage 3: Sequence alignment")
 
 	## Dirs
@@ -33,7 +51,7 @@ def run(wd = os.getcwd()):
 	naligns = int(paradict["naligns"])
 	all_counter = 0
 
-	## Process
+	## Read in sequences
 	# add alignments to namesdict
 	for key in namesdict.keys():
 		namesdict[key]['alignments'] = 0
@@ -49,50 +67,38 @@ def run(wd = os.getcwd()):
 			float(genedict[gene]["mingaps"]), minoverlap =\
 			int(genedict[gene]["minoverlap"]))
 		genestore.append((gene, seqstore))
+
+	## Run alignments
 	logging.info("Running alignments ....")
+	# loop through genes
 	for gene,seqstore in genestore:
+		# set up dir
 		gene_dir = os.path.join(alignment_dir, gene)
 		if not os.path.isdir(gene_dir):
 			os.mkdir(gene_dir)
 		logging.info("Aligning gene [{0}] for [{1}] species ....".\
 			format(gene, len(seqstore)))
-		mingaps = float(genedict[gene]["mingaps"])
-		minoverlap = int(genedict[gene]["minoverlap"])
-		maxtrys = int(genedict[gene]["maxtrys"])
-		minseedsize = int(genedict[gene]["minseedsize"])
-		maxseedtrys = int(genedict[gene]["maxseedtrys"])
-		gene_type = genedict[gene]['type']
-		# if gene type is deep or both, must have an outgroup
-		outgroup = gene_type != 'shallow'
-		aligner = atools.Aligner(seqstore, mingaps, minoverlap,\
-			minseedsize,maxtrys,maxseedtrys,gene_type,outgroup)
-		trys = each_counter = 0
-		i = 1
+		# set up aligner obj
+		aligner = atools.Aligner(seqstore, mingaps = \
+			float(genedict[gene]["mingaps"]), minoverlap = \
+			int(genedict[gene]["minoverlap"]), minseedsize = \
+			int(genedict[gene]["minseedsize"]), maxtrys = \
+			int(genedict[gene]["maxtrys"]), maxseedtrys = \
+			int(genedict[gene]["maxseedtrys"]), gene_type = \
+			genedict[gene]['type'])
+		# run for naligns
+		each_counter = 0
+		alignment = None
 		try:
-			while i <= naligns:
+			for i in range(1, naligns + 1):
 				logging.info(".... iteration [{0}]".format(i))
-				alignment = aligner.run()
-				if alignment is None:
-					trys += 1
-					if trys > maxtrys:
-						logging.info(".... max trys with no alignments")
-						break
-					else:
-						continue
-				logging.info(".... alignment length [{0}] for [{1}] species".\
-					format(alignment.get_alignment_length(), len(alignment)))
-				for record in alignment:
-					namesdict[record.id]['alignments'] += 1
-				align_len = alignment.get_alignment_length()
-				output_file = "{0}_nspp{1}_len{2}.faa".\
-				format(i,len(alignment),align_len)
-				output_path = os.path.join(gene_dir, output_file)
-				with open(output_path, "w") as file:
-					count = SeqIO.write(alignment, file, "fasta")
-					del count
+				while not alignment:
+					alignment = aligner.run()
+				namesdict, alignment = writeAlignment(alignment, i,\
+					namesdict, gene_dir)
 				each_counter += 1
-				trys = 0
-				i += 1
+		except atools.TrysError:
+			logging.info(".... max trys hit")
 		except atools.OutgroupError:
 			logging.info(".... outgroup dropped")
 		except atools.TooFewSpeciesError:
@@ -102,14 +108,17 @@ def run(wd = os.getcwd()):
 			shutil.rmtree(gene_dir)
 			continue
 		all_counter += each_counter
+
+	## Wrap-up
 	# the number of alignments per name in namesdict
-	naligns_name = [namesdict[e]['alignments'] for e in namesdict.keys() if\
-	namesdict[e]['genes'] > 0]
+	naligns_name = [namesdict[e]['alignments'] for e in \
+	namesdict.keys() if namesdict[e]['genes'] > 0]
 	# the proportion of alignments each name has of all alignments
 	paligns_name = [len(naligns_name) * float(e)/all_counter for e\
 	in naligns_name]
 	with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
 		pickle.dump(namesdict, file)
-	logging.info('Stage finished. Generated [{n1}] alignments for mean \
-[{n2:.{d}f}](sd[{n3:.{d}f}]) species.'.format(n1 = all_counter, n2 = \
-	numpy.mean(paligns_name), n3 = numpy.std(paligns_name), d = 2))
+	logging.info('Stage finished. Generated [{n1}] alignments for \
+mean [{n2:.{d}f}](sd[{n3:.{d}f}]) species.'.format(n1 = all_counter,\
+	n2 = numpy.mean(paligns_name), n3 = numpy.std(paligns_name),\
+	d = 2))
