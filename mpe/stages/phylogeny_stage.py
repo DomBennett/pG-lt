@@ -30,8 +30,7 @@ def run(wd = os.getcwd()):
 	constraint = True
 	phylocounter = 0
 
-	## Process
-	# alignments
+	## Read in alignments
 	genes = sorted(os.listdir(alignment_dir))
 	genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
 	logging.info("Reading in alignments ....")
@@ -47,7 +46,8 @@ def run(wd = os.getcwd()):
 			as file:
 				alignment = AlignIO.read(file, "fasta")
 			alignobj[gene].append((alignment, alignment_file))
-	# phylogenies
+
+	## Generate phylogenies
 	logging.info("Generating [{0}] phylogenies ....".format(nphylos))
 	phylogenies = []
 	trys = 0
@@ -60,24 +60,31 @@ def run(wd = os.getcwd()):
 			1)[0] for e in genes])
 		logging.info(".... Using alignments:")
 		for gene,alignment_file in zip(genes,alignment_files):
-			logging.info("........ [{0}]:[{1}]".format(gene, alignment_file))
-		alignment,partitions = ptools.concatenateAlignments(list(alignments))
+			logging.info("........ [{0}]:[{1}]".format(gene,\
+				alignment_file))
+		alignment,partitions = ptools.concatenateAlignments(list(\
+			alignments))
+		taxontree_file = os.path.join(phylogeny_dir, "taxontree.tre")
+		constraint = ptools.genConstraintTree(alignment, taxontree_file)
+		outgroup = ptools.getOutgroup(alignment, constraint)
 		if constraint:
-			constraint = ptools.genConstraintTree(alignment,\
-				os.path.join(phylogeny_dir, "taxontree.tre"))
+			constraint = ptools.getConstraintArg(constraint)
 		phylogeny = ptools.RAxML(alignment, constraint = constraint,\
-			outgroup = "outgroup",partitions = partitions)
-		phylogeny.root_with_outgroup("outgroup")
-		phylogeny.prune("outgroup")
+			outgroup = outgroup, partitions = partitions)
+		phylogeny.root_with_outgroup(outgroup)
+		phylogeny.prune(outgroup)
 		if ptools.test(phylogeny, maxrttsd):
 			phylogenies.append(phylogeny)
 			phylocounter += 1
-	# saving
+
+	## Write out
 	logging.info('Saving phylogenies ....')
 	filepath = os.path.join(phylogeny_dir, 'distribution.tre')
 	with open(filepath, "w") as file:
 		Phylo.write(phylogenies, file, 'newick')
 	logging.info('Generating consensus ....')
-	ptools.consensus(filepath, os.path.join(phylogeny_dir, 'consensus.tre'),
-		min_freq = 0.5, is_rooted = True, trees_splits_encoded = False)
-	logging.info('Stage finished. Generated [{0}] phylogenies.'.format(phylocounter))
+	ptools.consensus(filepath, os.path.join(phylogeny_dir, \
+		'consensus.tre'), min_freq = 0.5, is_rooted = True,\
+	trees_splits_encoded = False)
+	logging.info('Stage finished. Generated [{0}] phylogenies.'.\
+		format(phylocounter))
