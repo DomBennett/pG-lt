@@ -18,6 +18,7 @@ from system_tools import TerminationPipe
 from system_tools import OutgroupError
 from system_tools import TooFewSpeciesError
 from system_tools import MafftError
+from system_tools import TrysError
 
 ## Objects
 class SeqStore(dict):
@@ -48,15 +49,15 @@ minoverlap):
 
 	def _add(self, sequences = None):
 		"""Return a random sequence for alignment"""
-		if len(self.sequences_in_alignment) > 5:
-			# if there are more than 5 sequences, use blast alignment
+		if self.sequences_in_alignment:
+			# if there are sequences, use blast alignment
 			rand_ints = range(len(self.sppool))
 			random.shuffle(rand_ints)
 			for i in rand_ints:
 				sp = self.sppool[i]
 				next_seqs = [e[0] for e in self[sp][0]]
 				# blast next_seqs against sequences in alignment
-				next_seq_is,next_seqs = self._alignment_blast(\
+				next_seq_is,next_seqs = self._alignmentBlast(\
 					next_seqs,sequences)
 				# if any overlap, break
 				if next_seq_is:
@@ -74,31 +75,6 @@ minoverlap):
 			# record sequence + nfails in sequence_in_alignment
 			self.sequences_in_alignment.append(self[self.next_sp][0]\
 				[next_seq_i])
-		elif len(self.sequences_in_alignment) > 0:
-			# if there are fewer than minseedsize sequences, use
-			#  normal blast -- not alignment blast. This avoids single
-			#  sequence alignments which are likely to fail.
-			rand_ints = range(len(self.sppool))
-			random.shuffle(rand_ints)
-			for i in rand_ints:
-				sp = self.sppool[i]
-				next_seqs = [e[0] for e in self[sp][0]]
-				# blast sequences in alignment against next_seqs
-				next_seq_bools,_ = blast(query = sequences, subj = \
-					next_seqs, minoverlap = self.minoverlap, mingaps\
-					= self.mingaps)
-				# if all overlap, break -- all next seqs overlap
-				if all(next_seq_bools):
-					break
-			else:
-				return None
-			self.next_sp = self.sppool.pop(i)
-			# choose next_seq at random
-			next_seq = random.sample(next_seqs, 1)[0]
-			next_seq_i = next_seqs.index(next_seq)
-			# record sequence + nfails in sequence_in_alignment
-			self.sequences_in_alignment.append(self[self.next_sp][0]\
-				[next_seq_i])
 		else:
 			# without any sequences in alignment
 			#  simply return a random seq
@@ -110,7 +86,7 @@ minoverlap):
 			next_seq = result[0]
 		return next_seq
 
-	def _alignment_blast(self, query, sequences_in_alignment):
+	def _alignmentBlast(self, query, sequences_in_alignment):
 		"""Return indexes and overlapping sequences for each sequence 
 in query that overlaps with more than prop sequences in subj given 
 set parameters using NCBI's BLAST"""
@@ -196,47 +172,54 @@ species"""
 class Aligner(object):
 	"""Build alignments from seqstore"""
 	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
-		maxtrys, maxseedtrys, gene_type, outgroup = True):
+		maxtrys, maxseedtrys, gene_type):
 		self.seqstore = seqstore
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
 		self.minseedsize = minseedsize
-		self.maxtrys = maxtrys
-		self.buffer = maxseedtrys
+		self.maxtrys = maxtrys # trys for alignment attempts
+		self.buffer = maxseedtrys # trys for a seedsize
 		self.buffer_counter = 0 # seedsize buffer counter
 		self.seedsize = len(seqstore)
 		self.timeout = 99999999
 		self.silent = False
+		self.total_trys = 0 # counter for total number of trys
 		self.type = gene_type
-		self.outgroup = outgroup # bool for whether outgroup is necessary
+		self.outgroup = gene_type != 'shallow'
 
 	def _check(self, alignment):
 		return checkAlignment(alignment, self.mingaps, \
 			self.minoverlap, self.minlen)
 
-	def _return(self, store):
+	def _return(self):
 		"""Return best alignment from a list of alignments based on:\
 presence of outgroup, number of species and length of alignment"""
+		if not self.store:
+			self.total_trys += 1
+			return None
 		if self.outgroup:
 			# keep alignments with outgroups
 			# keep alignments with more than 5 species
-			store = [a for a in store if "outgroup" in\
+			self.store = [a for a in self.store if "outgroup" in\
 						  [e.id for e in a._records]]
-			if len(store) == 0:
-				logging.info("........ no outgroup")
+			if len(self.store) == 0:
+				logging.debug("........ no outgroup")
+				self.total_trys += 1
 				return None
-		store = [e for e in store if len(e) >= 5]
-		if len(store) == 0:
-			logging.info("........ too few species")
+		self.store = [e for e in self.store if len(e) >= 5]
+		if len(self.store) == 0:
+			logging.debug("........ too few species")
+			self.total_trys += 1
 			return None
 		# keep only alignments with lots of records
-		nrecords = [len(e._records) for e in store]
-		store = [store[i] for i,e in enumerate(nrecords)\
+		nrecords = [len(e._records) for e in self.store]
+		self.store = [self.store[i] for i,e in enumerate(nrecords)\
 					  if e == max(nrecords)]
 		# return longest alignment
-		lens = [len(e) for e in store]
+		lens = [len(e) for e in self.store]
 		max_i = lens.index(max(lens))
-		return store[max_i]
+		self.total_trys = 0
+		return self.store[max_i]
 
 	def _calcSeedsize(self, success = True):
 		"""Calculate seedsize based on buffer and success of current \
@@ -250,7 +233,8 @@ seedsize. Return 1 if trys must increase, else 0."""
 		if self.buffer_counter >= self.buffer:
 			if self.seedsize < len(self.seqstore):
 				self.seedsize += 1
-				self.buffer_counter = 0# reset every time seedsize changes
+				# reset every time seedsize changes
+				self.buffer_counter = 0
 		if self.buffer_counter <= (self.buffer * -1):
 			if self.seedsize > self.minseedsize:
 				self.seedsize -= 1
@@ -261,81 +245,95 @@ seedsize. Return 1 if trys must increase, else 0."""
 				return 1
 		return 0
 
+	def _seed(self, trys):
+		"""BLAST seedsize sequences together, align and return True
+if successful"""
+		self.minlen = min([self.seqstore[e][1] for e in self.\
+				seqstore.keys()])
+		sequences = self.seqstore.start(self.seedsize)
+		# make sure there are enough seqs for alignment
+		if len(sequences) >= self.minseedsize:
+			command = version(sequences, self.type)
+			try:
+				alignment = align(command, sequences)
+			except MafftError:
+				logging.debug('MAFTT error raised')
+				success = False
+			else:
+				success = self._check(alignment)
+		else:
+			success = False
+		# add to trys if unsuccessful or sequences are fewer than
+		#  seedsize
+		trys += self._calcSeedsize(success and len(sequences) == \
+			self.seedsize)
+		if success:
+			self.store.append(alignment)
+		return success,trys
+
+	def _add(self, trys):
+		"""Add sequence to alignment, return True if successful"""
+		alignment = self.store[-1]
+		self.minlen = min([self.seqstore[e][1] for e in self.\
+				seqstore.keys()])
+		if len(self.seqstore.sppool) == 0:
+			return True,trys
+		else:
+			sequence = self.seqstore.next(alignment)
+			if not sequence:
+				# if no sequence is returned, nothing more can be
+				#  added
+				return True,trys
+		try:
+			new_alignment = add(alignment, sequence)
+		except MafftError:
+			logging.debug('MAFTT error raised')
+			success = False
+		else:
+			success = self._check(new_alignment)
+		if success:
+			self.store.append(new_alignment)
+		else:
+			trys += 1
+			sequence = self.seqstore.back(alignment)
+			if not sequence:
+				# here a species has been dropped and now all
+				#  species are present
+				success = True
+		return success,trys
+
 	def run(self):
 		"""Incrementally build an alignment by adding sequences to a \
 seed alignment"""
-		trys = 0
-		store = []
+		self.store = []
+		if self.total_trys > self.maxtrys:
+			# if run has been run maxtrys in a row wo success
+			#  raise trys error, if outgroup isn't being used
+			if self.outgroup:
+				self.outgroup = False
+			else:
+				raise TrysError
+		# seed
 		logging.info("........ seed phase: [{0}] seed size".format(\
 			self.seedsize))
-		while True:
-			self.minlen = min([self.seqstore[e][1] for e in self.\
-				seqstore.keys()])
-			sequences = self.seqstore.start(self.seedsize)
-			# make sure there are enough seqs for alignment
-			if len(sequences) >= self.minseedsize:
-				command = version(sequences, self.type)
-				try:
-					alignment = align(command, sequences)
-				except MafftError:
-					continue
-				else:
-					success = self._check(alignment)
-			else:
-				success = False
-			# add to trys if unsuccessful or sequences are fewer than
-			#  seedsize
-			trys += self._calcSeedsize(success and len(sequences) == \
-				self.seedsize)
-			if self.maxtrys < trys:
-				return None
-			# if alignment is successful, return alignment or move to
-			#  next phase
-			if success:
-				if len(self.seqstore.sppool) == 0:
-					return alignment
-				else:
-					# if a sequence can be added move to add phase
-					sequence = self.seqstore.next(alignment)
-					if sequence:
-						store.append(alignment)
-						break
-					# if an alignment can be returned, return it
-					returnable_alignment = self._return([alignment])
-					if returnable_alignment:
-						return returnable_alignment
 		trys = 0
+		success = False
+		while not success:
+			success,trys = self._seed(trys)
+			if trys > self.maxtrys:
+				logging.debug("............ maxtrys hit")
+				return self._return()
+		# add
 		logging.info("........ add phase : [{0}] species".format(len(\
-			alignment)))
-		while True:
-			self.minlen = min([self.seqstore[e][1] for e in self.\
-				seqstore.keys()])
-			try:
-				alignment = add(alignment, sequence)
-			except MafftError:
-				pass
-			if self._check(alignment):
-				trys = 0
-				if len(self.seqstore.sppool) == 0:
-					return alignment
-				else:
-					store.append(alignment)
-					sequence = self.seqstore.next(alignment)
-					if not sequence:
-						return self._return(store)
-			elif trys < self.maxtrys:
-				alignment = store[-1]
-				sequence = self.seqstore.back(alignment)
-				if not sequence:
-					# here a species has been dropped and now all
-					#  species are present
-					return self._return(store)
-				trys += 1
-			else:
-				logging.info("............ maxtrys hit")
-				# when the maximum number of species is not reached
-				#  return the best alignment in the alignment store
-				return self._return(store)
+			self.store[-1])))
+		trys = 0
+		success = False
+		while not success:
+			success,trys = self._add(trys)
+			if trys > self.maxtrys:
+				logging.debug("............ maxtrys hit")
+				return self._return()
+		return self._return()
 
 ## Functions
 def version(sequences, gene_type):
@@ -377,7 +375,8 @@ allowed")
 	return res
 
 def add(alignment, sequence):
-	"""Align sequence(s) to an alignment using mafft (external program)"""
+	"""Align sequence(s) to an alignment using mafft (external 
+program)"""
 	alignment_file = ".alignment_in.fasta"
 	sequence_file = ".sequence_in.fasta"
 	output_file = "alignment_out.fasta" + '.fasta'
@@ -410,10 +409,13 @@ with subject given parameters."""
 	SeqIO.write(subj, ".subj.fasta", "fasta")
 	try:
 		cline = NcbiblastnCommandline(query = ".query.fasta",\
-			subject = ".subj.fasta", outfmt = 5)
+			subject = ".subj.fasta", outfmt = 5, task = 'blastn')
 		output = cline()[0]
-	except ApplicationError:
-		logging.warn("---- BLAST Error ----")
+	except ApplicationError:# as error_msg:
+		#logging.debug(error_msg)
+		#logging.warn("---- BLAST Error ----")
+		#TODO: work out why this is happening, doesn't seem to affect
+		#  results though, low priority
 		return [],[]
 	finally:
 		os.remove(".query.fasta")
@@ -441,8 +443,8 @@ with subject given parameters."""
 					# and it has more identities than mingaps give
 					#  it a True
 					bools.append(True)
-					positions.append(res.sbjct_start)
-					positions.append(res.sbjct_end)
+					positions.append(res.query_start)
+					positions.append(res.query_end)
 					continue
 		bools.append(False)
 	return bools,positions
@@ -459,6 +461,7 @@ parameters. Return bool"""
 		return overlap
 	alen = alignment.get_alignment_length()
 	if alen < minlen:
+		logging.debug('........ alignment too small')
 		return False
 	pintgaps = []
 	for each in alignment:
@@ -468,6 +471,7 @@ parameters. Return bool"""
 		totgaps = alen - totnucs
 		overlap = calcOverlap(columns)
 		if overlap < minoverlap:
+			logging.debug('........ alignment too little overlap')
 			return False
 		extgaps = 0
 		start_extgaps = re.search("^-+", sequence)
@@ -484,6 +488,7 @@ parameters. Return bool"""
 		#else:
 		pintgaps.append(pintgap)
 		if pintgap > mingaps:
+			logging.debug('........ alignment too many gaps')
 			return False
 	#try:
 	#	if any([e > pintgap_outgroup for e in pintgaps]):
