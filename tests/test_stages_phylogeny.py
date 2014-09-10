@@ -14,12 +14,28 @@ from cStringIO import StringIO
 ## Dirs
 working_dir = os.path.dirname(__file__)
 
+## Functions
+class AlignmentSeq(object):
+	def __init__(self, name):
+		self.id = name
+
+def genAlignment(names):
+	# little function that generates a list of sequences
+	#  looks like an alignment to getOutgroup
+	return [AlignmentSeq(e) for e in names]
+
 ## Dummies
 def dummy_concatenateAlignments(alignments):
-	return None,None
+	return genAlignment(['outgroup', 'B', 'C', 'D', 'E']),None
 
 def dummy_genConstraintTree(alignment, path):
-	pass
+	treedata = "(outgroup, (B, C), (D, E))"
+	handle = StringIO(treedata)
+	tree = Phylo.read(handle, "newick")
+	return tree
+
+def dummy_getConstraintArg(constraint):
+	return None
 
 def dummy_RAxML(alignment,constraint,outgroup,partitions):
 	treedata = "(outgroup, (B, C), (D, E))"
@@ -31,9 +47,10 @@ def dummy_test(phylogeny, maxpedge):
 	return True
 
 ## Test data
-with open(os.path.join(working_dir, 'data','test_alignment_ref.faa'), 'r') \
-as file:
+with open(os.path.join(working_dir, 'data','test_alignment_ref.faa'),\
+	'r') as file:
 	alignment = AlignIO.read(file, 'fasta')
+
 paradict = {'ntrees':1,'maxtrys':1,'maxrttsd':0.5}
 
 
@@ -43,10 +60,12 @@ class PhylogenyStageTestSuite(unittest.TestCase):
 		# stub out
 		self.true_concatenateAlignments = phylogeny_stage.ptools.concatenateAlignments
 		self.true_genConstraintTree = phylogeny_stage.ptools.genConstraintTree
+		self.true_getConstraintArg = phylogeny_stage.ptools.getConstraintArg
 		self.true_RAxML = phylogeny_stage.ptools.RAxML
 		self.true_test = phylogeny_stage.ptools.test
 		phylogeny_stage.ptools.concatenateAlignments = dummy_concatenateAlignments
 		phylogeny_stage.ptools.genConstraintTree = dummy_genConstraintTree
+		phylogeny_stage.ptools.getConstraintArg = dummy_getConstraintArg
 		phylogeny_stage.ptools.RAxML = dummy_RAxML
 		phylogeny_stage.ptools.test = dummy_test
 		# create input data
@@ -86,6 +105,7 @@ class PhylogenyStageTestSuite(unittest.TestCase):
 		#stub in
 		phylogeny_stage.ptools.concatenateAlignments = self.true_concatenateAlignments
 		phylogeny_stage.ptools.genConstraintTree = self.true_genConstraintTree
+		phylogeny_stage.ptools.getConstraintArg = self.true_getConstraintArg
 		phylogeny_stage.ptools.RAxML = self.true_RAxML
 		phylogeny_stage.ptools.test = self.true_test
 

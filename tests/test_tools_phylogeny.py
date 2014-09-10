@@ -7,6 +7,7 @@ Tests for phylogeny tools.
 
 import unittest,pickle,os
 from Bio import Phylo
+from cStringIO import StringIO
 import mpe.tools.phylogeny_tools as ptools
 
 ## Dirs
@@ -30,6 +31,16 @@ with open(os.path.join(working_dir,"data",\
 	constraint = Phylo.read(file, 'newick')
 
 partitions = [0, 1761, 3141]
+
+## Functions
+class AlignmentSeq(object):
+	def __init__(self, name):
+		self.id = name
+
+def genAlignment(names):
+	# little function that generates a list of sequences
+	#  looks like an alignment to getOutgroup
+	return [AlignmentSeq(e) for e in names]
 
 class PhylogenyTestSuite(unittest.TestCase):
 
@@ -78,13 +89,32 @@ class PhylogenyTestSuite(unittest.TestCase):
 		
 	def test_genconstrainttree(self):
 		# 4 tips not present in alignment
-		res_opt = ptools.genConstraintTree(self.alignment,\
+		res = ptools.genConstraintTree(self.alignment,\
 			os.path.join(working_dir, 'data',\
 				'test_phylo.tre'))
-		with open(".constraint.tre", "r") as file:
-			res_tree = Phylo.read(file, "newick")
-		self.assertEqual(len(res_tree.get_terminals()), 11)
+		self.assertEqual(len(res.get_terminals()), 11)
+
+	def test_genconstraintarg(self):
+		constraint = ptools.genConstraintTree(self.alignment,\
+			os.path.join(working_dir, 'data',\
+			'test_phylo.tre'))
+		res_opt = ptools.getConstraintArg(constraint)
+		self.assertTrue(os.path.isfile('.constraint.tre'))
 		self.assertEqual(res_opt, self.constraint_opt)
+
+	def test_getoutgroup(self):
+		# check with outgroup
+		alignment = genAlignment(['outgroup','F', 'B', 'H'])
+		treestr = '((outgroup:0.1,F:0.1):0.1,(B:0.1,H:0.1):0.1);'
+		tree = Phylo.read(StringIO(treestr), "newick")
+		res = ptools.getOutgroup(alignment, tree)
+		self.assertEqual(res,'outgroup')
+		# try without outgroup
+		alignment = genAlignment(['D','F', 'B', 'H'])
+		treestr = '((D:0.1,F:0.1):0.1,(B:0.1,H:0.1):0.1);'
+		tree = Phylo.read(StringIO(treestr), "newick")
+		res = ptools.getOutgroup(alignment, tree)
+		self.assertNotEqual(res,'outgroup')
 
 	def test_consensus(self):
 		# create a list of trees, save it to file, check if consensus.tre

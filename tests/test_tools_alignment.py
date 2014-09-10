@@ -50,7 +50,7 @@ class AlignmentTestSuite(unittest.TestCase):
 		seqfiles = [e for e in seqfiles if not re.search("^\.|^log\.txt$",\
 		 e)]
 		self.store = atools.SeqStore(genedir=genedir,\
-			seqfiles=seqfiles, minfails = 10, mingaps = 0.5,\
+			seqfiles = seqfiles, minfails = 10, mingaps = 0.5,\
 			minoverlap = 50)
 		self.aligner = atools.Aligner(self.store, mingaps = 0.5,\
 			minoverlap = 50, minseedsize = 3, maxtrys = 10,\
@@ -95,26 +95,6 @@ class AlignmentTestSuite(unittest.TestCase):
 		# all true
 		self.assertTrue(all(res))
 
-	#TODO.
-	#def test_seqstore_private_alignmentblast(self):
-	#	bad_seq = 'T' * 100
-	#	bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
-	#	subjseqs_w_bad = subjseqs[:]
-	#	subjseqs_w_bad.append(bad_seq)
-	#	res = self.true_blast(subj = subjseqs_w_bad, query = \
-	#		queryseqs, minoverlap = 50, mingaps = 0.5)
-	#	# bad seq should not be returned
-	#	self.assertFalse(5 in res[0])
-	#	corrected_seq = bad_seq + random.sample(real_seqs, 1)[0]
-	#	subjseqs_w_corrected = subjseqs[:]
-	#	subjseqs_w_corrected.append(corrected_seq)
-	#	res = self.true_blast(subj = subjseqs_w_corrected, query = \
-	#		queryseqs, minoverlap = 50, mingaps = 0.5)
-	#	# corrected seq should now be returned
-	#	self.assertTrue(5 in res[0])
-	#	# and its returned sequence shouldn't have the bad sequence
-	#	self.assertFalse(str(res[1][-1])[:100] == str(bad_seq[:100]))
-
 	def test_checkalignment_arg_mingaps(self):
 		# check mingaps argument (proportion of internal gaps)
 		# check with good alignment
@@ -150,6 +130,35 @@ class AlignmentTestSuite(unittest.TestCase):
 		res = atools.checkAlignment(test_alignment,\
 			mingaps = 0.5, minoverlap = 1, minlen = 101)
 		self.assertFalse(res)
+
+	def test_seqstore_private_alignmentblast(self):
+		# use real blast
+		atools.blast = self.true_blast
+		real_seqs = [e for e in real_alignment]
+		next_seqs = random.sample(real_seqs, 5)
+		seqs_in_alignment = random.sample(real_seqs, 1)
+		# same as blast test but with a dodgy sequence
+		bad_seq = 'T' * 100
+		bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
+		next_seqs_w_bad = next_seqs[:]
+		next_seqs_w_bad.append(bad_seq)
+		res = self.store._alignmentBlast(query = \
+			next_seqs_w_bad, sequences_in_alignment =\
+			seqs_in_alignment)
+		# bad seq should not be returned
+		self.assertFalse(5 in res[0])
+		corrected_seq = bad_seq + random.sample(real_seqs, 1)[0]
+		next_seqs_w_corrected = next_seqs[:]
+		next_seqs_w_corrected.append(corrected_seq)
+		res = self.store._alignmentBlast(query = \
+			next_seqs_w_corrected, sequences_in_alignment =\
+			seqs_in_alignment)
+		# corrected seq should now be returned
+		self.assertTrue(5 in res[0])
+		# and its returned sequence shouldn't have the bad sequence
+		self.assertTrue(str(res[1][-1].seq) != str(corrected_seq.seq))
+		# switch back to dummy blast
+		atools.blast = dummy_blast
 
 	def test_seqstore_private_add(self):
 		store = copy.deepcopy(self.store)
@@ -237,16 +246,18 @@ class AlignmentTestSuite(unittest.TestCase):
 		test_alignment_w_out.append(outgroup_seq)
 		mock_multi_alignment = [real_alignment,test_alignment,\
 		real_alignment_w_out,real_alignment[:5], test_alignment_w_out]
-		alignment = self.aligner._return(mock_multi_alignment)
+		self.aligner.store = mock_multi_alignment
+		alignment = self.aligner._return()
 		# should return real_alignment_w_out (has 12 records)
 		# it has an outgroup and it is the longest
 		self.assertEqual(len(alignment), 12)
 
 	def test_aligner_run(self):
-		# all the outgroup seqs should not align, should return None
-		# I used a small seedsize to test both phases: seed and add
+		# all the outgroup seqs should not align, alignment
+		#  cannot have outgroup species
 		res = self.aligner.run()
-		self.assertFalse(res)
+		spp = [e.id for e in res]
+		self.assertFalse('outgroup' in spp)
 
 if __name__ == '__main__':
     unittest.main()
