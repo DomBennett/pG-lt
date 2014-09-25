@@ -408,8 +408,10 @@ with subject given parameters."""
 	SeqIO.write(query, ".query.fasta", "fasta")
 	SeqIO.write(subj, ".subj.fasta", "fasta")
 	try:
+		# options: http://www.ncbi.nlm.nih.gov/books/NBK1763/
 		cline = NcbiblastnCommandline(query = ".query.fasta",\
-			subject = ".subj.fasta", outfmt = 5, task = 'blastn')
+			subject = ".subj.fasta", outfmt = 5, task = 'blastn',\
+			word_size = 8)
 		output = cline()[0]
 	except ApplicationError:# as error_msg:
 		#logging.debug(error_msg)
