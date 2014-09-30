@@ -227,8 +227,8 @@ def readInPars(pars_file):
 	# template
 	paradict = {'nseqs' : None, 'naligns' : None,\
 	'ntrees' : None, 'download_thoroughness' : None,\
-	'maxlen' : None, 'minlen' : None, 'maxtrys' : None,\
-	'maxrttsd': None, 'parentid' : None, 'outgroupid' : None}
+	'maxlen' : None, 'maxtrys' : None, 'maxrttsd': None,\
+	'parentid' : None, 'outgroupid' : None}
 	# open file, read each row, extract value
 	paradict = _read(pars_file, paradict)
 	# if Nones remain, use default

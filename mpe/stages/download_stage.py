@@ -57,7 +57,7 @@ def run(wd = os.getcwd()):
 	for gene in genes:
 		seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 		gene_names = genedict[gene]["names"]
-		minlen = genedict[gene]["minoverlap"]
+		minlen = int(genedict[gene]["minoverlap"])
 		logging.info('Downloading and outputting for [{0}] ....'.\
 			format(gene))
 		gene_dir  = os.path.join(download_dir, str(gene))

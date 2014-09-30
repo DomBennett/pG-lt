@@ -30,8 +30,8 @@ class Dummy_Downloader(object):
 ## Test data
 genedict = {'rbcl':{'names':['rbcl'],'minoverlap':'300'},\
 'COI':{'names':['COI'],'minoverlap':'300'}}
-paradict = {'email':'', 'nseqs':100,'download_thoroughness':\
-3,'maxlen':2000}
+paradict = {'email':'','nseqs':'100','download_thoroughness':\
+'3','maxlen':'2000'}
 namesdict = {}
 namesdict['query_name'] = {"txids" : [1,2],\
 	"unique_name" : 'returned_name', "rank" : 'species'}
