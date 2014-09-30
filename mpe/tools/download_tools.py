@@ -65,7 +65,7 @@ genome[TI] NOT unverified[TI]".format(taxids_term, gene_term))
 			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT \
 shotgun[TI] NOT scaffold[TI] NOT assembly[TI] NOT unverified[TI]".\
 format(taxids_term, gene_term))
-		#print search_term
+		logging.debug(search_term)
 		return search_term
 
 	def _search(self, taxids):
