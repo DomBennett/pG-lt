@@ -33,9 +33,8 @@ def run(wd = os.getcwd()):
 	nseqs = int(paradict['nseqs'])
 	thoroughness = int(paradict['download_thoroughness'])
 	maxlen = int(paradict['maxlen'])
-	minlen = int(paradict['minlen'])
 	seedsize = 10
-	mingaps = 0.01
+	mingaps = 5
 	minoverlap = 300
 	maxtrys = 100
 	minnseq = 1
@@ -58,6 +57,7 @@ def run(wd = os.getcwd()):
 	for gene in genes:
 		seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 		gene_names = genedict[gene]["names"]
+		minlen = genedict[gene]["minoverlap"]
 		logging.info('Downloading and outputting for [{0}] ....'.\
 			format(gene))
 		gene_dir  = os.path.join(download_dir, str(gene))
