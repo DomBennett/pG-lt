@@ -73,14 +73,14 @@ class AlignmentTestSuite(unittest.TestCase):
 
 	def test_align(self):
 		# align and check if results exist
-		res = atools.align('mafft --auto', test_seqs)
+		res = atools.align('mafft --auto', test_seqs, 99999)
 		self.assertTrue(res.__class__.__name__ ==\
 			'MultipleSeqAlignment')
 
 	def test_add(self):
 		# add to test_alignment and check if result
 		#  exists
-		res = atools.add(test_alignment, test_seqs[0])
+		res = atools.add(test_alignment, test_seqs[0], 99999)
 		self.assertTrue(res.__class__.__name__ ==\
 			'MultipleSeqAlignment')
 
@@ -104,12 +104,12 @@ class AlignmentTestSuite(unittest.TestCase):
 		# check with bad alignment
 		# this sequence has a large internal gap covering
 		#  50% of the alignment
-		bad_seq = 'A' + '-' * 51 + 'A' * 48
+		bad_seq = '-A' * 50
 		bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
 		bad_alignment = test_alignment[:]
 		bad_alignment.append(bad_seq)
 		res = atools.checkAlignment(bad_alignment,\
-			mingaps = 0.5, minoverlap = 1, minlen = 1)
+			mingaps = 0.1, minoverlap = 50, minlen = 1)
 		self.assertFalse(res)
 
 	def test_checkalignment_arg_minoverlap(self):
@@ -142,21 +142,26 @@ class AlignmentTestSuite(unittest.TestCase):
 		bad_seq = SeqRecord(Seq(bad_seq), id = 'bad')
 		next_seqs_w_bad = next_seqs[:]
 		next_seqs_w_bad.append(bad_seq)
-		res = self.store._alignmentBlast(query = \
-			next_seqs_w_bad, sequences_in_alignment =\
-			seqs_in_alignment)
-		# bad seq should not be returned
-		self.assertFalse(5 in res[0])
+		for i in range(len(next_seqs_w_bad)):
+			res = self.store._alignmentBlast(query = \
+				[next_seqs_w_bad[i]], sequences_in_alignment =\
+				seqs_in_alignment)
+			if i < 5:
+				self.assertTrue(res)
+			else:
+				# bad seq should not be returned
+				self.assertFalse(res)
 		corrected_seq = bad_seq + random.sample(real_seqs, 1)[0]
 		next_seqs_w_corrected = next_seqs[:]
 		next_seqs_w_corrected.append(corrected_seq)
-		res = self.store._alignmentBlast(query = \
-			next_seqs_w_corrected, sequences_in_alignment =\
-			seqs_in_alignment)
-		# corrected seq should now be returned
-		self.assertTrue(5 in res[0])
+		for i in range(len(next_seqs_w_corrected)):
+			res = self.store._alignmentBlast(query = \
+				next_seqs_w_corrected, sequences_in_alignment =\
+				seqs_in_alignment)
+			# corrected seq should now be returned
+			self.assertTrue(res)
 		# and its returned sequence shouldn't have the bad sequence
-		self.assertTrue(str(res[1][-1].seq) != str(corrected_seq.seq))
+		self.assertTrue(str(res[1].seq) != str(corrected_seq.seq))
 		# switch back to dummy blast
 		atools.blast = dummy_blast
 
