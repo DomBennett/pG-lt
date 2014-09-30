@@ -6,7 +6,7 @@ mpe system tools
 """
 
 ## Packages
-import subprocess,threading,os,logging,shutil,pickle,csv
+import subprocess,threading,os,logging,shutil,pickle,csv,time,sys
 from mpe import _PARS as default_pars_file
 from mpe import _GPARS as default_gpars_file
 from datetime import datetime
@@ -166,11 +166,6 @@ def readInNames(directory):
 
 def readInGenePars(gpars_file):
 	"""Read gene_parameters.csv. Return list of dictionaries."""
-	def split(element):
-		# split elements by ':'
-		if ':' in element:
-			return element.split(':')
-		return element
 	def _read(gpars_file, template, genes = None):
 		# open csv file and replace parameters in template
 		#  if they are None. If genes specified, only read
@@ -185,7 +180,11 @@ def readInGenePars(gpars_file):
 				for key in temp.keys():
 					if row[key]:
 						if temp[key] is None:
-							temp[key] = split(row[key])
+							if key == 'names':
+								# for names, split into a list of syns
+								temp[key] = row[key].split(':')
+							else:
+								temp[key] = row[key]
 				genedict[row['gene']] = temp
 		return genedict
 	# check if file exists, else use default
@@ -267,6 +266,19 @@ def sortArgs(directory, email, logger):
 	return {'terms' : terms, 'genedict' : genedict, 'paradict' : paradict}
 
 # Special functions
+def timeit(func, **kwargs):
+	#http://stackoverflow.com/questions/10884751/python-timeit-and-program-output
+	if sys.platform == "win32":
+		# On Windows, the best timer is time.clock()
+		default_timer = time.clock
+	else:
+		# On most other platforms the best timer is time.time()
+		default_timer = time.time
+	t0 = default_timer()
+	output = func(**kwargs)
+	t1 = default_timer()
+	return output, t1-t0
+
 def clean():
 	"""Remove all files and folders created by mpe"""
 	## Remove log.txt in parent folder
