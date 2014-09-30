@@ -6,6 +6,5 @@ download_thoroughness,3,Either 1 2 or 3
 parentid,,Nothing in default
 outgroupid,,Nothing in default
 maxlen,2000,Max sequence length
-minlen,300,Min sequence length
 maxtrys,1000,Max number of phylogeny attempts
 maxrttsd,0.5,Max standard deviation of root to tip distances for a normal tree
