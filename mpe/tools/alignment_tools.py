@@ -19,6 +19,7 @@ from system_tools import OutgroupError
 from system_tools import TooFewSpeciesError
 from system_tools import MafftError
 from system_tools import TrysError
+from system_tools import timeit
 
 ## Objects
 class SeqStore(dict):
@@ -30,7 +31,7 @@ minoverlap):
 		self.minfails = minfails # minimum number of fails in a row
 		self.dspp = [] # species dropped
 		self.nseqs = 0 # counter for seqs
-		self.blast_prop = 0.99 # the proportion of sequences in the alignment that a sequence must overlap with
+		self.blast_prop = 0.5 # the proportion of sequences in the alignment that a sequence must overlap with
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
 		for i, seqfile in enumerate(seqfiles):
@@ -57,21 +58,16 @@ minoverlap):
 				sp = self.sppool[i]
 				next_seqs = [e[0] for e in self[sp][0]]
 				# blast next_seqs against sequences in alignment
-				next_seq_is,next_seqs = self._alignmentBlast(\
+				res = self._alignmentBlast(\
 					next_seqs,sequences)
-				# if any overlap, break
-				if next_seq_is:
+				# if success break
+				if res:
 					break
 			else:
 				return None
 			self.next_sp = self.sppool.pop(i)
-			# choose next_seq at random
-			if (len(next_seq_is) > 1):
-				next_seq_i = random.sample(next_seq_is, 1)[0]
-			else:
-				next_seq_i = next_seq_is[0]
-			# get blasted next_seq
-			next_seq = next_seqs[next_seq_is.index(next_seq_i)]
+			next_seq_i = res[0]
+			next_seq = res[1]
 			# record sequence + nfails in sequence_in_alignment
 			self.sequences_in_alignment.append(self[self.next_sp][0]\
 				[next_seq_i])
@@ -88,25 +84,24 @@ minoverlap):
 
 	def _alignmentBlast(self, query, sequences_in_alignment):
 		"""Return indexes and overlapping sequences for each sequence 
-in query that overlaps with more than prop sequences in subj given 
-set parameters using NCBI's BLAST"""
-		# return query is and overlapping sequences if blast successful
-		query_is = []
-		sequences = []
-		# loop through each sequence in query
-		for i in range(len(query)):
+in query that overlaps with more than prop sequences in 
+sequences_in_alignment given set parameters using NCBI's BLAST"""
+		# loop through each sequence in query, if success, return
+		#  overlapping sequence and its index
+		# make sure indexes are randomised to avoid biased sampling
+		indexes = random.sample(range(len(query)), len(query))
+		for i in indexes:
+			# blast prospective next sequence against all sequences
+			#  in alignment
 			bools,positions = blast(query[i], sequences_in_alignment,\
 				self.minoverlap, self.mingaps)
-			# if more than prop overlap
+			# if more than prop overlap ...
 			overlap = (float(sum(bools))/len(sequences_in_alignment))\
 			> self.blast_prop
 			if overlap:
-				query_is.append(i)
-				# determine overlap as the max and min for all
-				#  successful blast results
-				sequences.append(query[i][min(positions):\
-					max(positions)])
-		return query_is,sequences
+				# ... return its index in the seqstore and the
+				#  overlapping sequence
+				return i,query[i][min(positions):max(positions)]
 
 	def start(self, n):
 		"""Return n starting random sp sequences, update sppool"""
@@ -182,10 +177,39 @@ class Aligner(object):
 		self.buffer_counter = 0 # seedsize buffer counter
 		self.seedsize = len(seqstore)
 		self.timeout = 99999999
+		self.talign = False
+		self.tadd = False
 		self.silent = False
 		self.total_trys = 0 # counter for total number of trys
 		self.type = gene_type
 		self.outgroup = gene_type != 'shallow'
+
+	def _calcTimeout(self, seconds, alignment, align = True):
+		"""Calculate the timeout"""
+		# sequences that align takes less time to finish
+		# make the most of this fact by capping the time MAFFT will
+		# run for based on time taken for successful alignments
+		# size if mean length * number of sequences
+		mean_len = np.mean([len(e) for e in alignment])
+		size = mean_len*len(alignment)
+		# add a *10 buffer
+		timeout = (seconds/size)*10
+		if align:
+			self.talign = timeout
+		else:
+			self.tadd = timeout
+
+	def _getTimeout(self, sequences, sequence = None):
+		"""Return seconds it should take for mafft to run"""
+		# Only return modified timeout if _calcTimeout has been run
+		# Use size of alignment to calc seconds per nuc
+		mean_len = np.mean([len(e) for e in sequences])
+		size = mean_len*len(sequences)
+		if sequence and self.tadd:
+			return (self.tadd*size) + len(sequence)
+		elif self.talign:
+			return self.talign*size
+		return self.timeout
 
 	def _check(self, alignment):
 		return checkAlignment(alignment, self.mingaps, \
@@ -255,12 +279,15 @@ if successful"""
 		if len(sequences) >= self.minseedsize:
 			command = version(sequences, self.type)
 			try:
-				alignment = align(command, sequences)
+				alignment,seconds = timeit(func = align, command = \
+					command, sequences = sequences, timeout = \
+					self._getTimeout(sequences))
 			except MafftError:
 				logging.debug('MAFTT error raised')
 				success = False
 			else:
 				success = self._check(alignment)
+				logging.debug(alignment.format('fasta'))
 		else:
 			success = False
 		# add to trys if unsuccessful or sequences are fewer than
@@ -268,6 +295,8 @@ if successful"""
 		trys += self._calcSeedsize(success and len(sequences) == \
 			self.seedsize)
 		if success:
+			self._calcTimeout(seconds, alignment)
+			logging.debug('Seed timeout ' + str(self.talign))
 			self.store.append(alignment)
 		return success,trys
 
@@ -285,13 +314,17 @@ if successful"""
 				#  added
 				return True,trys
 		try:
-			new_alignment = add(alignment, sequence)
+			new_alignment,seconds = timeit(func = add, alignment = \
+				alignment, sequence = sequence, timeout =\
+				self._getTimeout(alignment, sequence))
 		except MafftError:
 			logging.debug('MAFTT error raised')
 			success = False
 		else:
 			success = self._check(new_alignment)
 		if success:
+			self._calcTimeout(seconds, alignment, align = False)
+			logging.debug('Add timeout ' + str(self.tadd))
 			self.store.append(new_alignment)
 		else:
 			trys += 1
@@ -350,7 +383,7 @@ def version(sequences, gene_type):
 		return 'mafft-qinsi'
 	return 'mafft-xinsi'
 
-def align(command, sequences):
+def align(command, sequences, timeout):
 	"""Align sequences using mafft (external program)"""
 	input_file = ".sequences_in.fasta"
 	output_file = ".alignment_out.fasta"
@@ -358,7 +391,7 @@ def align(command, sequences):
 		output_file)
 	with open(input_file, "w") as file:
 		SeqIO.write(sequences, file, "fasta")
-	pipe = TerminationPipe(command_line)
+	pipe = TerminationPipe(command_line, timeout= timeout)
 	pipe.run()
 	os.remove(input_file)
 	if not pipe.failure:
@@ -370,11 +403,11 @@ def align(command, sequences):
 		else:
 			os.remove(output_file)
 	else:
-		raise RuntimeError("MAFFT alignment not complete in time \
-allowed")
+		# if pipe.failure, runtime error, return None
+		return None
 	return res
 
-def add(alignment, sequence):
+def add(alignment, sequence, timeout):
 	"""Align sequence(s) to an alignment using mafft (external 
 program)"""
 	alignment_file = ".alignment_in.fasta"
@@ -386,7 +419,7 @@ program)"""
 		SeqIO.write(sequence, file, "fasta")
 	with open(alignment_file, "w") as file:
 		AlignIO.write(alignment, file, "fasta")
-	pipe = TerminationPipe(command_line)
+	pipe = TerminationPipe(command_line, timeout= timeout)
 	pipe.run()
 	os.remove(alignment_file)
 	os.remove(sequence_file)
@@ -399,7 +432,7 @@ program)"""
 		else:
 			os.remove(output_file)
 	else:
-		raise RuntimeError("MAFFT alignment not complete in time allowed")
+		return None
 	return res
 
 def blast(query, subj, minoverlap, mingaps):
@@ -411,7 +444,7 @@ with subject given parameters."""
 		# options: http://www.ncbi.nlm.nih.gov/books/NBK1763/
 		cline = NcbiblastnCommandline(query = ".query.fasta",\
 			subject = ".subj.fasta", outfmt = 5, task = 'blastn',\
-			word_size = 8)
+			word_size = 11)
 		output = cline()[0]
 	except ApplicationError:# as error_msg:
 		#logging.debug(error_msg)
@@ -431,23 +464,14 @@ with subject given parameters."""
 	# BLAST records for each query sequence matched against subj
 	bresults = NCBIXML.parse(StringIO(output))
 	for record in bresults:
-		# if there is a hit....
 		if record.alignments:
 			res = record.alignments[0].hsps[0]
-			# work out how long it is ignoring Ns
-			ns = res.query.count("N")
-			length = res.align_length - ns
-			if length > minoverlap:
-				# if it's above the minoverlap
-				identities = res.identities
-				pgaps = 1 - float(length)/identities
-				if pgaps < mingaps:
-					# and it has more identities than mingaps give
-					#  it a True
-					bools.append(True)
-					positions.append(res.query_start)
-					positions.append(res.query_end)
-					continue
+			# if identities > minoverlap, keep
+			if res.identities > minoverlap:
+				bools.append(True)
+				positions.append(res.query_start)
+				positions.append(res.query_end)
+				continue
 		bools.append(False)
 	return bools,positions
 
@@ -455,47 +479,33 @@ def checkAlignment(alignment, mingaps, minoverlap, minlen):
 	"""Determine if an alignment is good or not based on given \
 parameters. Return bool"""
 	def calcOverlap(columns):
+		# what proportion of columns have nucs in other seqs
 		pcolgaps = []
 		for i in columns:
 			ith = float(alignment[:,i].count("-"))/(len(alignment)-1)
 			pcolgaps.append(ith)
+		# overlap is the mean proportion of columns shared
 		overlap = len(columns) - (len(columns) * np.mean(pcolgaps))
 		return overlap
+	def calcNgap(sequence):
+		# count the number of gaps
+		gaps = re.subn('-+', '', sequence)[1]
+		return float(gaps)/len(sequence)
+	if alignment is None:
+		return False
 	alen = alignment.get_alignment_length()
 	if alen < minlen:
 		logging.debug('........ alignment too small')
 		return False
-	pintgaps = []
 	for each in alignment:
 		sequence = str(each.seq)
 		columns = [ei for ei,e in enumerate(sequence) if e != "-"]
-		totnucs = len(columns)
-		totgaps = alen - totnucs
 		overlap = calcOverlap(columns)
 		if overlap < minoverlap:
 			logging.debug('........ alignment too little overlap')
 			return False
-		extgaps = 0
-		start_extgaps = re.search("^-+", sequence)
-		end_extgaps = re.search("-+$", sequence)
-		if not start_extgaps is None:
-			extgaps += start_extgaps.end()
-		if not end_extgaps is None:
-			extgaps += len(sequence) - end_extgaps.start()
-		intgaps = totgaps - extgaps
-		overlap = intgaps + totnucs
-		pintgap = float(intgaps)/overlap
-		#if each.id == "outgroup":
-		#	pintgap_outgroup = pintgap
-		#else:
-		pintgaps.append(pintgap)
-		if pintgap > mingaps:
+		ngap = calcNgap(sequence)
+		if ngap > mingaps:
 			logging.debug('........ alignment too many gaps')
 			return False
-	#try:
-	#	if any([e > pintgap_outgroup for e in pintgaps]):
-	#		print "Outgroup has fewer gaps than rest ..."
-	#		return False # if any seqs have more gaps than outgroup, false
-	#except UnboundLocalError:
-	#	pass
 	return True
