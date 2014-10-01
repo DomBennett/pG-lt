@@ -10,6 +10,9 @@ import os,re,random,logging
 import numpy as np
 from Bio import SeqIO
 from Bio import AlignIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.Align import MultipleSeqAlignment
 from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Application import ApplicationError
 from Bio.Blast import NCBIXML
@@ -383,8 +386,15 @@ def version(sequences, gene_type):
 		return 'mafft-qinsi'
 	return 'mafft-xinsi'
 
+def genNonAlignment(nseqs, alen):
+	"""Return non-alignment, for when align or add timeout"""
+	seqs = [SeqRecord(Seq('-' * alen), id = 'Seq{0}'.format(e),\
+		description = 'non-sequence') for e in range(nseqs)]
+	return MultipleSeqAlignment(seqs)
+
 def align(command, sequences, timeout):
-	"""Align sequences using mafft (external program)"""
+	"""Adapted pG function: Align sequences using mafft (external
+program)"""
 	input_file = ".sequences_in.fasta"
 	output_file = ".alignment_out.fasta"
 	command_line = '{0} {1} > {2}'.format(command, input_file, \
@@ -403,8 +413,8 @@ def align(command, sequences, timeout):
 		else:
 			os.remove(output_file)
 	else:
-		# if pipe.failure, runtime error, return None
-		return None
+		# if pipe.failure, runtime error, return non-alignment
+		return genNonAlignment(len(sequences), len(sequences[0]))
 	return res
 
 def add(alignment, sequence, timeout):
@@ -432,7 +442,8 @@ program)"""
 		else:
 			os.remove(output_file)
 	else:
-		return None
+		return genNonAlignment(len(alignment) + 1,\
+			len(alignment.get_alignment_length()))
 	return res
 
 def blast(query, subj, minoverlap, mingaps):
@@ -479,6 +490,8 @@ def checkAlignment(alignment, mingaps, minoverlap, minlen):
 	"""Determine if an alignment is good or not based on given \
 parameters. Return bool"""
 	def calcOverlap(columns):
+		if not columns:
+			return 0
 		# what proportion of columns have nucs in other seqs
 		pcolgaps = []
 		for i in columns:
