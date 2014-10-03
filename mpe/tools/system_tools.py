@@ -196,7 +196,7 @@ def readInGenePars(gpars_file):
 	template = {'names' : None, 'taxid' : None,\
 	'mingaps' : None, 'minoverlap' : None, 'minfails'\
 	: None, 'maxtrys' : None, 'minseedsize' : None,\
-	'maxseedtrys': None, 'type': None}
+	'maxseedtrys': None, 'codon_partition': None, 'type': None}
 	# open file, read each row and fill in template
 	genedict = _read(gpars_file, template)
 	# if Nones, use defaults
@@ -282,7 +282,10 @@ def timeit(func, **kwargs):
 def clean():
 	"""Remove all files and folders created by mpe"""
 	## Remove log.txt in parent folder
-	os.remove('log.txt')
+	try:
+		os.remove('log.txt')
+	except OSError:
+		pass
 
 	## Go through all subdirs and remove files in list
 	files_to_remove = ['info.txt', 'log.txt','.paradict.p','.allrankids.p',\
