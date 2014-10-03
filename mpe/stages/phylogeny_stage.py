@@ -22,6 +22,8 @@ def run(wd = os.getcwd()):
 	## Input
 	with open(os.path.join(wd, ".paradict.p"), "rb") as file:
 		paradict = pickle.load(file)
+	with open(os.path.join(wd, ".genedict.p"), "rb") as file:
+		genedict = pickle.load(file)
 
 	## Parameters
 	nphylos = int(paradict["ntrees"])
@@ -63,7 +65,7 @@ def run(wd = os.getcwd()):
 			logging.info("........ [{0}]:[{1}]".format(gene,\
 				alignment_file))
 		alignment,partitions = ptools.concatenateAlignments(list(\
-			alignments))
+			alignments), genes, genedict)
 		taxontree_file = os.path.join(phylogeny_dir, "taxontree.tre")
 		constraint = ptools.genConstraintTree(alignment, taxontree_file)
 		outgroup = ptools.getOutgroup(alignment, constraint)
