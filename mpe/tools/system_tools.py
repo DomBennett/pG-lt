@@ -197,7 +197,8 @@ def readInGenePars(gpars_file):
 	'minlen' : None, 'maxlen' : None,\
 	'mingaps' : None, 'minoverlap' : None, 'minfails'\
 	: None, 'maxtrys' : None, 'minseedsize' : None,\
-	'maxseedtrys': None, 'partition': None, 'type': None}
+	'maxseedsize' : None, 'maxseedtrys': None,\
+	'partition': None, 'type': None}
 	# open file, read each row and fill in template
 	genedict = _read(gpars_file, template)
 	# if Nones, use defaults

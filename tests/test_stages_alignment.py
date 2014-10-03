@@ -21,8 +21,8 @@ class Dummy_SeqStore(object):
 		return 0
 
 class Dummy_Aligner(object):
-	def __init__(self,seqstore, mingaps, minoverlap,\
-			minseedsize, maxtrys,maxseedtrys,gene_type):
+	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
+		maxseedsize, maxtrys, maxseedtrys, gene_type):
 		pass
 	def run(self):
 		return alignment
@@ -32,9 +32,10 @@ with open(os.path.join(working_dir, 'data','test_alignment_ref.faa'),\
 	'r') as file:
 	alignment = AlignIO.read(file, 'fasta')
 genedict = {'rbcl':{'mingaps':0.1,'minoverlap':0.1,'maxtrys':100,\
-'minseedsize':5,'maxseedtrys':10,'minfails':10,'type':'both'},'COI':\
-{'mingaps':0.1,'minoverlap':0.1,'maxtrys':100,'minseedsize':5,\
-'maxseedtrys':10,'minfails':10,'type':'shallow'}}
+'minseedsize':5,'maxseedsize':20,'maxseedtrys':10,'minfails':10,\
+'type':'both'},'COI':{'mingaps':0.1,'minoverlap':0.1,'maxtrys':\
+100,'minseedsize':5,'maxseedsize':20,'maxseedtrys':10,'minfails'\
+:10,'type':'shallow'}}
 paradict = {'naligns':1} # don't let it run more than once
 # all the names in reference alignment
 namesdict = {}

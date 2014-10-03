@@ -170,7 +170,7 @@ species"""
 class Aligner(object):
 	"""Build alignments from seqstore"""
 	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
-		maxtrys, maxseedtrys, gene_type):
+		maxseedsize, maxtrys, maxseedtrys, gene_type):
 		self.seqstore = seqstore
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
@@ -178,7 +178,10 @@ class Aligner(object):
 		self.maxtrys = maxtrys # trys for alignment attempts
 		self.buffer = maxseedtrys # trys for a seedsize
 		self.buffer_counter = 0 # seedsize buffer counter
-		self.seedsize = len(seqstore)
+		if len(seqstore) > maxseedsize:
+			self.seedsize = maxseedsize
+		else:
+			self.seedsize = len(seqstore)
 		self.timeout = 99999999
 		self.talign = False
 		self.tadd = False

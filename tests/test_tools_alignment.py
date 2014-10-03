@@ -53,8 +53,8 @@ class AlignmentTestSuite(unittest.TestCase):
 			seqfiles = seqfiles, minfails = 10, mingaps = 0.5,\
 			minoverlap = 50)
 		self.aligner = atools.Aligner(self.store, mingaps = 0.5,\
-			minoverlap = 50, minseedsize = 3, maxtrys = 10,\
-			maxseedtrys = 10, gene_type = 'shallow')
+			minoverlap = 50, minseedsize = 3, maxseedsize = 20,\
+			maxtrys = 10, maxseedtrys = 10, gene_type = 'shallow')
 
 	def tearDown(self):
 		atools.blast = self.true_blast

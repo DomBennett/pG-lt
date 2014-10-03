@@ -82,7 +82,8 @@ def run(wd = os.getcwd()):
 		aligner = atools.Aligner(seqstore, mingaps = \
 			float(genedict[gene]["mingaps"]), minoverlap = \
 			int(genedict[gene]["minoverlap"]), minseedsize = \
-			int(genedict[gene]["minseedsize"]), maxtrys = \
+			int(genedict[gene]["minseedsize"]), maxseedsize = \
+			int(genedict[gene]["maxseedsize"]), maxtrys = \
 			int(genedict[gene]["maxtrys"]), maxseedtrys = \
 			int(genedict[gene]["maxseedtrys"]), gene_type = \
 			genedict[gene]['type'])

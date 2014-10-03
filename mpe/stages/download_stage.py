@@ -44,9 +44,8 @@ def run(wd = os.getcwd()):
 
 	## Process
 	logging.info('Determining best genes ....')
-	# genes = dtools.findBestGenes(namesdict, genedict, thoroughness,\
-	# 	allrankids, minnseq, target, minnspp)
-	genes = ['COI']
+	genes = dtools.findBestGenes(namesdict, genedict, thoroughness,\
+		allrankids, minnseq, target, minnspp)
 	statement = 'Using genes:'
 	for gene in genes:
 		statement += " [" + gene + "]"
