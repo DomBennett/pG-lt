@@ -24,6 +24,8 @@ def run(wd = os.getcwd()):
 		paradict = pickle.load(file)
 	with open(os.path.join(wd, ".genedict.p"), "rb") as file:
 		genedict = pickle.load(file)
+	with open(os.path.join(wd, ".allrankids.p"), "rb") as file:
+		allrankids = pickle.load(file)
 
 	## Parameters
 	nphylos = int(paradict["ntrees"])

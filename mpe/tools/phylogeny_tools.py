@@ -126,7 +126,35 @@ def genConstraintTree(alignment, taxontree_file):
 		constraint.prune(tip)
 	return constraint
 
-def partitionCodons(alignment):
+def getStopCodons(allrankids):
+	# Find stop codons given taxonomoic group (mito only)
+	# http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
+	# ensure we're dealing with eukaryotes
+	# if '2759' not in allrankids:
+	# 	return None
+	# vertebrates
+	if '7742' in allrankids:
+		# ignore sea squirts
+		if '30275' not in allrankids:
+			fpattern = '(taa|tag|aga|agg)'
+			rpattern = '(tta|cta|tct|cct)'
+	# ciliates, green algae and diplomonads
+	elif '5878' in allrankids or '3135' in allrankids\
+	or '5738' in allrankids:
+		fpattern = 'tga'
+		rpattern = 'tca'
+	# all other eukaryotes (presumably stop codons
+	#  in other eukaryotes have been discovered yet)
+	else:
+		fpattern = '(taa|tag)'
+		rpattern = '(tta|cta)'
+	fpattern = re.compile(fpattern,\
+		flags = re.IGNORECASE)
+	rpattern = re.compile(rpattern,\
+		flags = re.IGNORECASE)
+	return fpattern,rpattern
+
+def partitionCodons(alignment, allrankids):
 	def partition(alignment, frame):
 		# return alignment from point where frame starts
 		#  this avoids codons of 1 or 2 bps.
@@ -138,13 +166,7 @@ def partitionCodons(alignment):
 			alignment = alignment[:,frame:]
 		return alignment,[3 for e in \
 		range(alignment.get_alignment_length()/3)]
-	# Vertebrate mt code has three stop codons: AGA, AGG and TAG
-	# http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi#SG2
-	# forward ....
-	# TODO: what about non-verts?
-	fstop = re.compile('(taa|tag)', flags = re.IGNORECASE)
-	# .... and in the reverse
-	rstop = re.compile('(acc|atc)', flags = re.IGNORECASE)
+	fstop,rstop = getStopCodons(allrankids)
 	frame_stops = [0, 0, 0, 0, 0, 0]
 	for record in alignment:
 		# convert to string
