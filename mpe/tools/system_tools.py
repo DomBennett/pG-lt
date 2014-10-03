@@ -194,9 +194,10 @@ def readInGenePars(gpars_file):
 	genedict = {}
 	# template of dict in genedict
 	template = {'names' : None, 'taxid' : None,\
+	'minlen' : None, 'maxlen' : None,\
 	'mingaps' : None, 'minoverlap' : None, 'minfails'\
 	: None, 'maxtrys' : None, 'minseedsize' : None,\
-	'maxseedtrys': None, 'codon_partition': None, 'type': None}
+	'maxseedtrys': None, 'partition': None, 'type': None}
 	# open file, read each row and fill in template
 	genedict = _read(gpars_file, template)
 	# if Nones, use defaults
@@ -226,8 +227,8 @@ def readInPars(pars_file):
 		return readInPars(default_pars_file)
 	# template
 	paradict = {'nseqs' : None, 'naligns' : None,\
-	'ntrees' : None, 'download_thoroughness' : None,\
-	'maxlen' : None, 'maxtrys' : None, 'maxrttsd': None,\
+	'ntrees' : None, 'thoroughness' : None,\
+	'maxtrys' : None, 'maxrttsd': None,\
 	'parentid' : None, 'outgroupid' : None}
 	# open file, read each row, extract value
 	paradict = _read(pars_file, paradict)

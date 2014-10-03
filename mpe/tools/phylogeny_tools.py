@@ -183,7 +183,7 @@ def getPartitions(alignments, genes, genedict):
 	lengths = []
 	returning = []
 	for alignment,gene in zip(alignments, genes):
-		if genedict[gene]['codon_partition'] == 'True':
+		if genedict[gene]['partition'] == 'True':
 			a,ls = partitionCodons(alignment)
 			print ls
 			lengths.extend(ls)

@@ -31,8 +31,7 @@ def run(wd = os.getcwd()):
 	## Parameters
 	dtools.etools.Entrez.email = paradict["email"]
 	nseqs = int(paradict['nseqs'])
-	thoroughness = int(paradict['download_thoroughness'])
-	maxlen = int(paradict['maxlen'])
+	thoroughness = int(paradict['thoroughness'])
 	seedsize = 10
 	mingaps = 5
 	minoverlap = 300
@@ -45,8 +44,9 @@ def run(wd = os.getcwd()):
 
 	## Process
 	logging.info('Determining best genes ....')
-	genes = dtools.findBestGenes(namesdict, genedict, thoroughness,\
-		allrankids, minnseq, target, minnspp)
+	# genes = dtools.findBestGenes(namesdict, genedict, thoroughness,\
+	# 	allrankids, minnseq, target, minnspp)
+	genes = ['COI']
 	statement = 'Using genes:'
 	for gene in genes:
 		statement += " [" + gene + "]"
@@ -57,7 +57,8 @@ def run(wd = os.getcwd()):
 	for gene in genes:
 		seqcounter_gene = noseqcounter_gene = spcounter_gene = 0
 		gene_names = genedict[gene]["names"]
-		minlen = int(genedict[gene]["minoverlap"])
+		minlen = int(genedict[gene]["minlen"])
+		maxlen = int(genedict[gene]["maxlen"])
 		logging.info('Downloading and outputting for [{0}] ....'.\
 			format(gene))
 		gene_dir  = os.path.join(download_dir, str(gene))

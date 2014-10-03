@@ -2,9 +2,8 @@ Parameter,Value,Note
 nseqs,100,Max number of sequences to download for each name and gene
 naligns,10,Number of alignments to create for each gene
 ntrees,100,Number of phylogenies to generate from alignments
-download_thoroughness,3,Either 1 2 or 3
+thoroughness,3,Either 1 2 or 3
 parentid,,Nothing in default
 outgroupid,,Nothing in default
-maxlen,2000,Max sequence length
 maxtrys,1000,Max number of phylogeny attempts
 maxrttsd,0.5,Max standard deviation of root to tip distances for a normal tree
