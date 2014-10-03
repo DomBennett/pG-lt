@@ -6,4 +6,4 @@ console.setFormatter(logging.Formatter('%(message)s'))
 logger.addHandler(console)
 
 import mpe
-mpe.stages.alignment_stage.run()
+mpe.stages.phylogeny_stage.run()
