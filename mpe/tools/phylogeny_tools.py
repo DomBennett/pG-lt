@@ -126,11 +126,85 @@ def genConstraintTree(alignment, taxontree_file):
 		constraint.prune(tip)
 	return constraint
 
-def concatenateAlignments(alignments):
+def partitionCodons(alignment):
+	def partition(alignment, frame):
+		# return alignment from point where frame starts
+		#  this avoids codons of 1 or 2 bps.
+		alignment = alignment[:,frame:]
+		offset = alignment.get_alignment_length() % 3
+		if offset > 0:
+			alignment = alignment[:,:-offset]
+		else:
+			alignment = alignment[:,frame:]
+		return alignment,[3 for e in \
+		range(alignment.get_alignment_length()/3)]
+	# Vertebrate mt code has three stop codons: AGA, AGG and TAG
+	# http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi#SG2
+	# forward ....
+	# TODO: what about non-verts?
+	fstop = re.compile('(taa|tag)', flags = re.IGNORECASE)
+	# .... and in the reverse
+	rstop = re.compile('(acc|atc)', flags = re.IGNORECASE)
+	frame_stops = [0, 0, 0, 0, 0, 0]
+	for record in alignment:
+		# convert to string
+		seq = str(record.seq)
+		# search for stop codons ignoring last 10bps; expect
+		#  a stop codon at the end of a sequence
+		frame_stops[0] += sum([bool(fstop.match(seq[:-50][e:e + 3])) \
+			for e in range(0, len(seq), 3)])
+		frame_stops[1] += sum([bool(fstop.match(seq[:-50][e:e + 3])) \
+			for e in range(1, len(seq), 3)])
+		frame_stops[2] += sum([bool(fstop.match(seq[:-50][e:e + 3])) \
+			for e in range(2,len(seq), 3)])
+		frame_stops[3] += sum([bool(rstop.match(seq[50:][e:e + 3])) \
+			for e in range(0, len(seq), 3)])
+		frame_stops[4] += sum([bool(rstop.match(seq[50:][e:e + 3])) \
+			for e in range(1, len(seq), 3)])
+		frame_stops[5] += sum([bool(rstop.match(seq[50:][e:e + 3])) \
+			for e in range(2, len(seq), 3)])
+	print frame_stops
+	# if more than one frame wo stop codon, return wo codon partitions
+	if sum([e == 0 for e in frame_stops]) > 1:
+		print 'no frames'
+		return alignment, [alignment.get_alignment_length()]
+	# if no frames wo stop codons, return wo codon partitions
+	if sum([e == 0 for e in frame_stops]) == 0:
+		print 'too many'
+		return alignment, [alignment.get_alignment_length()]
+	if frame_stops[0] == 0 or frame_stops[3] == 0:
+		return partition(alignment, 0)
+	if frame_stops[1] == 0 or frame_stops[4] == 0:
+		return partition(alignment, 1)
+	if frame_stops[2] == 0 or frame_stops[5] == 0:
+		return partition(alignment, 2)
+
+def getPartitions(alignments, genes, genedict):
+	lengths = []
+	returning = []
+	for alignment,gene in zip(alignments, genes):
+		if genedict[gene]['codon_partition'] == 'True':
+			a,ls = partitionCodons(alignment)
+			print ls
+			lengths.extend(ls)
+			returning.append(a)
+		else:
+			lengths.extend(alignment.get_alignment_length())
+			returning.append(alignment)
+	partitions = [0]
+	partitions.extend(list(np.cumsum(lengths)))
+	if len(partitions) <= 2:
+		partitions = False
+	if len(returning) == 1:
+		returning = returning[0]
+	print partitions
+	return returning,partitions
+
+def concatenateAlignments(alignments, genes, genedict):
 	"""Take list of alignments for multiple genes.
 Return single alignment with partitions."""
 	if len(alignments) == 1:
-		return alignments[0],False
+		return getPartitions(alignments, genes, genedict)
 	# Sort IDs
 	alignment_ids = []
 	for gene in alignments:
@@ -141,6 +215,8 @@ Return single alignment with partitions."""
 	all_ids = []
 	[all_ids.extend(e) for e in alignment_ids]
 	all_ids = list(set(all_ids))
+	# Get Partitions
+	alignments,partitions = getPartitions(alignments, genes, genedict)
 	# Concatenate
 	alignment = MultipleSeqAlignment([])
 	for txid in all_ids:
@@ -153,10 +229,6 @@ Return single alignment with partitions."""
 		sequence = SeqRecord(sequence, id = txid, description =\
 			"multigene sequence")
 		alignment.append(sequence)
-	# Get partitions
-	lengths = [e.get_alignment_length() for e in alignments]
-	partitions = [0]
-	partitions.extend(list(np.cumsum(lengths)))
 	return alignment,partitions
 
 def getOutgroup(alignment, constraint):
@@ -196,7 +268,7 @@ RAxML (external program)."""
 	if constraint:
 		options += constraint
 	command_line = 'raxml' + file_line + dnamodel + options
-	#print command_line
+	print command_line
 	pipe = TerminationPipe(command_line)
 	pipe.run()
 	if not pipe.failure:
