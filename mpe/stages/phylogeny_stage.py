@@ -28,8 +28,7 @@ def run(wd = os.getcwd()):
 		allrankids = pickle.load(file)
 
 	## Parameters
-	#nphylos = int(paradict["ntrees"])
-	nphylos = 10
+	nphylos = int(paradict["ntrees"])
 	maxtrys = int(paradict["maxtrys"])
 	rttpvalue = float(paradict["rttpvalue"])
 
