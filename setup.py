@@ -88,5 +88,6 @@ setup(
 		  'biopython',
 		  'dendropy',
 		  'numpy',
+		  'scipy',
 	  ],
 )
