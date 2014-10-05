@@ -133,7 +133,6 @@ root to tip distances"""
 			rtt_dists.append(phylogeny.distance(name))
 		print rtt_dists
 		_,pvalue = chisquare(rtt_dists)
-		print pvalue
 		return pvalue > self.rttpvalue
 
 	def _concatenate(self, alignments):
@@ -241,15 +240,12 @@ multiple genes."""
 				[e:e + 3])) for e in range(1, len(seq), 3)])
 			frame_stops[5] += sum([bool(rstop.match(seq[50:]\
 				[e:e + 3])) for e in range(2, len(seq), 3)])
-		print frame_stops
 		# if more than one frame wo stop codon
 		#  return wo codon partitions
 		if sum([e == 0 for e in frame_stops]) > 1:
-			print 'no frames'
 			return alignment, [alignment.get_alignment_length()]
 		# if no frames wo stop codons, return wo codon partitions
 		if sum([e == 0 for e in frame_stops]) == 0:
-			print 'too many'
 			return alignment, [alignment.get_alignment_length()]
 		# else return frame and reframed alignment
 		if frame_stops[0] == 0 or frame_stops[3] == 0:
@@ -351,7 +347,6 @@ RAxML (external program)."""
 	if constraint:
 		options += constraint
 	command_line = 'raxml' + file_line + dnamodel + options
-	print command_line
 	pipe = TerminationPipe(command_line)
 	pipe.run()
 	if not pipe.failure:
