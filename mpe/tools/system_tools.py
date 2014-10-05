@@ -34,6 +34,9 @@ class OutgroupError(Exception):
 class MafftError(Exception):
 	pass
 
+class RAxMLError(Exception):
+	pass
+
 class TrysError(Exception):
 	pass
 
@@ -229,7 +232,7 @@ def readInPars(pars_file):
 	# template
 	paradict = {'nseqs' : None, 'naligns' : None,\
 	'ntrees' : None, 'thoroughness' : None,\
-	'maxtrys' : None, 'maxrttsd': None,\
+	'maxtrys' : None, 'rttpvalue': None,\
 	'parentid' : None, 'outgroupid' : None}
 	# open file, read each row, extract value
 	paradict = _read(pars_file, paradict)

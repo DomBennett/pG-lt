@@ -44,6 +44,7 @@ from mpe.tools.system_tools import TooFewSpeciesError
 from mpe.tools.system_tools import PrimingError
 from mpe.tools.system_tools import TaxonomicRankError
 from mpe.tools.system_tools import OutgroupError
+from mpe.tools.system_tools import RAxMLError
 
 ## Description
 description = """mpe D.J. Bennett (C) 2014
@@ -73,6 +74,8 @@ outgroup_msg = '\nERROR: The outgroup has been dropped. This may be \
 due to too few sequence data available for outgroup or a failure to \
 align sequences that are available. If outgroup has been \
 automatically selected, consider manually choosing an outgroup.'
+raxml_msg = '\nERROR: Generated maxtrys poor phylogenies \
+consecutively, consider reducing maxrttsd.'
 unexpected_msg = '\nERROR: The following unexpected error occurred:\n\
 \"{0}\" \n\
 Please email details to the program maintainer for help.'
@@ -258,6 +261,8 @@ def main():
 			error_raised = logError(taxonomicrank_msg, folder_logger)
 		except OutgroupError:
 			error_raised = logError(outgroup_msg, folder_logger)
+		except RAxMLError:
+			error_raised = logError(raxml_msg, folder_logger)
 		except KeyboardInterrupt:
 			folder_logger.info('Execution halted by user')
 			sys.exit('Execution halted by user')
