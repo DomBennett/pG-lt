@@ -38,7 +38,7 @@ def run(wd = os.getcwd()):
 	maxtrys = 100
 	minnseq = 1
 	minnspp = 5
-	target = 'all'
+	target = 5
 	maxpn = 0.1
 	seqcounter = basecounter = 0
 
