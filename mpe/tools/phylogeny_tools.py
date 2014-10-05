@@ -2,20 +2,395 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE phylogeny tools
+mpe phylogeny tools
 """
 
 ## Packages
-import os,re,random
-#from Bio import Phylo
-#from Bio.Seq import Seq
+import os,re,random,logging
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio import AlignIO
 import numpy as np
 import dendropy as dp
+from scipy.stats import chisquare
 from system_tools import TerminationPipe
+from system_tools import RAxMLError
+
+## Classes
+class StopCodonRetriever(object):
+	"""Stop codon retrival class"""
+	# ref: http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
+	# Multiple lists referring to:
+	#  [0] Vertebrates (but Ascidia)
+	#  [1] Ciliates, green algae and diplomonads
+	#  [2] All other Eukaryotes (incl. Ascidia)
+	mt_txids = [[7742],[5878,3135,5738],[2759,30275]]
+	mt_fpattern = ['(taa|tag|aga|agg)','tag','(taa|tag)']
+	mt_rpattern = ['(tta|cta|tct|cct)','cta','(tta|cta)']
+	## TODO: add Nuc stop codons (Problem no use though -- low priority)
+
+	def __init__(self):
+		pass
+
+	def pattern(self, ids, genome_type):
+		"""Return stop pattern for lowest matching id"""
+		# assumes lower taxonomic levels are at higher indexes
+		if genome_type == 'mt':
+			# find all matching ids in mt_txids
+			matches = [i for i,e in enumerate(ids) if e in\
+				sum(self.mt_txids, [])]
+			if not matches:
+				logging.debug('No taxonomic IDs matched!')
+				return None
+			match = max(matches)
+			i = [i for i,e in enumerate(self.mt_txids) if ids[match]\
+			 in e][0]
+			# return reobjs
+			return re.compile(self.mt_fpattern[i],\
+				flags = re.IGNORECASE),re.compile(\
+				self.mt_rpattern[i], flags = re.IGNORECASE)
+		else:
+			return None
+
+class AlignmentStore(dict):
+	"""Alignment holding class"""
+	retriever = StopCodonRetriever()
+
+	def __init__(self, genes, genedict, allrankids, indir):
+		# Read in alignments for each gene
+		for gene in genes:
+			self[gene] = {'alignments':[],'files':[],'counters':[]}
+			self[gene]['stop'] = self.retriever.pattern(allrankids,\
+				genedict[gene]['partition'].lower())
+			gene_dir = os.path.join(indir, gene)
+			alignment_files = os.listdir(gene_dir)
+			alignment_files = [e for e in alignment_files if not\
+			re.search("^\.", e)]
+			for alignment_file in alignment_files:
+				with open(os.path.join(gene_dir, alignment_file),\
+				"r") as file:
+					alignment = AlignIO.read(file, "fasta")
+				self[gene]['alignments'].append(alignment)
+				self[gene]['files'].append(alignment_file)
+				self[gene]['counters'].append(0)
+
+	def count(self):
+		"""Add to alignments' counters"""
+		for each in self.counters:
+			each += 1
+
+	def report(self):
+		"""Return info on alignments used"""
+		# TODO: find a way to record alignments used
+		pass
+
+	def pull(self):
+		"""Randomly select an alignment for each gene. Return 
+list of alignments and stop pattern if partition"""
+		self.counters = []
+		alignments = []
+		stops = []
+		logging.info("........ Using alignments:")
+		for gene in self.keys():
+			genedata = self[gene]
+			i = random.randint(0,len(genedata['alignments']) - 1)
+			alignments.append(genedata['alignments'][i])
+			stops.append(genedata['stop'])
+			self.counters.append(genedata['counters'][i])
+			afile = genedata['files'][i]
+			if genedata['stop']:
+				logging.info("............ {0}(codon partitioned):\
+[{1}]".format(gene, afile))
+			else:
+				logging.info("............ {0}:[{1}]".\
+					format(gene, afile))
+		return alignments,stops
+
+
+class Generator(object):
+	"""Phylogeny generating class"""
+	def __init__(self, alignment_store, rttpvalue, outdir, maxtrys):
+		self.trys = 0
+		self.phylogenies = []
+		self.maxtrys = maxtrys
+		self.alignment_store = alignment_store
+		self.genes = alignment_store.keys()
+		self.rttpvalue = rttpvalue
+		self.outdir = outdir
+		self.taxontree = os.path.join(outdir, "taxontree.tre")
+		self.constraint = os.path.isfile(self.taxontree)
+
+	def _test(self, phylogeny):
+		"""Return false if chisquare rejects uniform distribution of 
+root to tip distances"""
+		# calc root to tip distance (rtt.dist) for each tip
+		names = []
+		for terminal in phylogeny.get_terminals():
+			names.append(terminal.name)
+		rtt_dists = []
+		for name in names:
+			rtt_dists.append(phylogeny.distance(name))
+		print rtt_dists
+		_,pvalue = chisquare(rtt_dists)
+		print pvalue
+		return pvalue > self.rttpvalue
+
+	def _concatenate(self, alignments):
+		"""Return single alignment from list of alignments for 
+multiple genes."""
+		if len(alignments) == 1:
+			return alignments[0]
+		# sort IDs
+		alignment_ids = []
+		for gene in alignments:
+			gene_ids = []
+			for rec in gene:
+				gene_ids.append(rec.id)
+			alignment_ids.append(gene_ids)
+		all_ids = []
+		[all_ids.extend(e) for e in alignment_ids]
+		all_ids = list(set(all_ids))
+		# concatenate
+		alignment = MultipleSeqAlignment([])
+		for txid in all_ids:
+			sequence = ""
+			for i,gene in enumerate(alignments):
+				if txid in alignment_ids[i]:
+					sequence += gene[alignment_ids[i].index(txid)].seq
+				else:
+					sequence += "-" * gene.get_alignment_length()
+			sequence = SeqRecord(sequence, id = txid, description =\
+				"multigene sequence")
+			alignment.append(sequence)
+		return alignment
+
+	def _constraint(self, alignment):
+		"""Generate constraint tree using taxontree, return arg"""
+		if not self.constraint:
+			return False
+		# drop tips from taxontree if not in alignment
+		tip_names = []
+		for record in alignment:
+			tip_names.append(record.id)
+		with open(self.taxontree, "r") as file:
+			constraint = Phylo.read(file, "newick")
+		constraint_tips = []
+		for terminal in constraint.get_terminals():
+			constraint_tips.append(terminal.name)
+		tips_to_drop = [e for e in constraint_tips if not e in \
+			tip_names]
+		for tip in tips_to_drop:
+			constraint.prune(tip)
+		# write out tree
+		with open(".constraint.tre", "w") as file:
+			Phylo.write(constraint, file, "newick")
+		# return arg
+		if constraint.is_bifurcating():
+			return " -r .constraint.tre"
+		else:
+			return " -g .constraint.tre"
+
+	def _outgroup(self, alignment):
+		"""Return arg for outgroup"""
+		spp = [e.id for e in alignment]
+		if 'outgroup' in spp:
+			return 'outgroup'
+		# otherwise find the species(s) with the fewest shared
+		#  taxonomic groups
+		if self.constraint:
+			with open(".constraint.tre", "w") as file:
+				constraint = Phylo.read(file, "newick")
+			distances = [constraint.distance(e) for e in spp]
+			index = [i for i,e in enumerate(distances) if e == \
+			min(distances)]
+			# always choose the first, even if multiple species are
+			#  returned
+			return spp[index[0]]
+		else:
+			return False
+
+	def _findORF(self, alignment, stop):
+		"""Return ORF of alignment based on absence of stop codons"""
+		def reframe(alignment, frame):
+			# return alignment from point where frame starts
+			alignment = alignment[:,frame:]
+			offset = alignment.get_alignment_length() % 3
+			if offset > 0:
+				alignment = alignment[:,:-offset]
+			return alignment
+		if not stop:
+			return alignment
+		# Unpack stop patterns
+		fstop,rstop = stop
+		frame_stops = [0, 0, 0, 0, 0, 0]
+		for record in alignment:
+			# convert to string
+			seq = str(record.seq)
+			# search for stop codons ignoring last 50bps; expect
+			#  a stop codon at the end of a sequence
+			frame_stops[0] += sum([bool(fstop.match(seq[:-50]\
+				[e:e + 3])) for e in range(0, len(seq), 3)])
+			frame_stops[1] += sum([bool(fstop.match(seq[:-50]\
+				[e:e + 3])) for e in range(1, len(seq), 3)])
+			frame_stops[2] += sum([bool(fstop.match(seq[:-50]\
+				[e:e + 3])) for e in range(2,len(seq), 3)])
+			frame_stops[3] += sum([bool(rstop.match(seq[50:]\
+				[e:e + 3])) for e in range(0, len(seq), 3)])
+			frame_stops[4] += sum([bool(rstop.match(seq[50:]\
+				[e:e + 3])) for e in range(1, len(seq), 3)])
+			frame_stops[5] += sum([bool(rstop.match(seq[50:]\
+				[e:e + 3])) for e in range(2, len(seq), 3)])
+		print frame_stops
+		# if more than one frame wo stop codon
+		#  return wo codon partitions
+		if sum([e == 0 for e in frame_stops]) > 1:
+			print 'no frames'
+			return alignment, [alignment.get_alignment_length()]
+		# if no frames wo stop codons, return wo codon partitions
+		if sum([e == 0 for e in frame_stops]) == 0:
+			print 'too many'
+			return alignment, [alignment.get_alignment_length()]
+		# else return frame and reframed alignment
+		if frame_stops[0] == 0 or frame_stops[3] == 0:
+			return reframe(alignment, 0)
+		if frame_stops[1] == 0 or frame_stops[4] == 0:
+			return reframe(alignment, 1)
+		if frame_stops[2] == 0 or frame_stops[5] == 0:
+			return reframe(alignment, 2)
+
+	def _partition(self, alignments, stops):
+		"""Return partition argument, write out partition postitions 
+to .partitions.txt"""
+		if len(alignments) == 1:
+			if not stops[0]:
+				return alignments, None
+		nbp = 1
+		ngene = 1
+		text = ''
+		reframed = []
+		for alignment,stop in zip (alignments, stops):
+			begin = nbp
+			# if stop pattern gets ORF, partition by codon ...
+			alignment = self._findORF(alignment, stop)
+			if alignment:
+				end = alignment.get_alignment_length() + nbp
+				text += 'DNA, gene{0}codon1 = {1}-{2}\\3\n'.\
+					format(ngene, begin, end)
+				text += 'DNA, gene{0}codon2 = {1}-{2}\\3\n'.\
+					format(ngene, begin + 1, end)
+				text += 'DNA, gene{0}codon3 = {1}-{2}\\3\n'.\
+					format(ngene, begin + 2, end)
+			else:
+				# ... else just for the whole gene
+				end = alignment.get_alignment_length() + nbp
+				text += 'DNA, gene{0} = {1}-{2}\n'.\
+					format(ngene, begin, end)
+			nbp = end + 1
+			reframed.append(alignment)
+		with open('.partitions.txt', 'w') as file:
+			file.write(text)
+		return reframed,' -q .partitions.txt'
+
+	def _setUp(self, alignments, stops):
+		"""Set up for RAxML"""
+		# partition
+		alignments,parg = self._partition(alignments, stops)
+		# create supermatrix alignment
+		alignment = self._concatenate(alignments)
+		# create constraint
+		carg = self._constraint(alignment)
+		# get outgroup arg
+		outgroup = self._outgroup(alignment)
+		return alignment,carg,outgroup,parg
+
+	def run(self):
+		"""Generate phylogeny from alignments"""
+		if self.trys > self.maxtrys:
+			raise RAxMLError()
+		# choose random alignment for each gene
+		alignments,stops = self.alignment_store.pull()
+		# set up
+		alignment,carg,outgroup,parg = self._setUp(alignments, stops)
+		# run RAxML
+		phylogeny = RAxML(alignment, constraint = carg,\
+			outgroup = outgroup, partitions = parg)
+		if outgroup:
+			phylogeny.root_with_outgroup(outgroup)
+			phylogeny.prune(outgroup)
+		# if successful return True
+		Phylo.draw_ascii(phylogeny)
+		if self._test(phylogeny):
+			self.phylogenies.append(phylogeny)
+			self.trys = 0
+			return True
+		else:
+			logging.info('........ poor phylogeny, retrying')
+			self.trys += 1
+			return False
+
+def RAxML(alignment, outgroup = None, partitions = None,\
+	constraint = None, timeout = 999999999):
+	"""Adapted pG function: Generate phylogeny from alignment using 
+RAxML (external program)."""
+	input_file = '.phylogeny_in.phylip'
+	output_file = '.phylogeny_out'
+	file_line = ' -s ' + input_file + ' -n ' + output_file
+	options = ' -p ' + str(random.randint(0,10000000)) + ' -T 2'
+	if outgroup:
+		options += ' -o ' + outgroup
+	with open(input_file, "w") as file:
+		AlignIO.write(alignment, file, "phylip-relaxed")
+	# only use GTRCAT for more than 100 taxa (ref RAxML manual)
+	if len(alignment) > 100:
+		dnamodel = ' -m GTRCAT'
+	else:
+		dnamodel = ' -m GTRGAMMA'
+	if partitions:
+		options += partitions
+	if constraint:
+		options += constraint
+	command_line = 'raxml' + file_line + dnamodel + options
+	print command_line
+	pipe = TerminationPipe(command_line)
+	pipe.run()
+	if not pipe.failure:
+		try:
+			with open('RAxML_bestTree.' + output_file, "r") as file:
+				tree = Phylo.read(file, "newick")
+		except IOError:
+			raise RAxMLError()
+		finally:
+			if constraint:
+				os.remove('.constraint.tre')
+			if partitions:
+				os.remove(".partitions.txt")
+			os.remove(input_file)
+			all_files = os.listdir(os.getcwd())
+			for each in all_files:
+				if re.search("(RAxML)", each):
+					os.remove(each)
+				if re.search("\.reduced$", each):
+					os.remove(each)
+		return tree
+	else:
+		raise RuntimeError()
+
+def consensus(distribution_dir, consensus_dir, min_freq = 0.5,\
+	is_rooted = True, trees_splits_encoded = False):
+	"""Generate a rooted consensus tree from a distribution 
+filepath"""
+	# create dendropy list
+	trees = dp.TreeList()
+	trees.read_from_path(distribution_dir, "newick", as_rooted = True)
+	#https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
+	sd = dp.treesplit.SplitDistribution(taxon_set=trees.taxon_set)
+	sd.is_rooted = is_rooted
+	tsum = dp.treesum.TreeSummarizer()
+	tsum.count_splits_on_trees(trees,split_distribution=sd,\
+		trees_splits_encoded=trees_splits_encoded)
+	consensus = tsum.tree_from_splits(sd, min_freq = min_freq)
+	consensus.write_to_path(os.path.join(consensus_dir), "newick")
 
 ## Old functions
 # def renameTips(phylo, names):
@@ -72,241 +447,3 @@ from system_tools import TerminationPipe
 # 			return True
 # 	else:
 # 		return True
-
-def consensus(distribution_dir, consensus_dir, min_freq = 0.5, is_rooted = True,\
-	trees_splits_encoded = False):
-	"""Generate a rooted consensus tree from a distribution filepath"""
-	trees = dp.TreeList()
-	trees.read_from_path(distribution_dir, "newick", as_rooted = True)
-	#https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
-	sd = dp.treesplit.SplitDistribution(taxon_set=trees.taxon_set)
-	sd.is_rooted = is_rooted
-	tsum = dp.treesum.TreeSummarizer()
-	tsum.count_splits_on_trees(trees,split_distribution=sd,\
-		trees_splits_encoded=trees_splits_encoded)
-	consensus = tsum.tree_from_splits(sd, min_freq = min_freq)
-	consensus.write_to_path(os.path.join(consensus_dir), "newick")
-
-def test(phylo, cutoff = 0.1):
-	"""Return true if std(rrt.dist) < cutoff"""
-	names = []
-	for terminal in phylo.get_terminals():
-		names.append(terminal.name)
-	rtt_dists = []
-	for name in names:
-		rtt_dists.append(phylo.distance(name))
-	if np.std(rtt_dists) < cutoff:
-		return True
-	else:
-		return False
-
-def getConstraintArg(constraint):
-	"""Return constaint arg for RAxML"""
-	# first write file
-	with open(".constraint.tre", "w") as file:
-		Phylo.write(constraint, file, "newick")
-	# then return arg based on whether it bifurcates
-	if constraint.is_bifurcating():
-		return " -r .constraint.tre"
-	else:
-		return " -g .constraint.tre"
-
-def genConstraintTree(alignment, taxontree_file):
-	"""Return constraint tree based on taxon tree"""
-	tip_names = []
-	for record in alignment:
-		tip_names.append(record.id)
-	with open(taxontree_file, "r") as file:
-		constraint = Phylo.read(file, "newick")
-	constraint_tips = []
-	for terminal in constraint.get_terminals():
-		constraint_tips.append(terminal.name)
-	tips_to_drop = [e for e in constraint_tips if not e in tip_names]
-	for tip in tips_to_drop:
-		constraint.prune(tip)
-	return constraint
-
-def getStopCodons(allrankids):
-	# Find stop codons given taxonomoic group (mito only)
-	# http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
-	# ensure we're dealing with eukaryotes
-	# if '2759' not in allrankids:
-	# 	return None
-	# vertebrates
-	if '7742' in allrankids:
-		# ignore sea squirts
-		if '30275' not in allrankids:
-			fpattern = '(taa|tag|aga|agg)'
-			rpattern = '(tta|cta|tct|cct)'
-	# ciliates, green algae and diplomonads
-	elif '5878' in allrankids or '3135' in allrankids\
-	or '5738' in allrankids:
-		fpattern = 'tga'
-		rpattern = 'tca'
-	# all other eukaryotes (presumably stop codons
-	#  in other eukaryotes have been discovered yet)
-	else:
-		fpattern = '(taa|tag)'
-		rpattern = '(tta|cta)'
-	fpattern = re.compile(fpattern,\
-		flags = re.IGNORECASE)
-	rpattern = re.compile(rpattern,\
-		flags = re.IGNORECASE)
-	return fpattern,rpattern
-
-def partitionCodons(alignment, allrankids):
-	def partition(alignment, frame):
-		# return alignment from point where frame starts
-		#  this avoids codons of 1 or 2 bps.
-		alignment = alignment[:,frame:]
-		offset = alignment.get_alignment_length() % 3
-		if offset > 0:
-			alignment = alignment[:,:-offset]
-		else:
-			alignment = alignment[:,frame:]
-		return alignment,[3 for e in \
-		range(alignment.get_alignment_length()/3)]
-	fstop,rstop = getStopCodons(allrankids)
-	frame_stops = [0, 0, 0, 0, 0, 0]
-	for record in alignment:
-		# convert to string
-		seq = str(record.seq)
-		# search for stop codons ignoring last 10bps; expect
-		#  a stop codon at the end of a sequence
-		frame_stops[0] += sum([bool(fstop.match(seq[:-50][e:e + 3])) \
-			for e in range(0, len(seq), 3)])
-		frame_stops[1] += sum([bool(fstop.match(seq[:-50][e:e + 3])) \
-			for e in range(1, len(seq), 3)])
-		frame_stops[2] += sum([bool(fstop.match(seq[:-50][e:e + 3])) \
-			for e in range(2,len(seq), 3)])
-		frame_stops[3] += sum([bool(rstop.match(seq[50:][e:e + 3])) \
-			for e in range(0, len(seq), 3)])
-		frame_stops[4] += sum([bool(rstop.match(seq[50:][e:e + 3])) \
-			for e in range(1, len(seq), 3)])
-		frame_stops[5] += sum([bool(rstop.match(seq[50:][e:e + 3])) \
-			for e in range(2, len(seq), 3)])
-	print frame_stops
-	# if more than one frame wo stop codon, return wo codon partitions
-	if sum([e == 0 for e in frame_stops]) > 1:
-		print 'no frames'
-		return alignment, [alignment.get_alignment_length()]
-	# if no frames wo stop codons, return wo codon partitions
-	if sum([e == 0 for e in frame_stops]) == 0:
-		print 'too many'
-		return alignment, [alignment.get_alignment_length()]
-	if frame_stops[0] == 0 or frame_stops[3] == 0:
-		return partition(alignment, 0)
-	if frame_stops[1] == 0 or frame_stops[4] == 0:
-		return partition(alignment, 1)
-	if frame_stops[2] == 0 or frame_stops[5] == 0:
-		return partition(alignment, 2)
-
-def getPartitions(alignments, genes, genedict):
-	lengths = []
-	returning = []
-	for alignment,gene in zip(alignments, genes):
-		if genedict[gene]['partition'] == 'True':
-			a,ls = partitionCodons(alignment)
-			print ls
-			lengths.extend(ls)
-			returning.append(a)
-		else:
-			lengths.extend(alignment.get_alignment_length())
-			returning.append(alignment)
-	partitions = [0]
-	partitions.extend(list(np.cumsum(lengths)))
-	if len(partitions) <= 2:
-		partitions = False
-	if len(returning) == 1:
-		returning = returning[0]
-	print partitions
-	return returning,partitions
-
-def concatenateAlignments(alignments, genes, genedict):
-	"""Take list of alignments for multiple genes.
-Return single alignment with partitions."""
-	if len(alignments) == 1:
-		return getPartitions(alignments, genes, genedict)
-	# Sort IDs
-	alignment_ids = []
-	for gene in alignments:
-		gene_ids = []
-		for rec in gene:
-			gene_ids.append(rec.id)
-		alignment_ids.append(gene_ids)
-	all_ids = []
-	[all_ids.extend(e) for e in alignment_ids]
-	all_ids = list(set(all_ids))
-	# Get Partitions
-	alignments,partitions = getPartitions(alignments, genes, genedict)
-	# Concatenate
-	alignment = MultipleSeqAlignment([])
-	for txid in all_ids:
-		sequence = ""
-		for i,gene in enumerate(alignments):
-			if txid in alignment_ids[i]:
-				sequence += gene[alignment_ids[i].index(txid)].seq
-			else:
-				sequence += "-" * gene.get_alignment_length()
-		sequence = SeqRecord(sequence, id = txid, description =\
-			"multigene sequence")
-		alignment.append(sequence)
-	return alignment,partitions
-
-def getOutgroup(alignment, constraint):
-	""""""
-	spp = [e.id for e in alignment]
-	if 'outgroup' in spp:
-		return 'outgroup'
-	# otherwise find the species(s) with the fewest shared taxonomic
-	#  groups
-	distances = [constraint.distance(e) for e in spp]
-	index = [i for i,e in enumerate(distances) if e == min(distances)]
-	# always choose the first, even if multiple species are.
-	return spp[index[0]]
-
-def RAxML(alignment, outgroup=None, partitions=None, constraint=None,\
-	timeout=999999999):
-	"""Adapted pG function: Generate phylogeny from alignment using 
-RAxML (external program)."""
-	input_file = '.phylogeny_in.phylip'
-	output_file = '.phylogeny_out'
-	file_line = ' -s ' + input_file + ' -n ' + output_file
-	options = ' -p ' + str(random.randint(0,10000000)) + ' -T 2'
-	if outgroup:
-		options += ' -o ' + outgroup
-	with open(input_file, "w") as file:
-		AlignIO.write(alignment, file, "phylip-relaxed")
-	if len(alignment) > 100:
-		dnamodel = ' -m GTRCAT'
-	else:
-		dnamodel = ' -m GTRGAMMA'
-	if partitions:
-		with open(".partitions.txt", 'w') as f:
-			for i in range(0, len(partitions)-1):
-				f.write("DNA, position" + str(partitions[i]+1) + " = "\
-				 + str(partitions[i]+1) + "-" + str(partitions[i+1]) + "\n")
-		options += " -q " + ".partitions.txt"
-	if constraint:
-		options += constraint
-	command_line = 'raxml' + file_line + dnamodel + options
-	print command_line
-	pipe = TerminationPipe(command_line)
-	pipe.run()
-	if not pipe.failure:
-		with open('RAxML_bestTree.' + output_file, "r") as file:
-			tree = Phylo.read(file, "newick")	
-		if constraint:
-			os.remove('.constraint.tre')
-		if partitions:
-			os.remove(".partitions.txt")
-		os.remove(input_file)
-		all_files = os.listdir(os.getcwd())
-		for each in all_files:
-			if re.search("(RAxML)", each):
-				os.remove(each)
-			if re.search("\.reduced$", each):
-				os.remove(each)
-		return tree
-	else:
-		raise RuntimeError("Either phylogeny building program failed, or ran out of time")
