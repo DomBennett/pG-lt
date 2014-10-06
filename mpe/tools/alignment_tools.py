@@ -51,12 +51,17 @@ minoverlap):
 			if len(seqs) > 0:
 				self[name] = [seqs, np.min(lengths)]
 
-	def _add(self, sequences = None):
+	def _add(self, sequences = None, limit = None):
 		"""Return a random sequence for alignment"""
+		# if there are sequences, use blast alignment
 		if self.sequences_in_alignment:
-			# if there are sequences, use blast alignment
-			rand_ints = range(len(self.sppool))
-			random.shuffle(rand_ints)
+			# if add is limited to certain species, use only its i
+			if limit and limit in self.sppool:
+				rand_ints = [ei for ei,e in enumerate(self.sppool) \
+					if e == limit]
+			else:
+				rand_ints = range(len(self.sppool))
+				random.shuffle(rand_ints)
 			for i in rand_ints:
 				sp = self.sppool[i]
 				next_seqs = [e[0] for e in self[sp][0]]
@@ -138,12 +143,15 @@ species"""
 		else:
 			return None
 			
-	def next(self, alignment):
-		"""Set nfails to 0, add additional random species"""
+	def next(self, alignment, limit = None):
+		"""Set nfails to 0, add additional random or limited species"""
 		for i in range(len(self.sequences_in_alignment)):
 			self.sequences_in_alignment[i][1] = 0
 		sequences = [e for e in alignment]
-		return self._add(sequences)
+		if limit:
+			return self._add(sequences = sequences, limit = limit)
+		else:
+			return self._add(sequences = sequences)
 		
 	def _check(self):
 		"""Check nfails, drop sequences and species"""
@@ -201,9 +209,12 @@ class Aligner(object):
 		# add a *10 buffer
 		timeout = (seconds/size)*10
 		if align:
-			self.talign = timeout
+			# only update if new timeout is bigger
+			if self.talign < timeout:
+				self.talign = timeout
 		else:
-			self.tadd = timeout
+			if self.tadd < timeout:
+				self.tadd = timeout
 
 	def _getTimeout(self, sequences, sequence = None):
 		"""Return seconds it should take for mafft to run"""
@@ -306,7 +317,7 @@ if successful"""
 			self.store.append(alignment)
 		return success,trys
 
-	def _add(self, trys):
+	def _add(self, trys, limit = None):
 		"""Add sequence to alignment, return True if successful"""
 		alignment = self.store[-1]
 		self.minlen = min([self.seqstore[e][1] for e in self.\
@@ -314,10 +325,11 @@ if successful"""
 		if len(self.seqstore.sppool) == 0:
 			return True,trys
 		else:
-			sequence = self.seqstore.next(alignment)
+			sequence = self.seqstore.next(alignment, limit = limit)
 			if not sequence:
 				# if no sequence is returned, nothing more can be
 				#  added
+				logging.debug('No new sequence added')
 				return True,trys
 		try:
 			new_alignment,seconds = timeit(func = add, alignment = \
@@ -338,8 +350,8 @@ if successful"""
 			if not sequence:
 				# here a species has been dropped and now all
 				#  species are present
-				success = True
-		return success,trys
+				return True,trys
+		return False,trys
 
 	def run(self):
 		"""Incrementally build an alignment by adding sequences to a \
@@ -366,9 +378,12 @@ seed alignment"""
 		logging.info("........ add phase : [{0}] species".format(len(\
 			self.store[-1])))
 		trys = 0
-		success = False
-		while not success:
-			success,trys = self._add(trys)
+		finished = False
+		# if outgroup, force it for the first add after seed
+		if self.outgroup:
+			finished,trys = self._add(trys, limit = 'outgroup')
+		while not finished:
+			finished,trys = self._add(trys)
 			if trys > self.maxtrys:
 				logging.debug("............ maxtrys hit")
 				return self._return()
@@ -417,6 +432,7 @@ program)"""
 			os.remove(output_file)
 	else:
 		# if pipe.failure, runtime error, return non-alignment
+		logging.debug('.... align timeout ....')
 		return genNonAlignment(len(sequences), len(sequences[0]))
 	return res
 
@@ -445,6 +461,7 @@ program)"""
 		else:
 			os.remove(output_file)
 	else:
+		logging.debug('.... add timeout ....')
 		return genNonAlignment(len(alignment) + 1,\
 			len(alignment.get_alignment_length()))
 	return res
@@ -458,7 +475,7 @@ with subject given parameters."""
 		# options: http://www.ncbi.nlm.nih.gov/books/NBK1763/
 		cline = NcbiblastnCommandline(query = ".query.fasta",\
 			subject = ".subj.fasta", outfmt = 5, task = 'blastn',\
-			word_size = 11)
+			word_size = 8)
 		output = cline()[0]
 	except ApplicationError:# as error_msg:
 		#logging.debug(error_msg)
