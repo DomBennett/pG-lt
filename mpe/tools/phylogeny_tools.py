@@ -131,7 +131,6 @@ root to tip distances"""
 		rtt_dists = []
 		for name in names:
 			rtt_dists.append(phylogeny.distance(name))
-		print rtt_dists
 		_,pvalue = chisquare(rtt_dists)
 		return pvalue > self.rttpvalue
 
@@ -315,7 +314,6 @@ to .partitions.txt"""
 			phylogeny.root_with_outgroup(outgroup)
 			phylogeny.prune(outgroup)
 		# if successful return True
-		Phylo.draw_ascii(phylogeny)
 		if self._test(phylogeny):
 			self.phylogenies.append(phylogeny)
 			self.trys = 0
