@@ -37,8 +37,8 @@ def run(wd = os.getcwd()):
 	minoverlap = 300
 	maxtrys = 100
 	minnseq = 1
-	minnspp = 'all'
-	target = 5
+	minnspp = 1
+	target = 'all'
 	maxpn = 0.1
 	seqcounter = basecounter = 0
 
