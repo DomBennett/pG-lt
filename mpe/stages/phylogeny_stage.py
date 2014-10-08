@@ -56,9 +56,9 @@ def run(wd = os.getcwd()):
 
 	## Generate consensus
 	logging.info('Generating consensus ....')
-	ptools.consensus(outfile, os.path.join(phylogeny_dir, \
-		'consensus.tre'), min_freq = 0.5, is_rooted = True,\
-	trees_splits_encoded = False)
+	ptools.consensus(generator.phylogenies, phylogeny_dir, \
+		min_freq = 0.5, is_rooted = True, \
+		trees_splits_encoded = False)
 
 	## Finish
 	logging.info('Stage finished. Generated [{0}] phylogenies.'.\

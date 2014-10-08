@@ -7,6 +7,7 @@ mpe phylogeny tools
 
 ## Packages
 import os,re,random,logging
+from collections import Counter
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
@@ -242,10 +243,10 @@ multiple genes."""
 		# if more than one frame wo stop codon
 		#  return wo codon partitions
 		if sum([e == 0 for e in frame_stops]) > 1:
-			return alignment, [alignment.get_alignment_length()]
+			return alignment
 		# if no frames wo stop codons, return wo codon partitions
 		if sum([e == 0 for e in frame_stops]) == 0:
-			return alignment, [alignment.get_alignment_length()]
+			return alignment
 		# else return frame and reframed alignment
 		if frame_stops[0] == 0 or frame_stops[3] == 0:
 			return reframe(alignment, 0)
@@ -369,13 +370,31 @@ RAxML (external program)."""
 	else:
 		raise RuntimeError()
 
-def consensus(distribution_dir, consensus_dir, min_freq = 0.5,\
+def consensus(phylogenies, outdir, min_freq = 0.5,\
 	is_rooted = True, trees_splits_encoded = False):
-	"""Generate a rooted consensus tree from a distribution 
-filepath"""
+	"""Generate a rooted consensus tree"""
+	# first ensure that all trees in the distribution have same number
+	# of taxa, otherwise, make it so by dropping taxa not present in
+	# all trees
+	all_tip_names = []
+	for phylogeny in phylogenies:
+		terminals = phylogeny.get_terminals()
+		all_tip_names.append([e.name for e in terminals])
+	counted = Counter(sum(all_tip_names, []))
+	print counted
+	to_drop = [e for e in counted.keys() if counted[e] < \
+		len(phylogenies)]
+	for tip_names,phylogeny in zip(all_tip_names,phylogenies):
+		dropping = [e for e in tip_names if e in to_drop]
+		for tip_name in dropping:
+			_ = phylogeny.prune(tip_name)
+	with open('.for_consensus.tre', "w") as file:
+		counter = Phylo.write(phylogenies, file, 'newick')
 	# create dendropy list
 	trees = dp.TreeList()
-	trees.read_from_path(distribution_dir, "newick", as_rooted = True)
+	trees.read_from_path('.for_consensus.tre', "newick",\
+		as_rooted = True)
+	os.remove('.for_consensus.tre')
 	#https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
 	sd = dp.treesplit.SplitDistribution(taxon_set=trees.taxon_set)
 	sd.is_rooted = is_rooted
@@ -383,9 +402,13 @@ filepath"""
 	tsum.count_splits_on_trees(trees,split_distribution=sd,\
 		trees_splits_encoded=trees_splits_encoded)
 	consensus = tsum.tree_from_splits(sd, min_freq = min_freq)
-	consensus.write_to_path(os.path.join(consensus_dir), "newick")
+	consensus.write_to_path(os.path.join(outdir, 'consensus.tre'),\
+		"newick")
 
 ## Old functions
+# with open('4_phylogeny/distribution.tre', "r") as file:
+# 	phylogenies = [e for e in Phylo.parse(file, "newick")]
+
 # def renameTips(phylo, names):
 # 	for each in phylo.get_terminals():
 # 		try:
