@@ -57,15 +57,18 @@ def run(wd = os.getcwd()):
 		namesdict[key]['alignments'] = 0
 	genes = sorted(os.listdir(download_dir))
 	genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
+	genekeys = {}
+	for gene in genes:
+		genekeys[gene] = re.sub('_cluster[0-9]+', '', gene)
 	logging.info('Reading in sequences ....')
 	genestore = []
 	for gene in genes:
 		gene_dir = os.path.join(download_dir, gene)
 		seq_files = os.listdir(gene_dir)
 		seqstore = atools.SeqStore(gene_dir, seq_files, minfails =\
-			int(genedict[gene]["minfails"]), mingaps = \
-			float(genedict[gene]["mingaps"]), minoverlap =\
-			int(genedict[gene]["minoverlap"]))
+			int(genedict[genekeys[gene]]["minfails"]), mingaps = \
+			float(genedict[genekeys[gene]]["mingaps"]), minoverlap =\
+			int(genedict[genekeys[gene]]["minoverlap"]))
 		genestore.append((gene, seqstore))
 
 	## Run alignments
@@ -80,13 +83,13 @@ def run(wd = os.getcwd()):
 			format(gene, len(seqstore)))
 		# set up aligner obj
 		aligner = atools.Aligner(seqstore, mingaps = \
-			float(genedict[gene]["mingaps"]), minoverlap = \
-			int(genedict[gene]["minoverlap"]), minseedsize = \
-			int(genedict[gene]["minseedsize"]), maxseedsize = \
-			int(genedict[gene]["maxseedsize"]), maxtrys = \
-			int(genedict[gene]["maxtrys"]), maxseedtrys = \
-			int(genedict[gene]["maxseedtrys"]), gene_type = \
-			genedict[gene]['type'])
+			float(genedict[genekeys[gene]]["mingaps"]), minoverlap = \
+			int(genedict[genekeys[gene]]["minoverlap"]), minseedsize = \
+			int(genedict[genekeys[gene]]["minseedsize"]), maxseedsize = \
+			int(genedict[genekeys[gene]]["maxseedsize"]), maxtrys = \
+			int(genedict[genekeys[gene]]["maxtrys"]), maxseedtrys = \
+			int(genedict[genekeys[gene]]["maxseedtrys"]), gene_type = \
+			genedict[genekeys[gene]]['type'])
 		# run for naligns
 		each_counter = 0
 		alignment = None

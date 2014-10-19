@@ -58,12 +58,12 @@ class AlignmentStore(dict):
     """Alignment holding class"""
     retriever = StopCodonRetriever()
 
-    def __init__(self, genes, genedict, allrankids, indir):
+    def __init__(self, genes, genedict, genekeys, allrankids, indir):
         # Read in alignments for each gene
         for gene in genes:
             self[gene] = {'alignments':[],'files':[],'counters':[]}
             self[gene]['stop'] = self.retriever.pattern(allrankids,\
-                genedict[gene]['partition'].lower())
+                genedict[genekeys[gene]]['partition'].lower())
             gene_dir = os.path.join(indir, gene)
             alignment_files = os.listdir(gene_dir)
             alignment_files = [e for e in alignment_files if not\

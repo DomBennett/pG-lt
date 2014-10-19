@@ -35,9 +35,12 @@ def run(wd = os.getcwd()):
 	## Read in alignments
 	genes = sorted(os.listdir(alignment_dir))
 	genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
+	genekeys = {}
+	for gene in genes:
+		genekeys[gene] = re.sub('_cluster[0-9]+', '', gene)
 	logging.info("Reading in alignments ....")
 	alignment_store = ptools.AlignmentStore(genes = genes, \
-		genedict = genedict, allrankids = allrankids,\
+		genedict = genedict, genekeys = genekeys, allrankids = allrankids,\
 		indir = alignment_dir)
 
 	## Generate distribution

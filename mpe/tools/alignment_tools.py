@@ -102,7 +102,7 @@ sequences_in_alignment given set parameters using NCBI's BLAST"""
 			# blast prospective next sequence against all sequences
 			#  in alignment
 			bools,positions = blast(query[i], sequences_in_alignment,\
-				self.minoverlap, self.mingaps)
+				self.minoverlap)
 			# if more than prop overlap ...
 			overlap = (float(sum(bools))/len(sequences_in_alignment))\
 			> self.blast_prop
@@ -466,7 +466,7 @@ program)"""
 			len(alignment.get_alignment_length()))
 	return res
 
-def blast(query, subj, minoverlap, mingaps):
+def blast(query, subj, minoverlap):
 	"""Return bool and positions of query sequences that overlapped
 with subject given parameters."""
 	SeqIO.write(query, ".query.fasta", "fasta")
