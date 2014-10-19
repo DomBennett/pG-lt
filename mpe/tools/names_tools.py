@@ -89,7 +89,7 @@ def genTaxTree(resolver, namesdict, draw = False):
 		Phylo.draw_ascii(tree)
 	return tree, shared_lineage
 
-def genNamesDict(resolver):
+def genNamesDict(resolver, parentid = None):
 	"""Return a dictionary containtaining all names and metadata"""
 	q_names = resolver.retrieve('query_name')
 	q_names = [re.sub("\s", "_", e) for e in q_names]
@@ -141,9 +141,7 @@ def genNamesDict(resolver):
 					"rank" : nul_ranks[i]}
 			i += 1
 	# if no parent id given, work one out
-	if resolver.taxon_id:
-		parentid = resolver.taxon_id
-	else:
+	if not parentid:
 		shared_bool = []
 		for each in lineages[0]:
 			shared_bool.append(all([each in e for e in lineages]))

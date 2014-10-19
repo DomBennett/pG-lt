@@ -38,17 +38,16 @@ def run(wd = os.getcwd()):
 	logging.info('Searching for taxids ....')
 	logging.info('------TaxonNamesResolver:Start------')
 	try:
-		parentid = int(paradict["parentid"])
+		parentid = paradict["parentid"]
 	except:
 		parentid = False
 	if len(terms) < minspecies:
 		raise TooFewSpeciesError
-	resolver = Resolver(terms = terms, datasource = "NCBI",\
-		taxon_id = parentid) ## TODO: make tnr accept strings
+	resolver = Resolver(terms = terms, datasource = "NCBI", taxon_id = parentid)
 	resolver.main()
 	logging.info('------TaxonNamesResolver:End------')
 	logging.info("Generating names dictionary ....")
-	namesdict,allrankids,parentid = ntools.genNamesDict(resolver)
+	namesdict,allrankids,parentid = ntools.genNamesDict(resolver, parentid)
 	logging.info("Finding an outgroup ....")
 	namesdict = ntools.getOutgroup(namesdict, parentid, outgroupid)
 	# add outgroup ids to allrankids
