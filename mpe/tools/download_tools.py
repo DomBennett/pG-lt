@@ -15,14 +15,13 @@ from Bio.SeqFeature import SeqFeature
 class Downloader(object):
 	"""Download sequences given taxids and gene_names"""
 	def __init__(self, gene_names, nseqs, thoroughness, maxpn,\
-		seedsize, maxtrys, mingaps, minoverlap, maxlen, minlen):
+		seedsize, maxtrys, minoverlap, maxlen, minlen):
 		self.gene_names = gene_names
 		self.nseqs = nseqs
 		self.max_thoroughness = thoroughness
 		self.maxpn = maxpn
 		self.seedsize = seedsize
 		self.maxtrys = maxtrys
-		self.mingaps = mingaps
 		self.minoverlap = minoverlap
 		self.maxlen = maxlen
 		self.minlen = minlen
@@ -104,8 +103,7 @@ fewer matches than target nseqs"""
 		query = [sequences[randn]]
 		subj = sequences
 		# blast rand seq against all other seqs
-		blast_bool,_ = atools.blast(query, subj, self.minoverlap,\
-			self.mingaps)
+		blast_bool,_ = atools.blast(query, subj, self.minoverlap)
 		# filtered are all sequences that are true
 		filtered = [sequences[i] for i,e in enumerate(blast_bool) if\
 		e]
@@ -270,7 +268,7 @@ matches in GenBank"""
 				downloader = Downloader(gene_names =\
 				genedict[gene]["names"], nseqs = minnseq + 1,\
 				thoroughness = thoroughness, maxpn = 0,\
-				seedsize = 0, maxtrys = 0, mingaps = 0,\
+				seedsize = 0, maxtrys = 0,\
 				minoverlap = 0, maxlen = 0, minlen = 0)
 				res = downloader._search(tipids)
 				# if gene is deep or both, then make sure it has
@@ -306,3 +304,28 @@ matches in GenBank"""
 			gene,searchlist,types = nextBest(searchlist,types)
 			genes.append(gene)
 	return genes
+
+def getClusters(gene_sequences, minoverlap):
+	def findClusters(gene_sequences):
+		# blast all against 1
+		sequences = [e[1] for e in gene_sequences]
+		bools,_ = atools.blast(sequences, sequences[0], minoverlap)
+		# how many species had sequences in the cluster?
+		cluster_sequences = [gene_sequences[i] for i,e in enumerate(bools) if e]
+		pspp = float(len(set([e[0] for e in cluster_sequences])))/nspp
+		# if more than 50% ...
+		if pspp < 0.5:
+			return None,None
+		else:
+			# return cluster, remove those sequences from gene_sequences
+			gene_sequences = [gene_sequences[i] for i,e in enumerate(bools) if not e]
+			return cluster_sequences,gene_sequences
+	res = []
+	nspp = len(set([e[0] for e in gene_sequences]))
+	while True:
+		cluster_sequences,gene_sequences = findClusters(gene_sequences)
+		if cluster_sequences:
+			res.append(cluster_sequences)
+		else:
+			break
+	return res
