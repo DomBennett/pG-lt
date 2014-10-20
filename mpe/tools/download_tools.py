@@ -64,7 +64,7 @@ genome[TI] NOT unverified[TI]".format(taxids_term, gene_term))
 			search_term = ("{0} AND ({1}) NOT predicted[TI] NOT \
 shotgun[TI] NOT scaffold[TI] NOT assembly[TI] NOT unverified[TI]".\
 format(taxids_term, gene_term))
-		logging.debug(search_term)
+		#logging.debug(search_term)
 		return search_term
 
 	def _search(self, taxids):
@@ -309,23 +309,26 @@ def getClusters(gene_sequences, minoverlap):
 	def findClusters(gene_sequences):
 		# blast all against 1
 		sequences = [e[1] for e in gene_sequences]
-		bools,_ = atools.blast(sequences, sequences[0], minoverlap)
+		randi = random.randint(0, len(sequences)-1)
+		bools,_ = atools.blast(sequences, sequences[randi], minoverlap)
 		# how many species had sequences in the cluster?
 		cluster_sequences = [gene_sequences[i] for i,e in enumerate(bools) if e]
 		pspp = float(len(set([e[0] for e in cluster_sequences])))/nspp
 		# if more than 50% ...
-		if pspp < 0.5:
-			return None,None
-		else:
+		if pspp > 0.5:
 			# return cluster, remove those sequences from gene_sequences
 			gene_sequences = [gene_sequences[i] for i,e in enumerate(bools) if not e]
 			return cluster_sequences,gene_sequences
+		return None, gene_sequences
 	res = []
 	nspp = len(set([e[0] for e in gene_sequences]))
-	while True:
+	# try max 5 times to get a cluster from randomly selecting a seq
+	for i in range(5):
 		cluster_sequences,gene_sequences = findClusters(gene_sequences)
 		if cluster_sequences:
 			res.append(cluster_sequences)
-		else:
+		# if gene sequences has not enough seqs left, break
+		pspp = float(len(set([e[0] for e in gene_sequences])))/nspp
+		if pspp < 0.5:
 			break
 	return res
