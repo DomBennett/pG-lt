@@ -178,25 +178,22 @@ species"""
 class Aligner(object):
 	"""Build alignments from seqstore"""
 	def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
-		maxseedsize, maxtrys, maxseedtrys, gene_type):
+		maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup):
 		self.seqstore = seqstore
 		self.mingaps = mingaps
 		self.minoverlap = minoverlap
 		self.minseedsize = minseedsize
-		self.maxtrys = maxtrys # trys for alignment attempts
+		self.maxtrys = 2 # trys for alignment attempts
 		self.buffer = maxseedtrys # trys for a seedsize
 		self.buffer_counter = 0 # seedsize buffer counter
-		if len(seqstore) > maxseedsize:
-			self.seedsize = maxseedsize
-		else:
-			self.seedsize = len(seqstore)
+		self.seedsize = len(seqstore)
 		self.timeout = 99999999
 		self.talign = False
 		self.tadd = False
 		self.silent = False
 		self.total_trys = 0 # counter for total number of trys
 		self.type = gene_type
-		self.outgroup = gene_type != 'shallow'
+		self.outgroup = outgroup
 
 	def _calcTimeout(self, seconds, alignment, align = True):
 		"""Calculate the timeout"""
@@ -304,7 +301,6 @@ if successful"""
 				success = False
 			else:
 				success = self._check(alignment)
-				logging.debug(alignment.format('fasta'))
 		else:
 			success = False
 		# add to trys if unsuccessful or sequences are fewer than
@@ -313,7 +309,6 @@ if successful"""
 			self.seedsize)
 		if success:
 			self._calcTimeout(seconds, alignment)
-			logging.debug('Seed timeout ' + str(self.talign))
 			self.store.append(alignment)
 		return success,trys
 
@@ -325,7 +320,9 @@ if successful"""
 		if len(self.seqstore.sppool) == 0:
 			return True,trys
 		else:
+			print 'before next'
 			sequence = self.seqstore.next(alignment, limit = limit)
+			print 'after next'
 			if not sequence:
 				# if no sequence is returned, nothing more can be
 				#  added
@@ -342,7 +339,6 @@ if successful"""
 			success = self._check(new_alignment)
 		if success:
 			self._calcTimeout(seconds, alignment, align = False)
-			logging.debug('Add timeout ' + str(self.tadd))
 			self.store.append(new_alignment)
 		else:
 			trys += 1

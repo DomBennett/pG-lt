@@ -89,7 +89,8 @@ def run(wd = os.getcwd()):
 			int(genedict[genekeys[gene]]["maxseedsize"]), maxtrys = \
 			int(genedict[genekeys[gene]]["maxtrys"]), maxseedtrys = \
 			int(genedict[genekeys[gene]]["maxseedtrys"]), gene_type = \
-			genedict[genekeys[gene]]['type'])
+			genedict[genekeys[gene]]['type'], outgroup = \
+			'outgroup' in seqstore.keys())
 		# run for naligns
 		each_counter = 0
 		alignment = None
