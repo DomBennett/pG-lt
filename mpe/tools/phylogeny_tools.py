@@ -315,7 +315,7 @@ to .partitions.txt"""
             phylogeny.root_with_outgroup(outgroup)
             phylogeny.prune(outgroup)
         # if successful return True
-        Phylo.draw_ascii(phylogeny)
+        #Phylo.draw_ascii(phylogeny)
         if self._test(phylogeny):
             self.phylogenies.append(phylogeny)
             self.trys = 0
