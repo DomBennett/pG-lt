@@ -23,6 +23,7 @@ from system_tools import TooFewSpeciesError
 from system_tools import MafftError
 from system_tools import TrysError
 from system_tools import timeit
+from system_tools import getThreads
 
 ## Objects
 class SeqStore(dict):
@@ -411,10 +412,12 @@ def align(command, sequences, timeout):
 program)"""
 	input_file = ".sequences_in.fasta"
 	output_file = ".alignment_out.fasta"
-	command_line = '{0} {1} > {2}'.format(command, input_file, \
-		output_file)
+	threads = getThreads()
+	command_line = '{0} --thread {1} {2} > {3}'.format(command, threads,\
+		input_file, output_file)
 	with open(input_file, "w") as file:
 		SeqIO.write(sequences, file, "fasta")
+	logging.debug(command_line)
 	pipe = TerminationPipe(command_line, timeout= timeout)
 	pipe.run()
 	os.remove(input_file)
@@ -438,8 +441,9 @@ program)"""
 	alignment_file = ".alignment_in.fasta"
 	sequence_file = ".sequence_in.fasta"
 	output_file = "alignment_out.fasta" + '.fasta'
-	command_line = 'mafft --auto --add {0} {1} > {2}'.format(\
-		sequence_file, alignment_file, output_file)
+	threads = getThreads()
+	command_line = 'mafft --auto --thread {0} --add {1} {2} > {3}'.format(\
+		threads, sequence_file, alignment_file, output_file)
 	with open(sequence_file, "w") as file:
 		SeqIO.write(sequence, file, "fasta")
 	with open(alignment_file, "w") as file:
@@ -471,7 +475,7 @@ with subject given parameters."""
 		# options: http://www.ncbi.nlm.nih.gov/books/NBK1763/
 		cline = NcbiblastnCommandline(query = ".query.fasta",\
 			subject = ".subj.fasta", outfmt = 5, task = 'blastn',\
-			word_size = 8)
+			word_size = 8, num_threads = getThreads())
 		output = cline()[0]
 	except ApplicationError:# as error_msg:
 		#logging.debug(error_msg)

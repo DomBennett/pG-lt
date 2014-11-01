@@ -284,6 +284,23 @@ def timeit(func, **kwargs):
 	t1 = default_timer()
 	return output, t1-t0
 
+def getThreads():
+	if sys.platform == 'darwin':
+		cmd = "system_profiler SPHardwareDataType | grep Cores | awk '{print $5}'"
+	elif sys.platform == 'linux2':
+		cmd = "cat /proc/cpuinfo | grep processor | tail -1 | awk '{print $3}'"
+	else:
+		# TODO: work out n cores for windows
+		# TODO: add a threads parameter to parameters.csv
+		return 1
+	s = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell = True)
+	nthreads = s.stdout.readline()
+	try:
+		nthreads = int(nthreads)
+	except:
+		nthreads = 1
+	return nthreads
+
 def clean():
 	"""Remove all files and folders created by mpe"""
 	## Remove log.txt in parent folder

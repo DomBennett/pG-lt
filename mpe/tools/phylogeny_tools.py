@@ -19,7 +19,7 @@ import dendropy as dp
 from scipy.stats import chisquare
 from system_tools import TerminationPipe
 from system_tools import RAxMLError
-
+from system_tools import getThreads
 
 # Classes
 class StopCodonRetriever(object):
@@ -332,7 +332,8 @@ RAxML (external program)."""
     input_file = '.phylogeny_in.phylip'
     output_file = '.phylogeny_out'
     file_line = ' -s ' + input_file + ' -n ' + output_file
-    options = ' -p ' + str(random.randint(0,10000000)) + ' -T 2'
+    threads = ' -T ' + str(getThreads())
+    options = ' -p ' + str(random.randint(0,10000000)) + threads
     if outgroup:
         options += ' -o ' + outgroup
     with open(input_file, "w") as file:
@@ -347,6 +348,7 @@ RAxML (external program)."""
     if constraint:
         options += constraint
     command_line = 'raxml' + file_line + dnamodel + options
+    logging.debug(command_line)
     pipe = TerminationPipe(command_line)
     pipe.run()
     if not pipe.failure:
