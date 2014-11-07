@@ -61,7 +61,7 @@ PACKAGE_DIRS = [p.replace(".", os.path.sep) for p in PACKAGES]
 
 ## Setup
 setup(
-	name = "mpe",
+	name = "pglt",
 	version = "1.0.0",
 	author = "Dominic John Bennett",
 	author_email = "dominic.john.bennett@gmail.com",
@@ -71,12 +71,12 @@ setup(
 	url = "https://github.com/DomBennett/MassPhylogenyEstimation",
 	packages = PACKAGES,
 	package_dir = dict(zip (PACKAGES, PACKAGE_DIRS)),
-	package_data = {'mpe':['parameters.csv','gene_parameters.csv']},
-	scripts = ['run_mpe.py'],
+	package_data = {'pglt':['parameters.csv','gene_parameters.csv']},
+	scripts = ['run_pglt.py'],
 	test_suite = 'tests',
 	long_description = read('README.md'),
 	classifiers=[
-		"Development Status :: 1 - Planning",
+		"Development Status :: 4 - Beta",
 		"Topic :: Scientific/Engineering :: Bio-Informatics",
 		"Programming Language :: Python :: 2.7",
 		"License :: OSI Approved :: GNU General Public License v2 (GPLv2)",

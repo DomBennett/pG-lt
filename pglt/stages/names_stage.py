@@ -2,13 +2,13 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-mpe Stage 1: Names resolution
+pglt Stage 1: Names resolution
 """
 
 ## Packages
 import os,pickle,shutil,logging
-import mpe.tools.names_tools as ntools
-from mpe.tools.system_tools import TooFewSpeciesError
+import pglt.tools.names_tools as ntools
+from pglt.tools.system_tools import TooFewSpeciesError
 from taxon_names_resolver import Resolver
 
 def run(wd = os.getcwd()):

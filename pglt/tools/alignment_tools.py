@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-mpe alignment tools
+pglt alignment tools
 """
 
 ## Packages
@@ -22,8 +22,8 @@ from system_tools import OutgroupError
 from system_tools import TooFewSpeciesError
 from system_tools import MafftError
 from system_tools import TrysError
-from system_tools import timeit
-from system_tools import getThreads
+from special_tools import timeit
+from special_tools import getThreads
 
 ## Objects
 class SeqStore(dict):
@@ -321,9 +321,7 @@ if successful"""
 		if len(self.seqstore.sppool) == 0:
 			return True,trys
 		else:
-			print 'before next'
 			sequence = self.seqstore.next(alignment, limit = limit)
-			print 'after next'
 			if not sequence:
 				# if no sequence is returned, nothing more can be
 				#  added
@@ -404,7 +402,7 @@ def version(sequences, gene_type):
 def genNonAlignment(nseqs, alen):
 	"""Return non-alignment, for when align or add timeout"""
 	seqs = [SeqRecord(Seq('-' * alen), id = 'Seq{0}'.format(e),\
-		description = 'non-sequence') for e in range(nseqs)]
+		description = 'timeout non-sequence') for e in range(nseqs)]
 	return MultipleSeqAlignment(seqs)
 
 def align(command, sequences, timeout):

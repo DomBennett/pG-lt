@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE Entrez tools
+pglt Entrez tools
 """
 
 ## Packages

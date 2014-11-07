@@ -2,14 +2,14 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-mpe Stage 3: Aligning sequences
+pglt Stage 3: Aligning sequences
 """
 
 ## Packages
 import os,re,pickle,logging,shutil
 import numpy
 from Bio import SeqIO
-import mpe.tools.alignment_tools as atools
+import pglt.tools.alignment_tools as atools
 
 ## Functions
 def writeAlignment(alignment, i, namesdict, gene_dir):

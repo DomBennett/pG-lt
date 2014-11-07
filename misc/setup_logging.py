@@ -5,5 +5,5 @@ console = logging.StreamHandler()
 console.setFormatter(logging.Formatter('%(message)s'))
 logger.addHandler(console)
 
-import mpe
-mpe.stages.phylogeny_stage.run()
+import pglt
+pglt.stages.names_stage.run()

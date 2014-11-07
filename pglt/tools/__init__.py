@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 26/05/2014
 """
-mpe tools
+pglt tools
 """
 
 import names_tools
@@ -11,3 +11,6 @@ import entrez_tools
 import download_tools
 import phylogeny_tools
 import system_tools
+import init_tools
+import setup_tools
+import special_tools

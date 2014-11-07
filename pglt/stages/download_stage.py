@@ -2,12 +2,12 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-mpe Stage 2: Sequence Download
+pglt Stage 2: Sequence Download
 """
 
 ## Packages
 import os, pickle,logging
-import mpe.tools.download_tools as dtools
+import pglt.tools.download_tools as dtools
 
 def run(wd = os.getcwd()):
 	## Print stage

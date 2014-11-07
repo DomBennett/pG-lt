@@ -2,7 +2,7 @@
 # D.J. Bennett
 # 24/03/2014
 """
-mpe phylogeny tools
+pglt phylogeny tools
 """
 
 # Packages
@@ -19,7 +19,7 @@ import dendropy as dp
 from scipy.stats import chisquare
 from system_tools import TerminationPipe
 from system_tools import RAxMLError
-from system_tools import getThreads
+from special_tools import getThreads
 
 # Classes
 class StopCodonRetriever(object):
@@ -125,13 +125,13 @@ class Generator(object):
     def _test(self, phylogeny):
         """Return false if chisquare rejects uniform distribution of
 root to tip distances"""
+        # Make sure tree exists
+        if not phylogeny:
+            return False
         # calc root to tip distance (rtt.dist) for each tip
-        names = []
-        for terminal in phylogeny.get_terminals():
-            names.append(terminal.name)
         rtt_dists = []
-        for name in names:
-            rtt_dists.append(phylogeny.distance(name))
+        for terminal in phylogeny.get_terminals():
+            rtt_dists.append(phylogeny.distance(terminal))
         _,pvalue = chisquare(rtt_dists)
         return pvalue > self.rttpvalue
 
@@ -311,9 +311,6 @@ to .partitions.txt"""
         # run RAxML
         phylogeny = RAxML(alignment, constraint = carg,\
             outgroup = outgroup, partitions = parg)
-        if outgroup:
-            phylogeny.root_with_outgroup(outgroup)
-            phylogeny.prune(outgroup)
         # if successful return True
         #Phylo.draw_ascii(phylogeny)
         if self._test(phylogeny):
@@ -356,19 +353,19 @@ RAxML (external program)."""
             with open('RAxML_bestTree.' + output_file, "r") as file:
                 tree = Phylo.read(file, "newick")
         except IOError:
-            raise RAxMLError()
-        finally:
-            if constraint:
-                os.remove('.constraint.tre')
-            if partitions:
-                os.remove(".partitions.txt")
-            os.remove(input_file)
-            all_files = os.listdir(os.getcwd())
-            for each in all_files:
-                if re.search("(RAxML)", each):
-                    os.remove(each)
-                if re.search("\.reduced$", each):
-                    os.remove(each)
+            return None
+        # finally:
+        #     if constraint:
+        #         os.remove('.constraint.tre')
+        #     if partitions:
+        #         os.remove(".partitions.txt")
+        #     os.remove(input_file)
+        #     all_files = os.listdir(os.getcwd())
+        #     for each in all_files:
+        #         if re.search("(RAxML)", each):
+        #             os.remove(each)
+        #         if re.search("\.reduced$", each):
+        #             os.remove(each)
         return tree
     else:
         raise RuntimeError()

@@ -2,13 +2,13 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-mpe Stage 4: Phylogeny generation
+pglt Stage 4: Phylogeny generation
 """
 
 ## Packages
 import os,re,pickle,logging
 from Bio import Phylo
-import mpe.tools.phylogeny_tools as ptools
+import pglt.tools.phylogeny_tools as ptools
 
 def run(wd = os.getcwd()):
 	## Print stage

@@ -2,7 +2,7 @@
 ## D.J. Bennett
 ## 24/03/2014
 """
-MPE download tools
+pglt download tools
 """
 
 ## Packages
@@ -313,22 +313,23 @@ def getClusters(gene_sequences, minoverlap):
 		bools,_ = atools.blast(sequences, sequences[randi], minoverlap)
 		# how many species had sequences in the cluster?
 		cluster_sequences = [gene_sequences[i] for i,e in enumerate(bools) if e]
-		pspp = float(len(set([e[0] for e in cluster_sequences])))/nspp
-		# if more than 50% ...
-		if pspp > 0.5:
+		nspp = len(set([e[0] for e in cluster_sequences]))
+		pspp = float(nspp)/tot_nspp
+		# if more than 50% and 5 species ...
+		if pspp > 0.5 and nspp > 5:
 			# return cluster, remove those sequences from gene_sequences
 			gene_sequences = [gene_sequences[i] for i,e in enumerate(bools) if not e]
 			return cluster_sequences,gene_sequences
 		return None, gene_sequences
 	res = []
-	nspp = len(set([e[0] for e in gene_sequences]))
+	tot_nspp = len(set([e[0] for e in gene_sequences]))
 	# try max 5 times to get a cluster from randomly selecting a seq
 	for i in range(5):
 		cluster_sequences,gene_sequences = findClusters(gene_sequences)
 		if cluster_sequences:
 			res.append(cluster_sequences)
 		# if gene sequences has not enough seqs left, break
-		pspp = float(len(set([e[0] for e in gene_sequences])))/nspp
+		pspp = float(len(set([e[0] for e in gene_sequences])))/tot_nspp
 		if pspp < 0.5:
 			break
 	return res
