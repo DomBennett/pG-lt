@@ -6,7 +6,7 @@ Tests for alignment tools.
 """
 
 import unittest,os,re,copy,pickle,random
-import mpe.tools.alignment_tools as atools
+import pglt.tools.alignment_tools as atools
 from Bio import SeqIO
 from Bio import AlignIO
 from Bio.SeqRecord import SeqRecord
@@ -31,7 +31,7 @@ with open(os.path.join(working_dir,"data",\
 	real_alignment = pickle.load(file)
 
 ## Mock
-def dummy_blast(query, subj, minoverlap, mingaps):
+def dummy_blast(query, subj, minoverlap):
 	# should return bools and positions
 	bools = [True for e in subj]
 	positions = [0 for e in subj]
@@ -54,10 +54,15 @@ class AlignmentTestSuite(unittest.TestCase):
 			minoverlap = 50)
 		self.aligner = atools.Aligner(self.store, mingaps = 0.5,\
 			minoverlap = 50, minseedsize = 3, maxseedsize = 20,\
-			maxtrys = 10, maxseedtrys = 10, gene_type = 'shallow')
+			maxtrys = 10, maxseedtrys = 10, gene_type = 'shallow',
+			outgroup = False)
 
 	def tearDown(self):
 		atools.blast = self.true_blast
+
+	def test_gennonalignment(self):
+		alignment = atools.genNonAlignment(1, 100)
+		self.assertEqual(len(alignment[0]), 100)
 
 	def test_version(self):
 		# try different combinations of sequences
@@ -88,10 +93,10 @@ class AlignmentTestSuite(unittest.TestCase):
 		# real_alignment and real_sequences are identical
 		real_seqs = [e for e in real_alignment]
 		# choose sample of real seqs for speed
-		subjseqs = random.sample(real_seqs, 5)
-		queryseqs = random.sample(real_seqs, 1)
-		res,_ = self.true_blast(query = queryseqs, subj = subjseqs,\
-			minoverlap = 50, mingaps = 0.5)
+		queryseqs = random.sample(real_seqs, 5)
+		subjseq = random.sample(real_seqs, 1)
+		res,_ = self.true_blast(query = queryseqs, subj = subjseq,\
+			minoverlap = 50)
 		# all true
 		self.assertTrue(all(res))
 
@@ -240,7 +245,7 @@ class AlignmentTestSuite(unittest.TestCase):
 		# ._check() should have removed it
 		self.assertFalse(sp_to_drop in store.keys())
 
-	def test_aligner_return(self):
+	def test_aligner_private_return(self):
 		# create different types of alignments and see what
 		#  is returned from _return
 		outgroup_seq = SeqRecord(Seq('T' * 3141), id = 'outgroup')
@@ -256,6 +261,21 @@ class AlignmentTestSuite(unittest.TestCase):
 		# should return real_alignment_w_out (has 12 records)
 		# it has an outgroup and it is the longest
 		self.assertEqual(len(alignment), 12)
+
+	def test_aligner_private_calctimeout(self):
+		pass
+
+	def test_aligner_private_gettimeout(self):
+		pass
+
+	def test_aligner_private_calcseedseize(self):
+		pass
+
+	def test_aligner_private_seed(self):
+		pass
+
+	def test_aligner_private_add(self):
+		pass
 
 	def test_aligner_run(self):
 		# all the outgroup seqs should not align, alignment
