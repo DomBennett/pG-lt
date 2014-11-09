@@ -1,4 +1,5 @@
 Parameter,Value,Note
+threads,-1,Number of threads -1 for all on machine (Mac and Unix only)
 nseqs,100,Max number of sequences to download for each name and gene
 naligns,10,Number of alignments to create for each gene
 ntrees,100,Number of phylogenies to generate from alignments

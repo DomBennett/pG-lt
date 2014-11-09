@@ -19,9 +19,13 @@ import dendropy as dp
 from scipy.stats import chisquare
 from system_tools import TerminationPipe
 from system_tools import RAxMLError
-from special_tools import getThreads
 
-# Classes
+
+# GLOBALS
+threads = 1
+
+
+# CLASSES
 class StopCodonRetriever(object):
     """Stop codon retrival class"""
     # ref: http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
@@ -50,7 +54,7 @@ class StopCodonRetriever(object):
             i = [i for i, e in enumerate(self.mt_txids) if ids[match] in e][0]
             # return reobjs
             return re.compile(self.mt_fpattern[i], flags = re.IGNORECASE), \
-			re.compile(self.mt_rpattern[i], flags = re.IGNORECASE)
+            re.compile(self.mt_rpattern[i], flags = re.IGNORECASE)
         else:
             return None
 
@@ -132,7 +136,7 @@ root to tip distances"""
         rtt_dists = []
         for terminal in phylogeny.get_terminals():
             rtt_dists.append(phylogeny.distance(terminal))
-        _,pvalue = chisquare(rtt_dists)
+        _, pvalue = chisquare(rtt_dists)
         return pvalue > self.rttpvalue
 
     def _concatenate(self, alignments):
@@ -154,13 +158,13 @@ multiple genes."""
         alignment = MultipleSeqAlignment([])
         for txid in all_ids:
             sequence = ""
-            for i,gene in enumerate(alignments):
+            for i, gene in enumerate(alignments):
                 if txid in alignment_ids[i]:
                     sequence += gene[alignment_ids[i].index(txid)].seq
                 else:
                     sequence += "-" * gene.get_alignment_length()
-            sequence = SeqRecord(sequence, id = txid, description =\
-                "multigene sequence")
+            sequence = SeqRecord(sequence, id=txid,
+                                 description="multigene sequence")
             alignment.append(sequence)
         return alignment
 
@@ -177,8 +181,7 @@ multiple genes."""
         constraint_tips = []
         for terminal in constraint.get_terminals():
             constraint_tips.append(terminal.name)
-        tips_to_drop = [e for e in constraint_tips if not e in \
-            tip_names]
+        tips_to_drop = [e for e in constraint_tips if e not in tip_names]
         for tip in tips_to_drop:
             constraint.prune(tip)
         # write out tree
@@ -201,27 +204,28 @@ multiple genes."""
             with open(".constraint.tre", "w") as file:
                 constraint = Phylo.read(file, "newick")
             distances = [constraint.distance(e) for e in spp]
-            index = [i for i,e in enumerate(distances) if e == \
-            min(distances)]
+            index = [i for i, e in enumerate(distances) if e ==
+                     min(distances)]
             # always choose the first, even if multiple species are
             #  returned
             return spp[index[0]]
         else:
             return False
 
+
     def _findORF(self, alignment, stop):
         """Return ORF of alignment based on absence of stop codons"""
         def reframe(alignment, frame):
             # return alignment from point where frame starts
-            alignment = alignment[:,frame:]
+            alignment = alignment[:, frame:]
             offset = alignment.get_alignment_length() % 3
             if offset > 0:
-                alignment = alignment[:,:-offset]
+                alignment = alignment[:, :-offset]
             return alignment
         if not stop:
             return alignment
         # Unpack stop patterns
-        fstop,rstop = stop
+        fstop, rstop = stop
         frame_stops = [0, 0, 0, 0, 0, 0]
         for record in alignment:
             # convert to string
@@ -265,7 +269,7 @@ to .partitions.txt"""
         ngene = 1
         text = ''
         reframed = []
-        for alignment,stop in zip (alignments, stops):
+        for alignment, stop in zip (alignments, stops):
             begin = nbp
             # if stop pattern gets ORF, partition by codon ...
             alignment = self._findORF(alignment, stop)
@@ -286,19 +290,19 @@ to .partitions.txt"""
             reframed.append(alignment)
         with open('.partitions.txt', 'w') as file:
             file.write(text)
-        return reframed,' -q .partitions.txt'
+        return reframed, ' -q .partitions.txt'
 
     def _setUp(self, alignments, stops):
         """Set up for RAxML"""
         # partition
-        alignments,parg = self._partition(alignments, stops)
+        alignments, parg = self._partition(alignments, stops)
         # create supermatrix alignment
         alignment = self._concatenate(alignments)
         # create constraint
         carg = self._constraint(alignment)
         # get outgroup arg
         outgroup = self._outgroup(alignment)
-        return alignment,carg,outgroup,parg
+        return alignment, carg, outgroup, parg
 
     def run(self):
         """Generate phylogeny from alignments"""
@@ -329,8 +333,7 @@ RAxML (external program)."""
     input_file = '.phylogeny_in.phylip'
     output_file = '.phylogeny_out'
     file_line = ' -s ' + input_file + ' -n ' + output_file
-    threads = ' -T ' + str(getThreads())
-    options = ' -p ' + str(random.randint(0,10000000)) + threads
+    options = ' -p ' + str(random.randint(0, 10000000)) + ' -T ' + str(threads)
     if outgroup:
         options += ' -o ' + outgroup
     with open(input_file, "w") as file:
