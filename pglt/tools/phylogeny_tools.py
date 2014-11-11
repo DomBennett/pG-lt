@@ -23,6 +23,7 @@ from system_tools import RAxMLError
 
 # GLOBALS
 threads = 1
+logger = logging.getLogger('')
 
 
 # CLASSES
@@ -48,7 +49,7 @@ class StopCodonRetriever(object):
             # find all matching ids in mt_txids
             matches = [i for i, e in enumerate(ids) if e in sum(self.mt_txids, [])]
             if not matches:
-                logging.debug('No taxonomic IDs matched!')
+                logger.debug('No taxonomic IDs matched!')
                 return None
             match = max(matches)
             i = [i for i, e in enumerate(self.mt_txids) if ids[match] in e][0]
@@ -96,7 +97,7 @@ list of alignments and stop pattern if partition"""
         self.counters = []
         alignments = []
         stops = []
-        logging.info("........ Using alignments:")
+        logger.info("........ Using alignments:")
         for gene in self.keys():
             genedata = self[gene]
             i = random.randint(0,len(genedata['alignments']) - 1)
@@ -105,10 +106,10 @@ list of alignments and stop pattern if partition"""
             self.counters.append(genedata['counters'][i])
             afile = genedata['files'][i]
             if genedata['stop']:
-                logging.info("............ {0}(codon partitioned):\
+                logger.info("............ {0}(codon partitioned):\
 [{1}]".format(gene, afile))
             else:
-                logging.info("............ {0}:[{1}]".\
+                logger.info("............ {0}:[{1}]".\
                     format(gene, afile))
         return alignments,stops
 
@@ -322,7 +323,7 @@ to .partitions.txt"""
             self.trys = 0
             return True
         else:
-            logging.info('........ poor phylogeny, retrying')
+            logger.info('........ poor phylogeny, retrying')
             self.trys += 1
             return False
 
@@ -348,7 +349,7 @@ RAxML (external program)."""
     if constraint:
         options += constraint
     command_line = 'raxml' + file_line + dnamodel + options
-    logging.debug(command_line)
+    logger.debug(command_line)
     pipe = TerminationPipe(command_line)
     pipe.run()
     if not pipe.failure:

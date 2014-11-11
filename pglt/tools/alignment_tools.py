@@ -29,6 +29,7 @@ from special_tools import timeit
 
 # GLOBALS
 threads = 1
+logger = logging.getLogger('')
 
 
 # OBEJECTS
@@ -40,7 +41,7 @@ not align"""
         self.minfails = minfails  # minimum number of fails in a row
         self.dspp = []  # species dropped
         self.nseqs = 0  # counter for seqs
-        self.blast_prop = 0.5  # the proportion of sequences in the alignment that a sequence must overlap with
+        self.blast_prop = 0.5  # the p sequences a sequence must overlap
         self.mingaps = mingaps
         self.minoverlap = minoverlap
         for i, seqfile in enumerate(seqfiles):
@@ -165,7 +166,7 @@ species"""
             to_drop = [ei for ei, e in enumerate(self[sp][0]) if e[1] >
                        self.minfails]
             for i in to_drop:
-                logging.info("Dropping [{0}] for [{1}] as nfails is \
+                logger.info("Dropping [{0}] for [{1}] as nfails is \
 [{2}]".format(self[sp][0][i][0].description,sp,self[sp][0][i][1]))
             self[sp][0] = [e for ei,e in enumerate(self[sp][0])\
                 if ei not in to_drop]
@@ -173,7 +174,7 @@ species"""
                 if sp == "outgroup":
                     raise OutgroupError
                 else:
-                    logging.info("Dropped [{0}]".format(sp))
+                    logger.info("Dropped [{0}]".format(sp))
                     self.dspp.append(sp)
                     self.sppool = [e for e in self.sppool if e != sp]
                     del self[sp]
@@ -247,12 +248,12 @@ presence of outgroup, number of species and length of alignment"""
             self.store = [a for a in self.store if "outgroup" in\
                           [e.id for e in a._records]]
             if len(self.store) == 0:
-                logging.debug("........ no outgroup")
+                logger.debug("........ no outgroup")
                 self.total_trys += 1
                 return None
         self.store = [e for e in self.store if len(e) >= 5]
         if len(self.store) == 0:
-            logging.debug("........ too few species")
+            logger.debug("........ too few species")
             self.total_trys += 1
             return None
         # keep only alignments with lots of records
@@ -303,7 +304,7 @@ if successful"""
                     command, sequences = sequences, timeout = \
                     self._getTimeout(sequences))
             except MafftError:
-                logging.debug('MAFTT error raised')
+                logger.debug('MAFTT error raised')
                 success = False
             else:
                 success = self._check(alignment)
@@ -330,14 +331,14 @@ if successful"""
             if not sequence:
                 # if no sequence is returned, nothing more can be
                 #  added
-                logging.debug('No new sequence added')
+                logger.debug('No new sequence added')
                 return True,trys
         try:
             new_alignment,seconds = timeit(func = add, alignment = \
                 alignment, sequence = sequence, timeout =\
                 self._getTimeout(alignment, sequence))
         except MafftError:
-            logging.debug('MAFTT error raised')
+            logger.debug('MAFTT error raised')
             success = False
         else:
             success = self._check(new_alignment)
@@ -365,17 +366,17 @@ seed alignment"""
             else:
                 raise TrysError
         # seed
-        logging.info("........ seed phase: [{0}] seed size".format(\
+        logger.info("........ seed phase: [{0}] seed size".format(\
             self.seedsize))
         trys = 0
         success = False
         while not success:
             success,trys = self._seed(trys)
             if trys > self.maxtrys:
-                logging.debug("............ maxtrys hit")
+                logger.debug("............ maxtrys hit")
                 return self._return()
         # add
-        logging.info("........ add phase : [{0}] species".format(len(\
+        logger.info("........ add phase : [{0}] species".format(len(\
             self.store[-1])))
         trys = 0
         finished = False
@@ -385,7 +386,7 @@ seed alignment"""
         while not finished:
             finished,trys = self._add(trys)
             if trys > self.maxtrys:
-                logging.debug("............ maxtrys hit")
+                logger.debug("............ maxtrys hit")
                 return self._return()
         return self._return()
 
@@ -422,7 +423,7 @@ program)"""
         input_file, output_file)
     with open(input_file, "w") as file:
         SeqIO.write(sequences, file, "fasta")
-    logging.debug(command_line)
+    logger.debug(command_line)
     pipe = TerminationPipe(command_line, timeout= timeout)
     pipe.run()
     os.remove(input_file)
@@ -430,13 +431,13 @@ program)"""
         try:
             res = AlignIO.read(output_file, 'fasta')
         except:
-            logging.info(pipe.output)
+            logger.info(pipe.output)
             raise MafftError()
         else:
             os.remove(output_file)
     else:
         # if pipe.failure, runtime error, return non-alignment
-        logging.debug('.... align timeout ....')
+        logger.debug('.... align timeout ....')
         return genNonAlignment(len(sequences), len(sequences[0]))
     return res
 
@@ -461,12 +462,12 @@ program)"""
         try:
             res = AlignIO.read(output_file, 'fasta')
         except:
-            logging.info(pipe.output)
+            logger.info(pipe.output)
             raise MafftError()
         else:
             os.remove(output_file)
     else:
-        logging.debug('.... add timeout ....')
+        logger.debug('.... add timeout ....')
         return genNonAlignment(len(alignment) + 1,\
             len(alignment.get_alignment_length()))
     return res
@@ -485,8 +486,8 @@ with subject given parameters."""
                                       num_threads=threads)
         output = cline()[0]
     except ApplicationError:# as error_msg:
-        #logging.debug(error_msg)
-        #logging.warn("---- BLAST Error ----")
+        #logger.debug(error_msg)
+        #logger.warn("---- BLAST Error ----")
         #TODO: work out why this is happening, doesn't seem to affect
         #  results though, low priority
         return [],[]
@@ -536,17 +537,17 @@ parameters. Return bool"""
         return False
     alen = alignment.get_alignment_length()
     if alen < minlen:
-        logging.debug('........ alignment too small')
+        logger.debug('........ alignment too small')
         return False
     for each in alignment:
         sequence = str(each.seq)
         columns = [ei for ei,e in enumerate(sequence) if e != "-"]
         overlap = calcOverlap(columns)
         if overlap < minoverlap:
-            logging.debug('........ alignment too little overlap')
+            logger.debug('........ alignment too little overlap')
             return False
         ngap = calcNgap(sequence)
         if ngap > mingaps:
-            logging.debug('........ alignment too many gaps')
+            logger.debug('........ alignment too many gaps')
             return False
     return True

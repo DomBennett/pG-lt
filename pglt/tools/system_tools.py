@@ -9,9 +9,10 @@ pglt system tools
 import subprocess
 import threading
 import os
-import logging
 import Queue
 from datetime import datetime
+from setup_tools import setUpLogging
+from setup_tools import tearDownLogging
 
 # MESSAGES
 priming_msg = '\nERROR: The program was unable to start due to a \
@@ -77,46 +78,50 @@ class Stager(object):
     """Stager class : runs each file in stage folder. Adapted from\
  code written by L. Hudson."""
 
-    def __init__(self, wd, stage):
-        # STAGES is added to Stager in __init__.py
+    def __init__(self, wd, stage, verbose=False, debug=False):
+        # STAGES is added to Stager at __init__.py
         if stage not in self.STAGES:
             raise StageError('Stage [{0}] not recognised'.format(stage))
         else:
             self.wd = wd
+            self.folder = os.path.split(wd)[-1]
             self.stage = stage
             # dir is second element of tuple
             self.output_dir = os.path.join(wd, self.STAGES[stage][1])
+            self.verbose = verbose
+            self.debug = debug
 
     def _start(self):
-        logging.info('-' * 70)
-        logging.info('Stage [{0}] started at [{1}]'.
-                     format(self.stage, self._time_string()))
-        logging.info('-' * 70)
+        self.logger.info('-' * 70)
+        self.logger.info('Stage [{0}] started at [{1}]'.
+                         format(self.stage, self._time_string()))
+        self.logger.info('-' * 70)
 
     def _end(self):
-        logging.info('-' * 70)
-        logging.info('Stage [{0}] finished at [{1}]'.
-                     format(self.stage, self._time_string()))
-        logging.info('-' * 70 + '\n\n')
+        self.logger.info('-' * 70)
+        self.logger.info('Stage [{0}] finished at [{1}]'.
+                         format(self.stage, self._time_string()))
+        self.logger.info('-' * 70 + '\n\n')
 
     def _error(self, msg):
         """Return true when error raised, log informative message"""
-        logging.error(msg)
-        logging.info('.... Moving to next folder')
-        logging.info('Stage [{0}] unfinished at [{1}]'.
-                     format(self.stage, self._time_string()))
-        logging.info('-' * 70 + '\n\n')
+        self.logger.error(msg)
+        self.logger.info('.... Moving to next folder')
+        self.logger.info('Stage [{0}] unfinished at [{1}]'.
+                         format(self.stage, self._time_string()))
+        self.logger.info('-' * 70 + '\n\n')
         return True
 
     def _time_string(self):
         return datetime.today().strftime("%A, %d %B %Y %I:%M%p")
 
     def _cmd(self):
-        # function is first element of tuple
-        # pass working directory to it
+        """Run stage command. Catch errors raised."""
         error_raised = None
         try:
-            self.STAGES[self.stage][0](self.wd)
+            # function is first element of tuple
+            # pass wd and logger
+            self.STAGES[self.stage][0](self.wd, self.logger)
         except PrimingError:
             error_raised = self._error(priming_msg)
         except TooFewSpeciesError:
@@ -132,12 +137,22 @@ class Stager(object):
         return error_raised
 
     def run(self):
+        # make sure dir exists
         if not os.path.isdir(self.output_dir):
             os.mkdir(self.output_dir)
-        self._start()  # log system info
-        failed = self._cmd()  # run stage
+        # set up a logger
+        self.logger = setUpLogging(verbose=self.verbose, debug=self.debug,
+                                   logname=self.folder,
+                                   directory=self.output_dir)
+        # log system info
+        self._start()
+        # run stage
+        failed = self._cmd()
         if not failed:
-            self._end()  # log end time
+            # log end time
+            self._end()
+        # remove logger
+        tearDownLogging(self.folder)
         return failed
 
     @classmethod
@@ -163,9 +178,7 @@ class Runner(object):
             # get a working dir for folder
             stage_wd = os.path.join(self.wd, folder)
             # run each stage for folder
-            for i in stages:
-                # get stage name from STAGES
-                stage = Stager.STAGES.keys()[i-1]
+            for stage in stages:
                 stager = Stager(stage_wd, stage)
                 failed = stager.run()
                 # if failed, remove folder from list
@@ -192,7 +205,6 @@ class Runner(object):
         # set workers running across all folders for stages
         for folder in folders:
             self.q.put((folder, stages))
-        self.q.join()
 
 
 class TerminationPipe(object):
@@ -222,6 +234,7 @@ written by W.D. Pearse."""
         else:
             thread = threading.Thread(target=loudTarget)
         thread.start()
+        # TODO: how to handle the main thread being killed?
         thread.join(self.timeout)
         if thread.is_alive():
             self.process.terminate()

@@ -15,7 +15,7 @@ from system_tools import TaxonomicRankError
 ## Functions
 def genTaxTree(resolver, namesdict, draw = False):
 	"""Generate Newick tree from TaxonNamesResolver class.
-		
+
 		Arguments:
 		 resolver = TaxonNamesResolver class
 		 by = Tip labels, either 'qnames', 'taxids' or 'name_string'

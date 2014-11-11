@@ -12,9 +12,9 @@ import logging
 import pglt.tools.download_tools as dtools
 
 
-def run(wd=os.getcwd()):
+def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # PRINT STAGE
-    logging.info("Stage 2: Sequence download")
+    logger.info("Stage 2: Sequence download")
 
     # DIRS
     download_dir = os.path.join(wd, '2_download')
@@ -36,6 +36,8 @@ def run(wd=os.getcwd()):
     nseqs = int(paradict['nseqs'])
     thoroughness = int(paradict['thoroughness'])
     dtools.atools.threads = int(paradict['threads'])
+    dtools.logger = logger
+    dtools.atools.logger = logger
     seedsize = 10
     maxtrys = 100
     minnseq = 1
@@ -45,13 +47,13 @@ def run(wd=os.getcwd()):
     seqcounter = basecounter = 0
 
     # PROCESS
-    logging.info('Determining best genes ....')
+    logger.info('Determining best genes ....')
     genes = dtools.findBestGenes(namesdict, genedict, thoroughness, allrankids,
                                  minnseq, target, minnspp)
     statement = 'Using genes:'
     for gene in genes:
         statement += " [" + gene + "]"
-    logging.info(statement)
+    logger.info(statement)
     # Add genes to namesdict
     for key in namesdict.keys():
         namesdict[key]['genes'] = 0
@@ -62,33 +64,34 @@ def run(wd=os.getcwd()):
         minlen = int(genedict[gene]["minlen"])
         maxlen = int(genedict[gene]["maxlen"])
         minoverlap = int(genedict[gene]['minoverlap'])
-        logging.info('Downloading and outputting for [{0}] ....'.\
-            format(gene))
+        logger.info('Downloading and outputting for [{0}] ....'.format(gene))
         for name in namesdict.keys():
-            logging.info("..... [{0}]".format(name))
+            logger.info("..... [{0}]".format(name))
             taxids = namesdict[name]["txids"]
-            downloader = dtools.Downloader(gene_names, nseqs, thoroughness,\
-                maxpn, seedsize, maxtrys, minoverlap, maxlen, minlen)
+            downloader = dtools.Downloader(gene_names, nseqs, thoroughness,
+                                           maxpn, seedsize, maxtrys,
+                                           minoverlap, maxlen, minlen)
             sequences = downloader.run(taxids)
             if not sequences:
                 noseqcounter_gene += 1
-                logging.info("........ no sequences found")
+                logger.info("........ no sequences found")
                 continue
-            logging.info("........ downloaded [{0}] sequences".\
-                format(len(sequences)))
+            logger.info("........ downloaded [{0}] sequences".
+                        format(len(sequences)))
             gene_sequences.extend(zip([name] * len(sequences), sequences))
         if noseqcounter_gene == len(namesdict.keys()):
-            logging.info("No sequences were downloaded for gene [{0}]".format(gene))
+            logger.info("No sequences were downloaded for gene [{0}]".
+                        format(gene))
             continue
         else:
             seqcounter += seqcounter_gene
-        logging.info('Checking for distinct clusters ....')
+        logger.info('Checking for distinct clusters ....')
         gene_sequences = dtools.getClusters(gene_sequences, minoverlap)
         if not gene_sequences:
-            logging.info('.... could not find any clustering sequences')
+            logger.info('.... could not find any clustering sequences')
             continue
-        logging.info('.... found [{0}] clusters'.format(len(gene_sequences)))
-        gene_dir  = os.path.join(download_dir, str(gene))
+        logger.info('.... found [{0}] clusters'.format(len(gene_sequences)))
+        gene_dir = os.path.join(download_dir, str(gene))
         for i in range(len(gene_sequences)):
             outdir = '{0}_cluster{1}'.format(gene_dir, i)
             if not os.path.isdir(outdir):
@@ -98,17 +101,19 @@ def run(wd=os.getcwd()):
                 if not seqs:
                     continue
                 seqs = [e.format('fasta') for e in seqs]
-                with open(os.path.join(outdir, "{0}.fasta".format(name)), 'wb') as outfile:
+                with open(os.path.join(outdir, "{0}.fasta".format(name)), 'wb')\
+                        as outfile:
                     for seq in seqs:
                         outfile.write("{0}\n".format(seq))
                         seqcounter_gene += 1
                         basecounter += len(seq)
                 namesdict[name]['genes'] += 1
                 spcounter_gene += 1
-        logging.info("Downloaded [{0}] sequences for gene [{1}] representing \
+        logger.info("Downloaded [{0}] sequences for gene [{1}] representing \
 [{2}] species".format(seqcounter_gene, gene, spcounter_gene))
     with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
         pickle.dump(namesdict, file)
-    logging.info('Stage finished. Downloaded [{0}] bases for [{1}] \
-sequences for [{2}] species.'.format(basecounter, seqcounter,\
-sum([namesdict[e]['genes'] > 0 for e in namesdict.keys()])))
+    logger.info('Stage finished. Downloaded [{0}] bases for [{1}] \
+sequences for [{2}] species.'.format(basecounter, seqcounter,
+                                     sum([namesdict[e]['genes'] > 0 for e in
+                                          namesdict.keys()])))
