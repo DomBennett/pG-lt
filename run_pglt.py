@@ -78,9 +78,8 @@ from pglt.tools.init_tools import sortArgs
 from pglt.tools.special_tools import clean
 
 # MAIN
-def main():
-    """Run pG-lt with user defined arguments from command-line"""
-    # read arguments
+if __name__ == '__main__':
+    # READ ARGUMENTS
     parser = parseArgs()
     args = parser.parse_args()
     if args.clean:
@@ -90,7 +89,8 @@ def main():
         # stop if no email
         print 'An email address must be provided. Use \'-e\'.'
         sys.exit()
-    # print program header
+
+    # PROGRAM HEADER
     printHeader()
     # create base logger -- messages in parent folder log.txt
     base_logger = setUpLogging(args.verbose, args.debug)
@@ -138,6 +138,3 @@ def main():
         else:
             logMessage('finish', logger=base_logger, directory=dirs[i])
     logMessage('end', logger=base_logger)
-
-if __name__ == '__main__':
-    main()
