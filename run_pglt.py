@@ -5,7 +5,7 @@
 pG-lt is a pipeline for the automated generation of phylogenies through
 'Mass Phylogeny Estimation'. This program is built on top of
 phyloGenerator (C) 2013 and was written by D.J. Bennett with
-additional help from W.D. Pearse and L. Hudson. This program makes
+additional help from W.D. Pearse and L. Hudson. It makes
 use of external programs for phylogeny generation and bioinformatics
 these are: RAxML (Copyright (C) Stamatakis 2013) , MAFFT (Copyright
 (C) 2013 Kazutaka Katoh) the NCBI's standalone BLAST suite 2.2.29+ and
@@ -31,57 +31,39 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 """
 
-# MESSAGES
-priming_msg = '\nERROR: The program was unable to start mpe due to a \
-problem with the files and folders in the study directory. Check the \
-parameters and gene parameters .csv for any potential conflicts.'
-toofewspecies_msg = '\nERROR: The program halted as there are too few \
-species left of phylogeny building -- five is the minimum. You may \
-have started with too few names, or names given could not be \
-taxonomically resolved or there may be too little sequence data \
-available.'
-taxonomicrank_msg = '\nERROR: It is likely that one or more names\
-have been resolved incorrectly, as such the parent taxonomic group \
-has been set to Eukaryotes which is too high a taxonomic rank for \
-phylogenetic analysis. Consider adding a parent ID to the \
-parameters.csv to prevent incorrect names resolution or reducing the \
-taxonomic diversity of the analysis names.'
-outgroup_msg = '\nERROR: The outgroup has been dropped. This may be \
-due to too few sequence data available for outgroup or a failure to \
-align sequences that are available. If outgroup has been \
-automatically selected, consider manually choosing an outgroup.'
-raxml_msg = '\nERROR: Generated maxtrys poor phylogenies \
-consecutively, consider reducing maxrttsd.'
-unexpected_msg = '\nERROR: The following unexpected error occurred:\n\
-\"{0}\" \n\
-Please email details to the program maintainer for help.'
-
 # PACAKGES
+import os
 import sys
-from pglt import _PARS as default_pars_file
-from pglt import _GPARS as default_gpars_file
-from pglt.tools.system_tools import Stager
-from pglt.tools.system_tools import TooFewSpeciesError
-from pglt.tools.system_tools import PrimingError
-from pglt.tools.system_tools import TaxonomicRankError
-from pglt.tools.system_tools import OutgroupError
-from pglt.tools.system_tools import RAxMLError
-from pglt.tools.setup_tools import printHeader
-from pglt.tools.setup_tools import parseArgs
-from pglt.tools.setup_tools import getDirs
+import argparse
 from pglt.tools.setup_tools import setUpLogging
-from pglt.tools.setup_tools import tearDownLogging
+from pglt.tools.setup_tools import printHeader
+from pglt.tools.setup_tools import getDirs
 from pglt.tools.setup_tools import logMessage
-from pglt.tools.setup_tools import logError
-from pglt.tools.init_tools import prime
-from pglt.tools.init_tools import sortArgs
+from pglt.tools.system_tools import Runner
+from pglt.tools.special_tools import getThreads
 from pglt.tools.special_tools import clean
 
-# MAIN
-if __name__ == '__main__':
-    # READ ARGUMENTS
-    parser = parseArgs()
+
+# FUNCTIONS
+def parseArguments():
+    """Read command-line arguments"""
+    # Add new arg for threads
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-email", "-e", help="please provide email \
+for NCBI")
+    parser.add_argument("-threads", "-t", help="number of threads, default -1 \
+will use all available on machine.", default=-1, type=int)
+    parser.add_argument("-restart", "-r", help="restart from \
+specified stage")
+    parser.add_argument("--verbose", help="increase output verbosity",
+                        action="store_true")
+    parser.add_argument("--debug", help="log warnings (developer only)",
+                        action="store_true")
+    parser.add_argument("--clean", help="remove all pG-lt files and \
+folders (developer only)", action="store_true")
+    # get args
     args = parser.parse_args()
+    # check them
     if args.clean:
         clean()
         sys.exit('Files and folders deleted')
@@ -89,52 +71,97 @@ if __name__ == '__main__':
         # stop if no email
         print 'An email address must be provided. Use \'-e\'.'
         sys.exit()
+    # check threads is a valid argument
+    if args.threads == 0 or args.threads < -1:
+        sys.exit('Invalid threads argument.')
+    return args.email, args.threads, args.verbose, args.debug
+
+
+def calcWorkers(threads, nfolders, min_threads_per_worker=2,
+                max_threads_per_worker=100):
+    """Calculate the number of workers for parallel running of folders"""
+    # get available threads on machine
+    available_threads = getThreads()
+    # make sure threads arg is not greater than those available
+    if threads > available_threads:
+        sys.exit('More threads specified than avaiable on machine')
+    if threads == -1:
+        threads = available_threads
+    # calc min_threads_per_worker if it is greater than threads
+    if min_threads_per_worker > threads:
+        min_threads_per_worker = threads
+    # calc max_threads_per_worker if it is greater than threads
+    if max_threads_per_worker > threads:
+        max_threads_per_worker = threads
+    # calc nworkers
+    threads_per_folder = float(threads)/nfolders
+    if threads_per_folder <= min_threads_per_worker:
+        nworkers = 1
+        threads_per_worker = min_threads_per_worker
+    elif threads_per_folder >= max_threads_per_worker:
+        nworkers = nfolders
+        threads_per_worker = max_threads_per_worker
+    else:
+        nworkers = nfolders
+        threads_per_worker = int(threads_per_folder)
+    spare_threads = int(threads - (float(nworkers)*threads_per_worker))
+    return nworkers, threads_per_worker, spare_threads
+
+
+def main():
+    """Run pG-lt run!"""
+    # READ ARGUMENTS
+    email, threads, verbose, debug = parseArguments()
 
     # PROGRAM HEADER
-    printHeader()
+    if not verbose:
+        printHeader()
+
+    # GET FOLDERS
     # create base logger -- messages in parent folder log.txt
-    base_logger = setUpLogging(args.verbose, args.debug)
+    base_logger = setUpLogging(verbose, debug)
     # search cwd for folders that contain names and parameter files
-    dirs = getDirs(base_logger)
-    logMessage('begin', logger=base_logger, directory=dirs)
-    # loop through each folder
-    for i in range(len(dirs)):
-        if not args.verbose:
-            print 'Woking on [{0}]'.format(dirs[i])
-        logMessage('start', logger=base_logger, directory=dirs[i])
-        error_raised = False
-        # set up a root logger, so now default logging refers to this
-        folder_logger = setUpLogging(args.verbose, args.debug,
-                                     logname='', directory=dirs[i])
-        try:
-            # get list of arguments
-            arguments = sortArgs(dirs[i], args.email, folder_logger,
-                                 default_pars_file, default_gpars_file)
-            # initialise hidden files
-            stage = prime(dirs[i], arguments)
-            # run Stager
-            Stager.run_all(dirs[i], stage=stage, verbose=args.verbose)
-        # if error raised handle it accordingly ...
-        except PrimingError:
-            error_raised = logError(priming_msg, folder_logger)
-        except TooFewSpeciesError:
-            error_raised = logError(toofewspecies_msg, folder_logger)
-        except TaxonomicRankError:
-            error_raised = logError(taxonomicrank_msg, folder_logger)
-        except OutgroupError:
-            error_raised = logError(outgroup_msg, folder_logger)
-        except RAxMLError:
-            error_raised = logError(raxml_msg, folder_logger)
-        except KeyboardInterrupt:
-            folder_logger.info('Execution halted by user')
-            sys.exit('Execution halted by user')
-        except Exception as unexpected_error:
-            error_raised = logError(unexpected_msg.format(unexpected_error),
-                                    folder_logger)
-        # disable folder_logger
-        tearDownLogging('')
-        if error_raised:
-            logMessage('folder-error', logger=base_logger, directory=dirs[i])
-        else:
-            logMessage('finish', logger=base_logger, directory=dirs[i])
-    logMessage('end', logger=base_logger)
+    folders = getDirs(base_logger)
+
+    # CALCULATE NWORKERS
+    nworkers, threads_per_worker, spare_threads =\
+        calcWorkers(threads=threads, nfolders=len(folders))
+
+    # START MESSAGE
+    logMessage('program-start', logger=base_logger, folders=folders,
+               threads=threads_per_worker*nworkers,
+               spare_threads=spare_threads, email=email)
+
+    # SETUP RUNNER
+    runner = Runner(folders=folders, nworkers=nworkers, wd=os.getcwd(),
+                    email=email, verbose=verbose, debug=debug)
+    # logMessage('start', logger=base_logger, directory=dirs[i])
+    runner.setup(folders)
+
+    # RUN STAGES 1 & 2
+    # don't run these in parallel
+    logMessage('stage-start', logger=base_logger, stage='1')
+    runner.run(folders=runner.folders, stage='1', parallel=False)
+    logMessage('stage-end', logger=base_logger)
+    logMessage('stage-start', logger=base_logger, stage='2')
+    runner.run(folders=runner.folders, stage='2', parallel=False)
+    logMessage('stage-end', logger=base_logger)
+
+    # RUN STAGES 3 & 4
+    # do run these in parallel
+    logMessage('stage-start', logger=base_logger, stage='3')
+    runner.run(folders=runner.folders, stage='3', parallel=True)
+    logMessage('stage-end', logger=base_logger)
+    logMessage('stage-start', logger=base_logger, stage='4')
+    runner.run(folders=runner.folders, stage='4', parallel=True)
+    logMessage('stage-end', logger=base_logger)
+
+    # FINISH MESSAGE
+    logMessage('program-end', logger=base_logger)
+
+# MAIN
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit('Execution halted by user')

@@ -41,4 +41,7 @@ import tools
 import stages
 # add stages -- a dictionary of stage functions -- to Stager
 tools.system_tools.Stager.STAGES = stages.STAGES
+# add default pars roots to Runner
+tools.system_tools.Runner._pars = _PARS
+tools.system_tools.Runner._gpars = _GPARS
 del os

@@ -10,14 +10,15 @@ import subprocess
 import threading
 import os
 import Queue
+import time
+import sys
 from datetime import datetime
 from setup_tools import setUpLogging
 from setup_tools import tearDownLogging
+from setup_tools import sortArgs
+from setup_tools import prime
 
 # MESSAGES
-priming_msg = '\nERROR: The program was unable to start due to a \
-problem with the files and folders in the study directory. Check the \
-parameters and gene parameters .csv for any potential conflicts.'
 toofewspecies_msg = '\nERROR: The program halted as there are too few \
 species left of phylogeny building -- five is the minimum. You may \
 have started with too few names, or names given could not be \
@@ -53,10 +54,6 @@ class TaxonomicRankError(Exception):
     pass
 
 
-class PrimingError(Exception):
-    pass
-
-
 class OutgroupError(Exception):
     pass
 
@@ -77,9 +74,9 @@ class TrysError(Exception):
 class Stager(object):
     """Stager class : runs each file in stage folder. Adapted from\
  code written by L. Hudson."""
+    # STAGES is added to Stager at __init__.py
 
     def __init__(self, wd, stage, verbose=False, debug=False):
-        # STAGES is added to Stager at __init__.py
         if stage not in self.STAGES:
             raise StageError('Stage [{0}] not recognised'.format(stage))
         else:
@@ -122,8 +119,6 @@ class Stager(object):
             # function is first element of tuple
             # pass wd and logger
             self.STAGES[self.stage][0](self.wd, self.logger)
-        except PrimingError:
-            error_raised = self._error(priming_msg)
         except TooFewSpeciesError:
             error_raised = self._error(toofewspecies_msg)
         except TaxonomicRankError:
@@ -165,46 +160,69 @@ class Stager(object):
 
 class Runner(object):
     """Runner class : run stages across folders"""
-    def __init__(self, folders, nworkers, wd):
+    # _pars and _gpars is added at __init__.py
+
+    def __init__(self, folders, nworkers, wd, email, verbose=False,
+                 debug=False):
         self.wd = wd
         self.nworkers = nworkers
         self.folders = folders
-        self.q = Queue.Queue(maxsize=nworkers)
+        self.verbose = verbose
+        self.debug = debug
+        self.email = email
+
+    def setup(self, folders):
+        """Setup files across folders"""
+        for folder in folders:
+            logger = setUpLogging(verbose=self.verbose, debug=self.debug,
+                                  logname=folder, directory=folder)
+            arguments = sortArgs(directory=folder, email=self.email,
+                                 logger=logger, default_pars_file=self._pars,
+                                 default_gpars_file=self._gpars)
+            tearDownLogging(folder)
+            _ = prime(folder, arguments)
+            del _
 
     def _worker(self):
         while True:
             # get folder and stages from queue
-            folder, stages = self.q.get()
+            folder, stage = self.q.get()
             # get a working dir for folder
             stage_wd = os.path.join(self.wd, folder)
-            # run each stage for folder
-            for stage in stages:
-                stager = Stager(stage_wd, stage)
-                failed = stager.run()
-                # if failed, remove folder from list
-                if failed:
-                    self.folders.remove(folder)
-                    break
+            # run stage for folder
+            stager = Stager(stage_wd, stage)
+            failed = stager.run()
+            # if failed, remove folder from list
+            if failed:
+                self.folders.remove(folder)
+                break
             self.q.task_done()
 
-    def setup(self, folders):
-        """Setup files across folders"""
-        pass
-
-    def run(self, folders, stages, parallel=False):
+    def run(self, folders, stage, parallel=False):
         """Run folders and stages"""
         if parallel:
             nworkers = self.nworkers
         else:
             nworkers = 1
+        # create queue
+        self.q = Queue.Queue(maxsize=0)
         # create nworkers workers
+        threads = []
         for i in range(nworkers):
             t = threading.Thread(target=self._worker)
+            threads.append(t)
             t.daemon = True
             t.start()
-        # set workers running across all folders for stages
+        # set workers running across all folders for stage
         for folder in folders:
-            self.q.put((folder, stages))
+            self.q.put((folder, stage))
+        # join main thread and keep alive to watch for KIs
+        # http://stackoverflow.com/questions/7610545/python-how-to-kill-threads-blocked-on-queue-with-signals
+        main = threading.Thread(target=self.q.join)
+        main.daemon = True
+        main.start()
+        while (main.isAlive()):
+            main.join(3600)
 
 
 class TerminationPipe(object):
