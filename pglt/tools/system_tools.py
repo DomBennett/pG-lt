@@ -10,8 +10,6 @@ import subprocess
 import threading
 import os
 import Queue
-import time
-import sys
 from datetime import datetime
 from setup_tools import setUpLogging
 from setup_tools import tearDownLogging
@@ -83,6 +81,7 @@ class Stager(object):
             self.wd = wd
             self.folder = os.path.split(wd)[-1]
             self.stage = stage
+            self.logname = '{0}_stage{1}_logger'.format(self.folder, stage)
             # dir is second element of tuple
             self.output_dir = os.path.join(wd, self.STAGES[stage][1])
             self.verbose = verbose
@@ -118,7 +117,7 @@ class Stager(object):
         try:
             # function is first element of tuple
             # pass wd and logger
-            self.STAGES[self.stage][0](self.wd, self.logger)
+            self.STAGES[self.stage][0](wd=self.wd, logger=self.logger)
         except TooFewSpeciesError:
             error_raised = self._error(toofewspecies_msg)
         except TaxonomicRankError:
@@ -127,8 +126,8 @@ class Stager(object):
             error_raised = self._error(outgroup_msg)
         except RAxMLError:
             error_raised = self._error(raxml_msg)
-        except Exception as unexpected_error:
-            error_raised = self._error(unexpected_msg.format(unexpected_error))
+        except Exception as unexp_err:
+            error_raised = self._error(unexpected_msg.format(unexp_err))
         return error_raised
 
     def run(self):
@@ -137,7 +136,7 @@ class Stager(object):
             os.mkdir(self.output_dir)
         # set up a logger
         self.logger = setUpLogging(verbose=self.verbose, debug=self.debug,
-                                   logname=self.folder,
+                                   logname=self.logname,
                                    directory=self.output_dir)
         # log system info
         self._start()
@@ -147,7 +146,7 @@ class Stager(object):
             # log end time
             self._end()
         # remove logger
-        tearDownLogging(self.folder)
+        tearDownLogging(self.logname)
         return failed
 
     @classmethod
@@ -190,7 +189,8 @@ class Runner(object):
             # get a working dir for folder
             stage_wd = os.path.join(self.wd, folder)
             # run stage for folder
-            stager = Stager(stage_wd, stage)
+            stager = Stager(wd=stage_wd, stage=stage, verbose=self.verbose,
+                            debug=self.debug)
             failed = stager.run()
             # if failed, remove folder from list
             if failed:

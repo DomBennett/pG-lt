@@ -37,7 +37,7 @@ import sys
 import argparse
 from pglt.tools.setup_tools import setUpLogging
 from pglt.tools.setup_tools import printHeader
-from pglt.tools.setup_tools import getDirs
+from pglt.tools.setup_tools import getFolders
 from pglt.tools.setup_tools import logMessage
 from pglt.tools.system_tools import Runner
 from pglt.tools.special_tools import getThreads
@@ -108,36 +108,32 @@ def calcWorkers(threads, nfolders, min_threads_per_worker=2,
     return nworkers, threads_per_worker, spare_threads
 
 
-def main():
-    """Run pG-lt run!"""
-    # READ ARGUMENTS
+def start():
+    """Start pG-lt start!"""
     email, threads, verbose, debug = parseArguments()
-
-    # PROGRAM HEADER
-    if not verbose:
+    if verbose:
         printHeader()
-
-    # GET FOLDERS
     # create base logger -- messages in parent folder log.txt
-    base_logger = setUpLogging(verbose, debug)
+    base_logger = setUpLogging(not verbose, debug, 'base')
     # search cwd for folders that contain names and parameter files
-    folders = getDirs(base_logger)
+    folders = getFolders()
+    return email, threads, verbose, debug, base_logger, folders
 
-    # CALCULATE NWORKERS
+
+def run(email, threads, verbose, debug, base_logger, folders):
+    """Run pG-lt run!"""
+    # calculate nworkers
     nworkers, threads_per_worker, spare_threads =\
         calcWorkers(threads=threads, nfolders=len(folders))
-
-    # START MESSAGE
+    # start message
     logMessage('program-start', logger=base_logger, folders=folders,
                threads=threads_per_worker*nworkers,
                spare_threads=spare_threads, email=email)
-
-    # SETUP RUNNER
+    # setup runner
     runner = Runner(folders=folders, nworkers=nworkers, wd=os.getcwd(),
                     email=email, verbose=verbose, debug=debug)
     # logMessage('start', logger=base_logger, directory=dirs[i])
     runner.setup(folders)
-
     # RUN STAGES 1 & 2
     # don't run these in parallel
     logMessage('stage-start', logger=base_logger, stage='1')
@@ -146,7 +142,6 @@ def main():
     logMessage('stage-start', logger=base_logger, stage='2')
     runner.run(folders=runner.folders, stage='2', parallel=False)
     logMessage('stage-end', logger=base_logger)
-
     # RUN STAGES 3 & 4
     # do run these in parallel
     logMessage('stage-start', logger=base_logger, stage='3')
@@ -155,13 +150,17 @@ def main():
     logMessage('stage-start', logger=base_logger, stage='4')
     runner.run(folders=runner.folders, stage='4', parallel=True)
     logMessage('stage-end', logger=base_logger)
-
-    # FINISH MESSAGE
+    # finish message
     logMessage('program-end', logger=base_logger)
 
 # MAIN
 if __name__ == '__main__':
+    email, threads, verbose, debug, base_logger, folders = start()
     try:
-        main()
+        run(email, threads, verbose, debug, base_logger, folders)
     except KeyboardInterrupt:
-        sys.exit('Execution halted by user')
+        base_logger.info('Execution halted by user')
+        if not verbose:
+            sys.exit()
+        else:
+            sys.exit('Execution halted by user')

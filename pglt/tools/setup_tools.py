@@ -61,7 +61,7 @@ folders (developer only)", action="store_true")
     return parser
 
 
-def getDirs(logger):
+def getFolders():
     """Return folders in directory with names.txt files"""
     # list all folders
     unchecked_dirs = [f for f in os.listdir('.') if not os.path.isfile(f)]
@@ -78,11 +78,10 @@ def getDirs(logger):
     if len(checked_dirs) > 0:
         return checked_dirs
     else:
-        logger.error(nonamestxt_msg)
-        sys.exit()
+        sys.exit(nonamestxt_msg)
 
 
-def setUpLogging(verbose, debug, logname='base', directory=os.getcwd()):
+def setUpLogging(verbose, debug, logname, directory=os.getcwd()):
     """Set up logging : direct and control log statements"""
     # get logger
     logger = logging.getLogger(logname)
@@ -104,6 +103,7 @@ def setUpLogging(verbose, debug, logname='base', directory=os.getcwd()):
         console = logging.StreamHandler()
         console.setFormatter(logging.Formatter('%(message)s'))
         logger.addHandler(console)
+    logger.propagate = False
     return logger
 
 
@@ -152,7 +152,7 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
     elif phase == 'stage-start':
         logger.info('Stage [{0}] started at [{1}]'.format(stage, timestamp()))
     elif phase == 'stage-end':
-        logger.info('.... finished at [{1}]'.format(timestamp()))
+        logger.info('.... finished at [{0}]'.format(timestamp()))
     else:
         raise(ValueError('Unrecognised phase'))
 
