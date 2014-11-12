@@ -10,6 +10,7 @@ import subprocess
 import threading
 import os
 import Queue
+import pickle
 from datetime import datetime
 from setup_tools import setUpLogging
 from setup_tools import tearDownLogging
@@ -33,7 +34,7 @@ due to too few sequence data available for outgroup or a failure to \
 align sequences that are available. If outgroup has been \
 automatically selected, consider manually choosing an outgroup.'
 raxml_msg = '\nERROR: Generated maxtrys poor phylogenies \
-consecutively, consider reducing maxrttsd.'
+consecutively, consider reducing rttpvalue.'
 unexpected_msg = '\nERROR: The following unexpected error occurred:\n\
 \"{0}\" \n\
 Please email details to the program maintainer for help.'
@@ -161,10 +162,11 @@ class Runner(object):
     """Runner class : run stages across folders"""
     # _pars and _gpars is added at __init__.py
 
-    def __init__(self, folders, nworkers, wd, email, verbose=False,
-                 debug=False):
+    def __init__(self, folders, nworkers, threads_per_worker, wd, email,
+                 verbose=False, debug=False):
         self.wd = wd
         self.nworkers = nworkers
+        self.threads_per_worker = threads_per_worker
         self.folders = folders
         self.verbose = verbose
         self.debug = debug
@@ -173,11 +175,15 @@ class Runner(object):
     def setup(self, folders):
         """Setup files across folders"""
         for folder in folders:
+            # TODO: do I need to log at this point?
             logger = setUpLogging(verbose=self.verbose, debug=self.debug,
                                   logname=folder, directory=folder)
             arguments = sortArgs(directory=folder, email=self.email,
                                  logger=logger, default_pars_file=self._pars,
                                  default_gpars_file=self._gpars)
+            # save threads per worker in each folder
+            with open(os.path.join(folder, '.threads.p'), "wb") as file:
+                pickle.dump(self.threads_per_worker, file)
             tearDownLogging(folder)
             _ = prime(folder, arguments)
             del _

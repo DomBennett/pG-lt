@@ -26,9 +26,10 @@ from system_tools import TooFewSpeciesError
 from system_tools import MafftError
 from system_tools import TrysError
 from special_tools import timeit
+from special_tools import getThreads
 
 # GLOBALS
-threads = 1
+threads = getThreads(True)
 logger = logging.getLogger('')
 
 

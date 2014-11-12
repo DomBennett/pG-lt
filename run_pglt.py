@@ -130,7 +130,8 @@ def run(email, threads, verbose, debug, base_logger, folders):
                threads=threads_per_worker*nworkers,
                spare_threads=spare_threads, email=email)
     # setup runner
-    runner = Runner(folders=folders, nworkers=nworkers, wd=os.getcwd(),
+    runner = Runner(folders=folders, nworkers=nworkers,
+                    threads_per_worker=threads_per_worker, wd=os.getcwd(),
                     email=email, verbose=verbose, debug=debug)
     # logMessage('start', logger=base_logger, directory=dirs[i])
     runner.setup(folders)
@@ -152,6 +153,7 @@ def run(email, threads, verbose, debug, base_logger, folders):
     logMessage('stage-end', logger=base_logger)
     # finish message
     logMessage('program-end', logger=base_logger)
+    sys.exit()
 
 # MAIN
 if __name__ == '__main__':

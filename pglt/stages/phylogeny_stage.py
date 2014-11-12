@@ -36,7 +36,6 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     nphylos = int(paradict["ntrees"])
     maxtrys = int(paradict["maxtrys"])
     rttpvalue = float(paradict["rttpvalue"])
-    ptools.threads = int(paradict['threads'])  # ensure threads are specified
     ptools.logger = logger
 
     # READ ALIGMENTS

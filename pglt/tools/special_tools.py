@@ -11,6 +11,7 @@ import time
 import sys
 import subprocess
 import shutil
+import pickle
 
 
 # FUNCTIONS
@@ -29,8 +30,16 @@ def timeit(func, **kwargs):
     return output, t1-t0
 
 
-def getThreads():
-    """Find number of cores on machine (platform independent)"""
+def getThreads(local=False):
+    """Find number of cores on machine (platform independent). If local, \
+search cwd for pickled .threads.p"""
+    if local:
+        if os.path.isfile('.threads.p'):
+            with open('.threads.p', "rb") as file:
+                nthreads = pickle.load(file)
+        else:
+            nthreads = 1
+        return nthreads
     if sys.platform == 'darwin':
         # find threads for a mac
         cmd = "system_profiler SPHardwareDataType | grep Cores | awk \

@@ -126,7 +126,6 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # PARAMETERS
     naligns = int(paradict["naligns"])
     all_counter = 0
-    atools.threads = int(paradict['threads'])  # ensure threads are specified
     atools.logger = logger
 
     # READ IN SEQUENCES

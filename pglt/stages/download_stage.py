@@ -35,7 +35,6 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     dtools.etools.Entrez.email = paradict["email"]
     nseqs = int(paradict['nseqs'])
     thoroughness = int(paradict['thoroughness'])
-    dtools.atools.threads = int(paradict['threads'])
     dtools.logger = logger
     dtools.atools.logger = logger
     seedsize = 10

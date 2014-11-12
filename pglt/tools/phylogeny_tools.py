@@ -19,10 +19,11 @@ import dendropy as dp
 from scipy.stats import chisquare
 from system_tools import TerminationPipe
 from system_tools import RAxMLError
+from special_tools import getThreads
 
 
 # GLOBALS
-threads = 1
+threads = getThreads(True)
 logger = logging.getLogger('')
 
 
@@ -317,7 +318,7 @@ to .partitions.txt"""
         phylogeny = RAxML(alignment, constraint = carg,\
             outgroup = outgroup, partitions = parg)
         # if successful return True
-        #Phylo.draw_ascii(phylogeny)
+        # Phylo.draw_ascii(phylogeny)
         if self._test(phylogeny):
             self.phylogenies.append(phylogeny)
             self.trys = 0

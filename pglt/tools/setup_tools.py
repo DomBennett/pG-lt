@@ -15,7 +15,6 @@ import csv
 import logging
 import platform
 from datetime import datetime
-from special_tools import getThreads
 
 # MESSAGES
 description = """pG-lt: A pipeline for the automated generation of phylogenies
@@ -310,7 +309,7 @@ def readInPars(pars_file, default_pars_file):
     # template
     paradict = {'nseqs': None, 'naligns': None, 'ntrees': None,
                 'thoroughness': None, 'maxtrys': None, 'rttpvalue': None,
-                'parentid': None, 'outgroupid': None, 'threads': None}
+                'parentid': None, 'outgroupid': None}
     # open file, read each row, extract value
     paradict = _read(pars_file, paradict)
     # if Nones remain, use default
@@ -321,7 +320,4 @@ def readInPars(pars_file, default_pars_file):
             break
     if nones:
         paradict = _read(default_pars_file, paradict)
-    # add threads if -1 is specified
-    if int(paradict['threads']) == -1:
-        paradict['threads'] = getThreads()
     return paradict
