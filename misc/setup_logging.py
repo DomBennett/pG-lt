@@ -6,4 +6,4 @@ console.setFormatter(logging.Formatter('%(message)s'))
 logger.addHandler(console)
 
 import pglt
-pglt.stages.names_stage.run()
+pglt.stages.phylogeny_stage.run()

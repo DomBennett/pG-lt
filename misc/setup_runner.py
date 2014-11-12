@@ -10,3 +10,11 @@ folders = getDirs(base_logger)
 runner = Runner(folders, 1, os.getcwd(), 'dominic.john.bennett@gmail.com')
 runner.setup(folders)
 runner.run(folders, ['1'])
+
+
+threads = []
+for i in range(nworkers):
+    t = threading.Thread(target=runner._worker)
+    threads.append(t)
+    t.daemon = True
+    t.start()
