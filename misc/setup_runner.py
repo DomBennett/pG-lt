@@ -1,10 +1,12 @@
 # Set up runner
 
-import pglt
 import os
+from pglt.tools.setup_tools import getDirs
+from pglt.tools.setup_tools import setUpLogging
+from pglt.tools.system_tools import Runner
 
-
-Runner = pglt.tools.system_tools.Runner
-folders = ['SE1_2007__Parra_1']
-runner = Runner(folders, 1, os.getcwd())
-runner.run(folders, ['1', '2'])
+base_logger = setUpLogging(False, False)
+folders = getDirs(base_logger)
+runner = Runner(folders, 1, os.getcwd(), 'dominic.john.bennett@gmail.com')
+runner.setup(folders)
+runner.run(folders, ['1'])
