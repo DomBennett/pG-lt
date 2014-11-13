@@ -310,6 +310,7 @@ def readInNames(directory):
 
 def readInGenePars(gpars_file, default_gpars_file):
     """Read gene_parameters.csv. Return list of dictionaries."""
+    # TODO: too complex, consider breaking up
     def _read(gpars_file, template, genes=None):
         # open csv file and replace parameters in template
         # if they are None. If genes specified, only read

@@ -192,6 +192,7 @@ by searching features."""
 
     def run(self, taxids):
         """Dynamic sequence download"""
+        # TODO: too complex, consider breaking up
         sequences = []
         while self.thoroughness < self.max_thoroughness:
             seqids = self._search(taxids)
@@ -223,6 +224,7 @@ def findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq=1,
                   target='all', minnspp=5):
     """Return suitable genes for phylogeny by searching for \
 matches in GenBank"""
+    # TODO: too complex, consider breaking up
     def nextBest(searchlist, types):
         # return best genes based on n and types
         ns = [e[1] for e in searchlist]
