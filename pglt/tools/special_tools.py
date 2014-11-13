@@ -73,7 +73,8 @@ def clean():
     files_to_remove = ['info.txt', 'log.txt', '.paradict.p', '.allrankids.p',
                        '.namesdict.p', '.genedict.p', '.terms.p',
                        '.constraint.tre', '.partitions.txt',
-                       '.phylogeny_in.phylip', '.alignment_out.fasta']
+                       '.phylogeny_in.phylip', '.alignment_out.fasta',
+                       '.threads.p']
     folders = os.listdir(os.getcwd())
     while folders:
         temp_folder = folders.pop()
