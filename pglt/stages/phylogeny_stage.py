@@ -33,7 +33,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         allrankids = pickle.load(file)
 
     # PARAMETERS
-    nphylos = int(paradict["ntrees"])
+    nphylos = int(paradict["nphylos"])
     maxtrys = int(paradict["maxtrys"])
     rttpvalue = float(paradict["rttpvalue"])
     ptools.logger = logger
