@@ -5,6 +5,7 @@
 Tests for Entrez tools.
 """
 
+# PACKAGES
 import unittest
 import pglt.tools.entrez_tools as etools
 
@@ -30,7 +31,7 @@ class EntrezTestSuite(unittest.TestCase):
         self.assertGreater(int(res['Count']), 500)
 
     def test_findchildren_next_is_true(self):
-        # Cattarhines have 2 clades ranked below it: apes and old world monkeys
+        # Catarrhines have 2 clades ranked below it: apes and old world monkeys
         res = etools.findChildren(9526, next=True)
         self.assertEqual(len(res), 2)
 
