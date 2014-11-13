@@ -172,19 +172,16 @@ class Runner(object):
         self.debug = debug
         self.email = email
 
-    def setup(self, folders):
+    def setup(self, folders, base_logger):
         """Setup files across folders"""
         for folder in folders:
-            # TODO: do I need to log at this point?
-            logger = setUpLogging(verbose=self.verbose, debug=self.debug,
-                                  logname=folder, directory=folder)
             arguments = sortArgs(directory=folder, email=self.email,
-                                 logger=logger, default_pars_file=self._pars,
+                                 logger=base_logger,
+                                 default_pars_file=self._pars,
                                  default_gpars_file=self._gpars)
             # save threads per worker in each folder
             with open(os.path.join(folder, '.threads.p'), "wb") as file:
                 pickle.dump(self.threads_per_worker, file)
-            tearDownLogging(folder)
             _ = prime(folder, arguments)
             del _
 

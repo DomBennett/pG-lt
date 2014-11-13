@@ -15,6 +15,8 @@ import csv
 import logging
 import platform
 from datetime import datetime
+from special_tools import clean
+from special_tools import getThreads
 
 # MESSAGES
 description = """pG-lt: A pipeline for the automated generation of phylogenies
@@ -43,12 +45,51 @@ def printHeader():
     print '#' * 70 + '\n'
 
 
-def parseArgs():
+def calcWorkers(threads, nfolders, min_threads_per_worker=2,
+                max_threads_per_worker=100):
+    """Calculate the number of workers for parallel running of folders"""
+    # get available threads on machine
+    available_threads = getThreads()
+    # make sure threads arg is not greater than those available
+    if threads > available_threads:
+        sys.exit('More threads specified than avaiable on machine')
+    if threads == -1:
+        threads = available_threads
+    # calc min_threads_per_worker if it is greater than threads
+    if min_threads_per_worker > threads:
+        min_threads_per_worker = threads
+    # calc max_threads_per_worker if it is greater than threads
+    if max_threads_per_worker > threads:
+        max_threads_per_worker = threads
+    # calc nworkers and threads_per_worker
+    # increase workers before threads_per_worker
+    threads_per_worker = min_threads_per_worker
+    for i in range(nfolders):
+        if (float(i)*threads_per_worker) > threads:
+            nworkers = i-1
+            break
+    else:
+        nworkers = nfolders
+        for i in range(min_threads_per_worker, max_threads_per_worker):
+            if (float(nworkers)*i) > threads:
+                threads_per_worker = i-1
+                break
+        else:
+            threads_per_worker = max_threads_per_worker
+    spare_threads = int(threads - (float(nworkers)*threads_per_worker))
+    return nworkers, threads_per_worker, spare_threads
+
+
+def parseArguments():
     """Read command-line arguments"""
     # Add new arg for threads
     parser = argparse.ArgumentParser()
     parser.add_argument("-email", "-e", help="please provide email \
 for NCBI")
+    parser.add_argument("-threads", "-t", help="number of threads, default\
+ \'-1\' will use all available on machine.", default=-1, type=int)
+    parser.add_argument("-stages", "-s", help="stages to run, default \'1-4\'",
+                        default='1-4')
     parser.add_argument("-restart", "-r", help="restart from \
 specified stage")
     parser.add_argument("--verbose", help="increase output verbosity",
@@ -57,7 +98,28 @@ specified stage")
                         action="store_true")
     parser.add_argument("--clean", help="remove all pG-lt files and \
 folders (developer only)", action="store_true")
-    return parser
+    # get args
+    args = parser.parse_args()
+    # check them
+    if args.clean:
+        clean()
+        sys.exit('Files and folders deleted')
+    if not args.email:
+        # stop if no email
+        sys.exit('An email address must be provided. Use \'-e\'.')
+    # extract stages
+    if not re.match('[1-4]-?[1-4]?', args.stages):
+        sys.exit('Invalid stage argument. Use \'-s [from]-[to]\' for stages 1 \
+through 4.')
+    startend = [int(e) for e in args.stages.split('-')]
+    if len(startend) > 1:
+        stages = [str(e) for e in range(startend[0], startend[1]+1)]
+    else:
+        stages = str(startend[0])
+    # check threads is a valid argument
+    if args.threads == 0 or args.threads < -1:
+        sys.exit('Invalid threads argument.')
+    return args.email, args.threads, args.verbose, args.debug, stages
 
 
 def getFolders():
@@ -116,8 +178,9 @@ def tearDownLogging(logname):
         logger.removeHandler(h)
 
 
+# NON-EXPORTED FUNCTIONS
 def logMessage(phase, logger, folders=None, stage=None, threads=None,
-               spare_threads=None, email=None):
+               spare_threads=None, email=None, stages=None):
     if phase == 'program-start':
         logger.info('#' * 70)
         logger.info(description)
@@ -129,6 +192,7 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
         logger.info('Using [{0}] threads with [{1}] spare'.
                     format(threads, spare_threads))
         logger.info('Using [{0}] as Entrez email'.format(email))
+        logger.info('Running stages {0}'.format(stages))
         logger.info('Working with the following [{0}] folders:'.
                     format(len(folders)))
         # convert folders to string
@@ -211,7 +275,6 @@ def sortArgs(directory, email, logger, default_pars_file, default_gpars_file):
     return {'terms': terms, 'genedict': genedict, 'paradict': paradict}
 
 
-# NON-EXPORTED FUNCTIONS
 def timestamp():
     timestamp = datetime.today().strftime("%A, %d %B %Y %I:%M%p")
     return timestamp
