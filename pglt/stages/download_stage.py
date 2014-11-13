@@ -13,6 +13,7 @@ import pglt.tools.download_tools as dtools
 
 
 def run(wd=os.getcwd(), logger=logging.getLogger('')):
+    # TODO: too complex, consider breaking up
     # PRINT STAGE
     logger.info("Stage 2: Sequence download")
 
