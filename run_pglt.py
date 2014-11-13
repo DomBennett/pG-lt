@@ -93,17 +93,21 @@ def calcWorkers(threads, nfolders, min_threads_per_worker=2,
     # calc max_threads_per_worker if it is greater than threads
     if max_threads_per_worker > threads:
         max_threads_per_worker = threads
-    # calc nworkers
-    threads_per_folder = float(threads)/nfolders
-    if threads_per_folder <= min_threads_per_worker:
-        nworkers = 1
-        threads_per_worker = min_threads_per_worker
-    elif threads_per_folder >= max_threads_per_worker:
-        nworkers = nfolders
-        threads_per_worker = max_threads_per_worker
+    # calc nworkers and threads_per_worker
+    # increase workers before threads_per_worker
+    threads_per_worker = min_threads_per_worker
+    for i in range(nfolders):
+        if (float(i)*threads_per_worker) > threads:
+            nworkers = i-1
+            break
     else:
         nworkers = nfolders
-        threads_per_worker = int(threads_per_folder)
+        for i in range(min_threads_per_worker, max_threads_per_worker):
+            if (float(nworkers)*i) > threads:
+                threads_per_worker = i-1
+                break
+        else:
+            threads_per_worker = max_threads_per_worker
     spare_threads = int(threads - (float(nworkers)*threads_per_worker))
     return nworkers, threads_per_worker, spare_threads
 
