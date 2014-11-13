@@ -80,26 +80,13 @@ def calcWorkers(threads, nfolders, min_threads_per_worker=2,
     return nworkers, threads_per_worker, spare_threads
 
 
-def parseArguments():
+def parseArguments(args=None):
     """Read command-line arguments"""
-    # Add new arg for threads
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-email", "-e", help="please provide email \
-for NCBI")
-    parser.add_argument("-threads", "-t", help="number of threads, default\
- \'-1\' will use all available on machine.", default=-1, type=int)
-    parser.add_argument("-stages", "-s", help="stages to run, default \'1-4\'",
-                        default='1-4')
-    parser.add_argument("-restart", "-r", help="restart from \
-specified stage")
-    parser.add_argument("--verbose", help="increase output verbosity",
-                        action="store_true")
-    parser.add_argument("--debug", help="log warnings (developer only)",
-                        action="store_true")
-    parser.add_argument("--clean", help="remove all pG-lt files and \
-folders (developer only)", action="store_true")
+    stages_err_msg = 'Invalid stage argument. Use \'-s [from]-[to]\' for \
+numbers 1 through 4.'
     # get args
-    args = parser.parse_args()
+    if not args:
+        args = createParser().parse_args()
     # check them
     if args.clean:
         clean()
@@ -108,14 +95,12 @@ folders (developer only)", action="store_true")
         # stop if no email
         sys.exit('An email address must be provided. Use \'-e\'.')
     # extract stages
-    if not re.match('[1-4]-?[1-4]?', args.stages):
-        sys.exit('Invalid stage argument. Use \'-s [from]-[to]\' for stages 1 \
-through 4.')
+    if not re.match('[1-4]-[1-4]', args.stages):
+        sys.exit(stages_err_msg)
     startend = [int(e) for e in args.stages.split('-')]
-    if len(startend) > 1:
-        stages = [str(e) for e in range(startend[0], startend[1]+1)]
-    else:
-        stages = str(startend[0])
+    stages = [str(e) for e in range(startend[0], startend[1]+1)]
+    if not stages:
+        sys.exit(stages_err_msg)
     # check threads is a valid argument
     if args.threads == 0 or args.threads < -1:
         sys.exit('Invalid threads argument.')
@@ -179,6 +164,27 @@ def tearDownLogging(logname):
 
 
 # NON-EXPORTED FUNCTIONS
+def createParser():
+    """Create parser for command-line"""
+    # Add new arg for threads
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-email", "-e", help="please provide email \
+for NCBI")
+    parser.add_argument("-threads", "-t", help="number of threads, default\
+ \'-1\' will use all available on machine.", default=-1, type=int)
+    parser.add_argument("-stages", "-s", help="stages to run, default \
+\'1-4\'", default='1-4')
+    parser.add_argument("-restart", "-r", help="restart from \
+specified stage")
+    parser.add_argument("--verbose", help="increase output verbosity",
+                        action="store_true")
+    parser.add_argument("--debug", help="log warnings (developer only)",
+                        action="store_true")
+    parser.add_argument("--clean", help="remove all pG-lt files and \
+folders (developer only)", action="store_true")
+    return parser
+
+
 def logMessage(phase, logger, folders=None, stage=None, threads=None,
                spare_threads=None, email=None, stages=None):
     if phase == 'program-start':
@@ -218,13 +224,6 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
         logger.info('.... finished at [{0}]'.format(timestamp()))
     else:
         raise(ValueError('Unrecognised phase'))
-
-
-def logError(msg, logger):
-    """Return true when error raised, log informative message"""
-    logger.error(msg)
-    logger.info('.... Moving to next folder')
-    return True
 
 
 def prime(directory, arguments):
