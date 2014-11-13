@@ -168,9 +168,9 @@ species"""
                        self.minfails]
             for i in to_drop:
                 logger.info("Dropping [{0}] for [{1}] as nfails is \
-[{2}]".format(self[sp][0][i][0].description,sp,self[sp][0][i][1]))
-            self[sp][0] = [e for ei,e in enumerate(self[sp][0])\
-                if ei not in to_drop]
+[{2}]".format(self[sp][0][i][0].description, sp, self[sp][0][i][1]))
+            self[sp][0] = [e for ei, e in enumerate(self[sp][0])
+                           if ei not in to_drop]
             if len(self[sp][0]) < 1:
                 if sp == "outgroup":
                     raise OutgroupError
@@ -185,25 +185,25 @@ species"""
 
 class Aligner(object):
     """Build alignments from seqstore"""
-    def __init__(self, seqstore, mingaps, minoverlap, minseedsize,\
-        maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup):
+    def __init__(self, seqstore, mingaps, minoverlap, minseedsize,
+                 maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup):
         self.seqstore = seqstore
         self.mingaps = mingaps
         self.minoverlap = minoverlap
         self.minseedsize = minseedsize
-        self.maxtrys = 2 # trys for alignment attempts
-        self.buffer = maxseedtrys # trys for a seedsize
-        self.buffer_counter = 0 # seedsize buffer counter
+        self.maxtrys = 2  # trys for alignment attempts
+        self.buffer = maxseedtrys  # trys for a seedsize
+        self.buffer_counter = 0  # seedsize buffer counter
         self.seedsize = len(seqstore)
         self.timeout = 99999999
         self.talign = False
         self.tadd = False
         self.silent = False
-        self.total_trys = 0 # counter for total number of trys
+        self.total_trys = 0  # counter for total number of trys
         self.type = gene_type
         self.outgroup = outgroup
 
-    def _calcTimeout(self, seconds, alignment, align = True):
+    def _calcTimeout(self, seconds, alignment, align=True):
         """Calculate the timeout"""
         # sequences that align takes less time to finish
         # make the most of this fact by capping the time MAFFT will
@@ -221,7 +221,7 @@ class Aligner(object):
             if self.tadd < timeout:
                 self.tadd = timeout
 
-    def _getTimeout(self, sequences, sequence = None):
+    def _getTimeout(self, sequences, sequence=None):
         """Return seconds it should take for mafft to run"""
         # Only return modified timeout if _calcTimeout has been run
         # Use size of alignment to calc seconds per nuc
@@ -234,8 +234,8 @@ class Aligner(object):
         return self.timeout
 
     def _check(self, alignment):
-        return checkAlignment(alignment, self.mingaps, \
-            self.minoverlap, self.minlen)
+        return checkAlignment(alignment, self.mingaps, self.minoverlap,
+                              self.minlen)
 
     def _return(self):
         """Return best alignment from a list of alignments based on:\
@@ -246,7 +246,7 @@ presence of outgroup, number of species and length of alignment"""
         if self.outgroup:
             # keep alignments with outgroups
             # keep alignments with more than 5 species
-            self.store = [a for a in self.store if "outgroup" in\
+            self.store = [a for a in self.store if "outgroup" in
                           [e.id for e in a._records]]
             if len(self.store) == 0:
                 logger.debug("........ no outgroup")
@@ -259,7 +259,7 @@ presence of outgroup, number of species and length of alignment"""
             return None
         # keep only alignments with lots of records
         nrecords = [len(e._records) for e in self.store]
-        self.store = [self.store[i] for i,e in enumerate(nrecords)\
+        self.store = [self.store[i] for i, e in enumerate(nrecords)
                       if e == max(nrecords)]
         # return longest alignment
         lens = [len(e) for e in self.store]
@@ -267,7 +267,7 @@ presence of outgroup, number of species and length of alignment"""
         self.total_trys = 0
         return self.store[max_i]
 
-    def _calcSeedsize(self, success = True):
+    def _calcSeedsize(self, success=True):
         """Calculate seedsize based on buffer and success of current \
 seedsize. Return 1 if trys must increase, else 0."""
         # increase seedsize if successful buffer times in a row
@@ -294,16 +294,16 @@ seedsize. Return 1 if trys must increase, else 0."""
     def _seed(self, trys):
         """BLAST seedsize sequences together, align and return True
 if successful"""
-        self.minlen = min([self.seqstore[e][1] for e in self.\
-                seqstore.keys()])
+        self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
         sequences = self.seqstore.start(self.seedsize)
         # make sure there are enough seqs for alignment
         if len(sequences) >= self.minseedsize:
             command = version(sequences, self.type)
             try:
-                alignment,seconds = timeit(func = align, command = \
-                    command, sequences = sequences, timeout = \
-                    self._getTimeout(sequences))
+                alignment, seconds = timeit(func=align, command=command,
+                                            sequences=sequences,
+                                            timeout=self._getTimeout(sequences)
+                                            )
             except MafftError:
                 logger.debug('MAFTT error raised')
                 success = False
@@ -313,38 +313,37 @@ if successful"""
             success = False
         # add to trys if unsuccessful or sequences are fewer than
         #  seedsize
-        trys += self._calcSeedsize(success and len(sequences) == \
-            self.seedsize)
+        trys += self._calcSeedsize(success and len(sequences) == self.seedsize)
         if success:
             self._calcTimeout(seconds, alignment)
             self.store.append(alignment)
-        return success,trys
+        return success, trys
 
-    def _add(self, trys, limit = None):
+    def _add(self, trys, limit=None):
         """Add sequence to alignment, return True if successful"""
         alignment = self.store[-1]
-        self.minlen = min([self.seqstore[e][1] for e in self.\
-                seqstore.keys()])
+        self.minlen = min([self.seqstore[e][1] for e in self.seqstore.keys()])
         if len(self.seqstore.sppool) == 0:
-            return True,trys
+            return True, trys
         else:
-            sequence = self.seqstore.next(alignment, limit = limit)
+            sequence = self.seqstore.next(alignment, limit=limit)
             if not sequence:
                 # if no sequence is returned, nothing more can be
                 #  added
                 logger.debug('No new sequence added')
-                return True,trys
+                return True, trys
         try:
-            new_alignment,seconds = timeit(func = add, alignment = \
-                alignment, sequence = sequence, timeout =\
-                self._getTimeout(alignment, sequence))
+            new_alignment, seconds = timeit(func=add, alignment=alignment,
+                                            sequence=sequence,
+                                            timeout=self._getTimeout(alignment,
+                                                                     sequence))
         except MafftError:
             logger.debug('MAFTT error raised')
             success = False
         else:
             success = self._check(new_alignment)
         if success:
-            self._calcTimeout(seconds, alignment, align = False)
+            self._calcTimeout(seconds, alignment, align=False)
             self.store.append(new_alignment)
         else:
             trys += 1
@@ -352,8 +351,8 @@ if successful"""
             if not sequence:
                 # here a species has been dropped and now all
                 #  species are present
-                return True,trys
-        return False,trys
+                return True, trys
+        return False, trys
 
     def run(self):
         """Incrementally build an alignment by adding sequences to a \
@@ -367,25 +366,25 @@ seed alignment"""
             else:
                 raise TrysError
         # seed
-        logger.info("........ seed phase: [{0}] seed size".format(\
-            self.seedsize))
+        logger.info("........ seed phase: [{0}] seed size".
+                    format(self.seedsize))
         trys = 0
         success = False
         while not success:
-            success,trys = self._seed(trys)
+            success, trys = self._seed(trys)
             if trys > self.maxtrys:
                 logger.debug("............ maxtrys hit")
                 return self._return()
         # add
-        logger.info("........ add phase : [{0}] species".format(len(\
-            self.store[-1])))
+        logger.info("........ add phase : [{0}] species".
+                    format(len(self.store[-1])))
         trys = 0
         finished = False
         # if outgroup, force it for the first add after seed
         if self.outgroup:
-            finished,trys = self._add(trys, limit = 'outgroup')
+            finished, trys = self._add(trys, limit='outgroup')
         while not finished:
-            finished,trys = self._add(trys)
+            finished, trys = self._add(trys)
             if trys > self.maxtrys:
                 logger.debug("............ maxtrys hit")
                 return self._return()
@@ -410,8 +409,9 @@ def version(sequences, gene_type):
 
 def genNonAlignment(nseqs, alen):
     """Return non-alignment, for when align or add timeout"""
-    seqs = [SeqRecord(Seq('-' * alen), id = 'Seq{0}'.format(e),\
-        description = 'timeout non-sequence') for e in range(nseqs)]
+    seqs = [SeqRecord(Seq('-' * alen), id='Seq{0}'.format(e),
+                      description='timeout non-sequence') for
+            e in range(nseqs)]
     return MultipleSeqAlignment(seqs)
 
 
@@ -420,12 +420,12 @@ def align(command, sequences, timeout):
 program)"""
     input_file = ".sequences_in.fasta"
     output_file = ".alignment_out.fasta"
-    command_line = '{0} --thread {1} {2} > {3}'.format(command, threads,\
-        input_file, output_file)
+    command_line = '{0} --thread {1} {2} > {3}'.format(command, threads,
+                                                       input_file, output_file)
     with open(input_file, "w") as file:
         SeqIO.write(sequences, file, "fasta")
     logger.debug(command_line)
-    pipe = TerminationPipe(command_line, timeout= timeout)
+    pipe = TerminationPipe(command_line, timeout=timeout)
     pipe.run()
     os.remove(input_file)
     if not pipe.failure:
@@ -449,13 +449,13 @@ program)"""
     alignment_file = ".alignment_in.fasta"
     sequence_file = ".sequence_in.fasta"
     output_file = "alignment_out.fasta" + '.fasta'
-    command_line = 'mafft --auto --thread {0} --add {1} {2} > {3}'.format(\
-        threads, sequence_file, alignment_file, output_file)
+    command_line = 'mafft --auto --thread {0} --add {1} {2} > {3}'.\
+                   format(threads, sequence_file, alignment_file, output_file)
     with open(sequence_file, "w") as file:
         SeqIO.write(sequence, file, "fasta")
     with open(alignment_file, "w") as file:
         AlignIO.write(alignment, file, "fasta")
-    pipe = TerminationPipe(command_line, timeout= timeout)
+    pipe = TerminationPipe(command_line, timeout=timeout)
     pipe.run()
     os.remove(alignment_file)
     os.remove(sequence_file)
@@ -469,8 +469,8 @@ program)"""
             os.remove(output_file)
     else:
         logger.debug('.... add timeout ....')
-        return genNonAlignment(len(alignment) + 1,\
-            len(alignment.get_alignment_length()))
+        return genNonAlignment(len(alignment) + 1,
+                               len(alignment.get_alignment_length()))
     return res
 
 
@@ -486,12 +486,12 @@ with subject given parameters."""
                                       task='blastn', word_size=8,
                                       num_threads=threads)
         output = cline()[0]
-    except ApplicationError:# as error_msg:
-        #logger.debug(error_msg)
-        #logger.warn("---- BLAST Error ----")
-        #TODO: work out why this is happening, doesn't seem to affect
+    except ApplicationError:  # as error_msg:
+        # logger.debug(error_msg)
+        # logger.warn("---- BLAST Error ----")
+        # TODO: work out why this is happening, doesn't seem to affect
         #  results though, low priority
-        return [],[]
+        return [], []
     finally:
         os.remove(".query.fasta")
         os.remove(".subj.fasta")
@@ -513,27 +513,32 @@ with subject given parameters."""
                 positions.append(res.query_end)
                 continue
         bools.append(False)
-    return bools,positions
+    return bools, positions
 
 
 def checkAlignment(alignment, mingaps, minoverlap, minlen):
     """Determine if an alignment is good or not based on given \
 parameters. Return bool"""
+    # TODO: too complex, consider breaking up
+    # internals
     def calcOverlap(columns):
         if not columns:
             return 0
         # what proportion of columns have nucs in other seqs
         pcolgaps = []
         for i in columns:
-            ith = float(alignment[:,i].count("-"))/(len(alignment)-1)
+            ith = float(alignment[:, i].count("-"))/(len(alignment)-1)
             pcolgaps.append(ith)
         # overlap is the mean proportion of columns shared
         overlap = len(columns) - (len(columns) * np.mean(pcolgaps))
         return overlap
+
     def calcNgap(sequence):
         # count the number of gaps
         gaps = re.subn('-+', '', sequence)[1]
         return float(gaps)/len(sequence)
+
+    # process
     if alignment is None:
         return False
     alen = alignment.get_alignment_length()
@@ -542,7 +547,7 @@ parameters. Return bool"""
         return False
     for each in alignment:
         sequence = str(each.seq)
-        columns = [ei for ei,e in enumerate(sequence) if e != "-"]
+        columns = [ei for ei, e in enumerate(sequence) if e != "-"]
         overlap = calcOverlap(columns)
         if overlap < minoverlap:
             logger.debug('........ alignment too little overlap')
