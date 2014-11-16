@@ -1,0 +1,22 @@
+gene,names,group,taxid,minlen,maxlen,mingaps,minoverlap,minfails,maxtrys,minseedsize,maxseedsize,maxseedtrys,partition,type,notes
+COI,COI:CO1:COX1:COXI,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,mt,shallow,mitochondrial
+CYTB,cytb:cytochrome b,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,both,mitochondrial
+COII,COII:CO2:COXII:COX2,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs1,NADH subunit 1:NADH dehydrogenase subunit 1:ND1:NAD1,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs2,NADH subunit 2:NADH dehydrogenase subunit 2:ND2:NAD2,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs3,NADH subunit 3:NADH dehydrogenase subunit 3:ND3:NAD3,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs4,NADH subunit 4:NADH dehydrogenase subunit 4:ND4:NAD4,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs5,NADH subunit 5:NADH dehydrogenase subunit 5:ND5:NAD5,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs6,NADH subunit 6:NADH dehydrogenase subunit 6:ND6:NAD6,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs7,NADH subunit 7:NADH dehydrogenase subunit 7:ND7:NAD7,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs8,NADH subunit 8:NADH dehydrogenase subunit 8:ND8:NAD8,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs9,NADH subunit 9:NADH dehydrogenase subunit 9:ND9:NAD9,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs10,NADH subunit 10:NADH dehydrogenase subunit 10:ND10:NAD10,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs11,NADH subunit 11:NADH dehydrogenase subunit 11:ND11:NAD11,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+NADHs12,NADH subunit 12:NADH dehydrogenase subunit 12:ND12:NAD12,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial
+12S,12S:12S ribosomal RNA,eukaryotes,2759,500,2000,20,300,10,10,5,10,10,False,shallow,ribosomal mitochondrial
+16S,16S:16S ribosomal RNA,eukaryotes,2759,500,2000,20,300,10,10,5,10,10,False,shallow,ribosomal mitochondrial
+18S,18S:18S ribosomal RNA,eukaryotes,2759,500,2000,20,300,10,10,5,10,10,False,deep,ribosomal nuclear
+28S,28S:28S ribosomal RNA,eukaryotes,2759,500,2000,20,300,10,10,5,10,10,False,deep,ribosomal nuclear
+rbcl,rbcl,viridiplantae,33090,300,2000,10,300,10,10,5,10,10,False,both,chloroplast
+matk,matk,viridiplantae,33090,300,2000,10,300,10,10,5,10,10,False,shallow,chloroplast

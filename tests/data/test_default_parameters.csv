@@ -1,0 +1,9 @@
+Parameter,Value,Note
+nseqs,100,Max number of sequences to download for each name and gene
+naligns,10,Number of alignments to create for each gene
+nphylos,100,Number of phylogenies to generate from alignments
+thoroughness,3,Either 1 2 or 3
+parentid,,Nothing in default
+outgroupid,,Nothing in default
+maxtrys,1000,Max number of phylogeny attempts
+rttpvalue,0.001,Chisquare p value for uniformity test of root to tip distances
