@@ -245,35 +245,6 @@ def prime(directory, arguments):
     # TODO create other functions for creating hidden files
 
 
-def sortArgs(directory, email, logger, default_pars_file, default_gpars_file):
-    """Search for relevant files in dir, return list of arguments"""
-    # find text file and read, raise error if fail
-    try:
-        terms = readInNames(directory)
-    except IOError:
-        logger.error(ioerror_msg.format('names.txt', directory))
-        raise PrimingError()
-    # find gene parameter file and read, raise error if fail
-    try:
-        genedict = readInGenePars(os.path.join(directory,
-                                               'gene_parameters.csv'),
-                                  default_gpars_file)
-    except IOError:
-        logger.error(ioerror_msg.format('gene_parameters.csv', directory))
-        raise PrimingError()
-    # find parameter file and read, raise error if fail
-    try:
-        paradict = readInPars(os.path.join(directory,
-                                           'parameters.csv'),
-                              default_pars_file)
-    except IOError:
-        logger.error(ioerror_msg.format('parameters.csv', directory))
-        raise PrimingError()
-    # add email to paradict
-    paradict['email'] = email
-    return {'terms': terms, 'genedict': genedict, 'paradict': paradict}
-
-
 def timestamp():
     timestamp = datetime.today().strftime("%A, %d %B %Y %I:%M%p")
     return timestamp
@@ -368,9 +339,9 @@ def readInPars(pars_file, default_pars_file):
         return paradict
     # check if file exists, else use default
     if not os.path.isfile(pars_file):
-        return readInPars(default_pars_file)
+        return readInPars(default_pars_file, None)
     # template
-    paradict = {'nseqs': None, 'naligns': None, 'ntrees': None,
+    paradict = {'nseqs': None, 'naligns': None, 'nphylos': None,
                 'thoroughness': None, 'maxtrys': None, 'rttpvalue': None,
                 'parentid': None, 'outgroupid': None}
     # open file, read each row, extract value
@@ -384,3 +355,32 @@ def readInPars(pars_file, default_pars_file):
     if nones:
         paradict = _read(default_pars_file, paradict)
     return paradict
+
+
+def sortArgs(directory, email, logger, default_pars_file, default_gpars_file):
+    """Search for relevant files in dir, return list of arguments"""
+    # find text file and read, raise error if fail
+    try:
+        terms = readInNames(directory)
+    except IOError:
+        logger.error(ioerror_msg.format('names.txt', directory))
+        raise PrimingError()
+    # find gene parameter file and read, raise error if fail
+    try:
+        genedict = readInGenePars(os.path.join(directory,
+                                               'gene_parameters.csv'),
+                                  default_gpars_file)
+    except IOError:
+        logger.error(ioerror_msg.format('gene_parameters.csv', directory))
+        raise PrimingError()
+    # find parameter file and read, raise error if fail
+    try:
+        paradict = readInPars(os.path.join(directory,
+                                           'parameters.csv'),
+                              default_pars_file)
+    except IOError:
+        logger.error(ioerror_msg.format('parameters.csv', directory))
+        raise PrimingError()
+    # add email to paradict
+    paradict['email'] = email
+    return {'terms': terms, 'genedict': genedict, 'paradict': paradict}
