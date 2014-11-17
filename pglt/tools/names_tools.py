@@ -1,19 +1,24 @@
 #! /usr/bin/env python
-## D.J. Bennett
-## 24/03/2014
+# D.J. Bennett
+# 24/03/2014
 """
 pglt names tools
 """
 
-## Packages
-import collections,re,logging, csv, os
+# PACKAGES
+import collections
+import re
+import logging
+import csv
+import os
 from Bio import Phylo
 from cStringIO import StringIO
 import entrez_tools as etools
 from system_tools import TaxonomicRankError
 
-## Functions
-def genTaxTree(resolver, namesdict, draw = False):
+
+# FUNCTIONS
+def genTaxTree(resolver, namesdict, draw=False):
     """Generate Newick tree from TaxonNamesResolver class.
 
         Arguments:
@@ -23,20 +28,19 @@ def genTaxTree(resolver, namesdict, draw = False):
 
          Return:
           (Newick Tree Object, [shared lineage])"""
+    # TODO: too complex, consider breaking up
     ranks = resolver.retrieve('classification_path_ranks')
     qnames = resolver.retrieve('query_name')
     lineages = resolver.retrieve('classification_path_ids')
     # replace ' ' with '_' for taxon tree
     qnames = [re.sub("\s", "_", e) for e in qnames]
     resolved_names_bool = [e in namesdict.keys() for e in qnames]
-    ranks = [ranks[ei] for ei,e in enumerate(resolved_names_bool)\
-    if e]
-    lineages = [lineages[ei] for ei,e in enumerate(resolved_names_bool)\
-    if e]
+    ranks = [ranks[ei] for ei, e in enumerate(resolved_names_bool) if e]
+    lineages = [lineages[ei] for ei, e in enumerate(resolved_names_bool) if e]
     # identify unresolved names
-    unresolved_names = [qnames[ei] for ei,e in\
-    enumerate(resolved_names_bool) if not e]
-    idents = [qnames[ei] for ei,e in enumerate(resolved_names_bool) if e]
+    unresolved_names = [qnames[ei] for ei, e in enumerate(resolved_names_bool)
+                        if not e]
+    idents = [qnames[ei] for ei, e in enumerate(resolved_names_bool) if e]
     statement = "Unresolved names: "
     for each in unresolved_names:
         statement += " " + each
@@ -50,35 +54,33 @@ def genTaxTree(resolver, namesdict, draw = False):
         ranks[i] = rank
     # make lineages of same ranks
     all_ranks = [e2 for e1 in ranks for e2 in e1]
-    rank_freq =  collections.Counter(all_ranks).items()
+    rank_freq = collections.Counter(all_ranks).items()
     shared_ranks = [e for e, f in rank_freq if f == len(idents)]
     line_bool = [[1 if e2 in shared_ranks else 0 for e2 in e1] for e1 in ranks]
-    lineages = [[lineages[i1][i2] for i2, e2 in enumerate(e1) if e2 == 1] for \
-                    i1, e1 in enumerate(line_bool)]
+    lineages = [[lineages[i1][i2] for i2, e2 in enumerate(e1) if e2 == 1] for
+                i1, e1 in enumerate(line_bool)]
     all_lines = [e2 for e1 in lineages for e2 in e1]
-    line_freq =  collections.Counter(all_lines).items()
+    line_freq = collections.Counter(all_lines).items()
     shared_lineage = [e for e, f in line_freq if f == len(idents)]
     # create line_obj, a tuple of ident and lineage
     line_obj = zip(idents, lineages)
     for i in range(len(lineages[0])):
         for uniq in set([each[1][i] for each in line_obj]):
             # find shared taxonomic groups
-            new_node = [each[0] for each in line_obj if each[1][i]\
-            == uniq]
+            new_node = [each[0] for each in line_obj if each[1][i] == uniq]
             if len(new_node) > 1:
                 # extract shared lineage
-                lineage = [each[1] for each in line_obj if each[0]\
-                == new_node[0]]
+                lineage = [each[1] for each in line_obj if each[0]
+                           == new_node[0]]
                 # remove shareds from line_obj
-                line_obj = [each for each in line_obj if not each[0]\
-                in new_node]
+                line_obj = [each for each in line_obj if not each[0] in
+                            new_node]
                 # convert to strings
                 new_node = [str(each) for each in new_node]
-                new_node = [re.sub("\\s", "_", each) for each\
-                in new_node]
+                new_node = [re.sub("\\s", "_", each) for each in new_node]
                 # add new node to line_obj
-                new_node = ('(' + ','.join(new_node) + ')' +\
-                    str(uniq), lineage[0])
+                new_node = ('(' + ','.join(new_node) + ')' + str(uniq),
+                            lineage[0])
                 line_obj.append(new_node)
         if len(line_obj) < 1:
             break
@@ -89,8 +91,10 @@ def genTaxTree(resolver, namesdict, draw = False):
         Phylo.draw_ascii(tree)
     return tree, shared_lineage
 
-def genNamesDict(resolver, parentid = None):
+
+def genNamesDict(resolver, parentid=None):
     """Return a dictionary containtaining all names and metadata"""
+    # TODO: too complex, consider breaking up
     q_names = resolver.retrieve('query_name')
     q_names = [re.sub("\s", "_", e) for e in q_names]
     r_names = resolver.retrieve('classification_path')
@@ -121,8 +125,8 @@ def genNamesDict(resolver, parentid = None):
         txid = query_line[best_bool.index(True)]
         rank = ranks[i][best_bool.index(True)]
         rname = r_names[i][best_bool.index(True)]
-        namesdict[q_names[i]] = {"txids" : [txid], "unique_name" : rname,\
-        "rank" : rank}
+        namesdict[q_names[i]] = {"txids": [txid], "unique_name": rname,
+                                 "rank": rank}
     if non_unique_lineages:
         nul_ids = [lineages[e][-1] for e in non_unique_lineages]
         nul_qnames = [q_names[e] for e in non_unique_lineages]
@@ -131,14 +135,13 @@ def genNamesDict(resolver, parentid = None):
         while len(nul_ids) > 0:
             temp_id = nul_ids.pop(0)
             # find ids in the next level
-            temp_children = etools.findChildren(str(temp_id), next = True)
+            temp_children = etools.findChildren(str(temp_id), next=True)
             temp_children = [int(e) for e in temp_children]
             # if none are in allrankids, must be unique
             temp_children = [e for e in temp_children if e not in allrankids]
             if len(temp_children) > 0:
-                namesdict[nul_qnames[i]] = {"txids" : temp_children,\
-                "unique_name" : "Non-unique resolution",\
-                    "rank" : nul_ranks[i]}
+                namesdict[nul_qnames[i]] = {"txids": temp_children, "unique_na\
+me": "Non-unique resolution", "rank": nul_ranks[i]}
             i += 1
     # if no parent id given, work one out
     if not parentid:
@@ -146,18 +149,21 @@ def genNamesDict(resolver, parentid = None):
         for each in lineages[0]:
             shared_bool.append(all([each in e for e in lineages]))
         parentid = lineages[0][shared_bool.index(False) - 1]
-    return namesdict,allrankids,parentid
+    return namesdict, allrankids, parentid
 
-def getOutgroup(namesdict, parentid, outgroupid = None, minrecords = 1000):
+
+def getOutgroup(namesdict, parentid, outgroupid=None, minrecords=1000):
     """Return namesdict with suitable outgroup"""
+    # TODO: too complex, consider breaking up
     def findParent(parentid):
-        return etools.eFetch(parentid, db = "taxonomy")[0]['ParentTaxId']
+        return etools.eFetch(parentid, db="taxonomy")[0]['ParentTaxId']
+
     def getTaxIdMetaData(ncbi_id):
         etal_bool = False
         if len(ncbi_id) > 1:
             ncbi_id = ncbi_id[0]
             etal_bool = True
-        record = etools.eFetch(ncbi_id, db = "taxonomy")[0]
+        record = etools.eFetch(ncbi_id, db="taxonomy")[0]
         metadata = [record['Rank'], record['ScientificName']]
         if etal_bool:
             metadata = [e + ' et al.' for e in metadata]
@@ -165,7 +171,7 @@ def getOutgroup(namesdict, parentid, outgroupid = None, minrecords = 1000):
     # loop until a suitable outgroup is found. Criteria are:
     #  1. ids returned must belong to a sister group of all ids of
     #   names given
-    #  2. ids must have nucleotide data (i.e. avoid returning extinct organisms)
+    #  2. ids must have nucleotide data (i.e.avoid returning extinct organisms)
     # assumptions:
     #  1. NCBI taxonomy is not paraphyletic
     # make sure parentid is string
@@ -180,7 +186,7 @@ def getOutgroup(namesdict, parentid, outgroupid = None, minrecords = 1000):
             # get parent of parent
             grandparentid = findParent(parentid)
             # find all children
-            candidates = etools.findChildren(grandparentid, next = True)
+            candidates = etools.findChildren(grandparentid, next=True)
             # filter out children that are in ingroup
             candidates = [e for e in candidates if e != parentid]
             # search genbank for nuc records
@@ -195,15 +201,15 @@ def getOutgroup(namesdict, parentid, outgroupid = None, minrecords = 1000):
     else:
         outgroup_ids = [outgroupid]
     # add outgroup_ids to namesdict
-    rank,unique_name = getTaxIdMetaData(outgroup_ids)
-    namesdict["outgroup"] = {"txids" : outgroup_ids, "unique_name" :\
-    unique_name, "rank" : rank}
+    rank, unique_name = getTaxIdMetaData(outgroup_ids)
+    namesdict["outgroup"] = {"txids": outgroup_ids, "unique_name": unique_name,
+                             "rank": rank}
     return namesdict
+
 
 def writeNamesDict(directory, namesdict):
     headers = ["name", "unique_name", "rank", "NCBI_Taxids"]
-    with open(os.path.join(directory, 'resolved_names.csv'), 'wb')\
-    as file:
+    with open(os.path.join(directory, 'resolved_names.csv'), 'wb') as file:
         writer = csv.writer(file)
         writer.writerow(headers)
         for key in namesdict.keys():
