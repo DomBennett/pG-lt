@@ -48,17 +48,19 @@ class StopCodonRetriever(object):
         # assumes lower taxonomic levels are at higher indexes
         if genome_type == 'mt':
             # find all matching ids in mt_txids
-            matches = [i for i, e in enumerate(ids) if e in sum(self.mt_txids, [])]
+            matches = [i for i, e in enumerate(ids) if
+                       e in sum(self.mt_txids, [])]
             if not matches:
                 logger.debug('No taxonomic IDs matched!')
                 return None
             match = max(matches)
             i = [i for i, e in enumerate(self.mt_txids) if ids[match] in e][0]
             # return reobjs
-            return re.compile(self.mt_fpattern[i], flags = re.IGNORECASE), \
-            re.compile(self.mt_rpattern[i], flags = re.IGNORECASE)
+            return re.compile(self.mt_fpattern[i], flags=re.IGNORECASE),
+            re.compile(self.mt_rpattern[i], flags=re.IGNORECASE)
         else:
             return None
+
 
 class AlignmentStore(dict):
     """Alignment holding class"""
@@ -67,16 +69,17 @@ class AlignmentStore(dict):
     def __init__(self, genes, genedict, genekeys, allrankids, indir):
         # Read in alignments for each gene
         for gene in genes:
-            self[gene] = {'alignments':[],'files':[],'counters':[]}
-            self[gene]['stop'] = self.retriever.pattern(allrankids,\
-                genedict[genekeys[gene]]['partition'].lower())
+            self[gene] = {'alignments': [], 'files': [], 'counters': []}
+            self[gene]['stop'] =\
+                self.retriever.pattern(allrankids,
+                                       genedict[genekeys[gene]]['partition'].
+                                       lower())
             gene_dir = os.path.join(indir, gene)
             alignment_files = os.listdir(gene_dir)
-            alignment_files = [e for e in alignment_files if not\
-            re.search("^\.", e)]
+            alignment_files = [e for e in alignment_files if
+                               not re.search("^\.", e)]
             for alignment_file in alignment_files:
-                with open(os.path.join(gene_dir, alignment_file),\
-                "r") as file:
+                with open(os.path.join(gene_dir, alignment_file), "r") as file:
                     alignment = AlignIO.read(file, "fasta")
                 self[gene]['alignments'].append(alignment)
                 self[gene]['files'].append(alignment_file)
@@ -101,7 +104,7 @@ list of alignments and stop pattern if partition"""
         logger.info("........ Using alignments:")
         for gene in self.keys():
             genedata = self[gene]
-            i = random.randint(0,len(genedata['alignments']) - 1)
+            i = random.randint(0, len(genedata['alignments']) - 1)
             alignments.append(genedata['alignments'][i])
             stops.append(genedata['stop'])
             self.counters.append(genedata['counters'][i])
@@ -110,9 +113,8 @@ list of alignments and stop pattern if partition"""
                 logger.info("............ {0}(codon partitioned):\
 [{1}]".format(gene, afile))
             else:
-                logger.info("............ {0}:[{1}]".\
-                    format(gene, afile))
-        return alignments,stops
+                logger.info("............ {0}:[{1}]".format(gene, afile))
+        return alignments, stops
 
 
 class Generator(object):
@@ -217,6 +219,7 @@ multiple genes."""
 
     def _findORF(self, alignment, stop):
         """Return ORF of alignment based on absence of stop codons"""
+        # TODO: too complex, consider breaking up
         def reframe(alignment, frame):
             # return alignment from point where frame starts
             alignment = alignment[:, frame:]
@@ -234,18 +237,18 @@ multiple genes."""
             seq = str(record.seq)
             # search for stop codons ignoring last 50bps; expect
             #  a stop codon at the end of a sequence
-            frame_stops[0] += sum([bool(fstop.match(seq[:-50]\
-                [e:e + 3])) for e in range(0, len(seq), 3)])
-            frame_stops[1] += sum([bool(fstop.match(seq[:-50]\
-                [e:e + 3])) for e in range(1, len(seq), 3)])
-            frame_stops[2] += sum([bool(fstop.match(seq[:-50]\
-                [e:e + 3])) for e in range(2,len(seq), 3)])
-            frame_stops[3] += sum([bool(rstop.match(seq[50:]\
-                [e:e + 3])) for e in range(0, len(seq), 3)])
-            frame_stops[4] += sum([bool(rstop.match(seq[50:]\
-                [e:e + 3])) for e in range(1, len(seq), 3)])
-            frame_stops[5] += sum([bool(rstop.match(seq[50:]\
-                [e:e + 3])) for e in range(2, len(seq), 3)])
+            frame_stops[0] += sum([bool(fstop.match(seq[:-50]
+                                  [e:e + 3])) for e in range(0, len(seq), 3)])
+            frame_stops[1] += sum([bool(fstop.match(seq[:-50]
+                                  [e:e + 3])) for e in range(1, len(seq), 3)])
+            frame_stops[2] += sum([bool(fstop.match(seq[:-50]
+                                  [e:e + 3])) for e in range(2, len(seq), 3)])
+            frame_stops[3] += sum([bool(rstop.match(seq[50:]
+                                  [e:e + 3])) for e in range(0, len(seq), 3)])
+            frame_stops[4] += sum([bool(rstop.match(seq[50:]
+                                  [e:e + 3])) for e in range(1, len(seq), 3)])
+            frame_stops[5] += sum([bool(rstop.match(seq[50:]
+                                  [e:e + 3])) for e in range(2, len(seq), 3)])
         # if more than one frame wo stop codon
         #  return wo codon partitions
         if sum([e == 0 for e in frame_stops]) > 1:
@@ -271,7 +274,7 @@ to .partitions.txt"""
         ngene = 1
         text = ''
         reframed = []
-        for alignment, stop in zip (alignments, stops):
+        for alignment, stop in zip(alignments, stops):
             begin = nbp
             # if stop pattern gets ORF, partition by codon ...
             alignment = self._findORF(alignment, stop)
@@ -311,12 +314,12 @@ to .partitions.txt"""
         if self.trys > self.maxtrys:
             raise RAxMLError()
         # choose random alignment for each gene
-        alignments,stops = self.alignment_store.pull()
+        alignments, stops = self.alignment_store.pull()
         # set up
-        alignment,carg,outgroup,parg = self._setUp(alignments, stops)
+        alignment, carg, outgroup, parg = self._setUp(alignments, stops)
         # run RAxML
-        phylogeny = RAxML(alignment, constraint = carg,\
-            outgroup = outgroup, partitions = parg)
+        phylogeny = RAxML(alignment, constraint=carg, outgroup=outgroup,
+                          partitions=parg)
         # if successful return True
         # Phylo.draw_ascii(phylogeny)
         if self._test(phylogeny):
@@ -328,8 +331,9 @@ to .partitions.txt"""
             self.trys += 1
             return False
 
-def RAxML(alignment, outgroup = None, partitions = None,\
-    constraint = None, timeout = 999999999):
+
+def RAxML(alignment, outgroup=None, partitions=None, constraint=None,
+          timeout=999999999):
     """Adapted pG function: Generate phylogeny from alignment using
 RAxML (external program)."""
     input_file = '.phylogeny_in.phylip'
@@ -375,8 +379,9 @@ RAxML (external program)."""
     else:
         raise RuntimeError()
 
-def consensus(phylogenies, outdir, min_freq = 0.5,\
-    is_rooted = True, trees_splits_encoded = False):
+
+def consensus(phylogenies, outdir, min_freq=0.5, is_rooted=True,
+              trees_splits_encoded=False):
     """Generate a rooted consensus tree"""
     # first ensure that all trees in the distribution have same number
     # of taxa, otherwise, make it so by dropping taxa not present in
@@ -386,84 +391,22 @@ def consensus(phylogenies, outdir, min_freq = 0.5,\
         terminals = phylogeny.get_terminals()
         all_tip_names.append([e.name for e in terminals])
     counted = Counter(sum(all_tip_names, []))
-    to_drop = [e for e in counted.keys() if counted[e] < \
-        len(phylogenies)]
-    for tip_names,phylogeny in zip(all_tip_names,phylogenies):
+    to_drop = [e for e in counted.keys() if counted[e] < len(phylogenies)]
+    for tip_names, phylogeny in zip(all_tip_names, phylogenies):
         dropping = [e for e in tip_names if e in to_drop]
         for tip_name in dropping:
-            _ = phylogeny.prune(tip_name)
+            phylogeny.prune(tip_name)
     with open('.for_consensus.tre', "w") as file:
-        counter = Phylo.write(phylogenies, file, 'newick')
+        Phylo.write(phylogenies, file, 'newick')
     # create dendropy list
     trees = dp.TreeList()
-    trees.read_from_path('.for_consensus.tre', "newick",\
-        as_rooted = True)
+    trees.read_from_path('.for_consensus.tre', "newick", as_rooted=True)
     os.remove('.for_consensus.tre')
-    #https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
+    # https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
     sd = dp.treesplit.SplitDistribution(taxon_set=trees.taxon_set)
     sd.is_rooted = is_rooted
     tsum = dp.treesum.TreeSummarizer()
-    tsum.count_splits_on_trees(trees,split_distribution=sd,\
-        trees_splits_encoded=trees_splits_encoded)
-    consensus = tsum.tree_from_splits(sd, min_freq = min_freq)
-    consensus.write_to_path(os.path.join(outdir, 'consensus.tre'),\
-        "newick")
-
-## Old functions
-# with open('4_phylogeny/distribution.tre', "r") as file:
-#     phylogenies = [e for e in Phylo.parse(file, "newick")]
-
-# def renameTips(phylo, names):
-#     for each in phylo.get_terminals():
-#         try:
-#             each.name = names[each.name]["name"]
-#         except KeyError:
-#             pass
-#     return phylo
-
-# def getBranchLengths(phylo):
-#     lens = []
-#     depths =  phylo.depths(unit_branch_lengths = True)
-#     for branch in depths.keys():
-#         if branch.branch_length:
-#             lens.append(branch.branch_length)
-#     return lens
-
-# def goodPhylogenyTest(query, max_branch):
-#     lens = getBranchLengths(query)
-#     total_len = sum(lens)
-#     lens_bool = [e/total_len > max_branch for e in lens]
-#     if any(lens_bool):
-#         return False
-#     else:
-#         return True
-
-# def phyloTest(query, ref_path, max_nsplits, max_branch):
-#     lens = getBranchLengths(query)
-#     total_len = sum(lens)
-#     lens_bool = [e/total_len > max_branch for e in lens]
-#     if any(lens_bool):
-#         return False
-#     elif max_nsplits:
-#         tax_tree = dp.Tree()
-#         tax_tree.read_from_path(ref_path, "newick")
-#         temp_tree = dp.Tree()
-#         Phylo.write(query, "temp_phylo.txt", 'newick')
-#         temp_tree.read_from_path("temp_phylo.txt", "newick")
-#         os.remove("temp_phylo.txt")
-#         # I don't think it's necessary for them to have the same number of taxa
-#         tax_list = [e for e in tax_tree.taxon_set]
-#         temp_list = [e for e in temp_tree.taxon_set]
-#         drop_list = [e1 for e1 in tax_list if e1.label not in [e2.label for e2 in temp_list]]
-#         tax_tree.prune_taxa(drop_list)
-#         print tax_tree.as_ascii_plot()
-#         # extract number of splits in the tax_tree not in temp_tree
-#         # http://pythonhosted.org/DendroPy/tutorial/treestats.html#frequency-of-a-split-in-a-collection-of-trees
-#         nsplits = tax_tree.false_positives_and_negatives(temp_tree)
-#         print "... [{0}] tax splits, [{1}] temp splits...".format(nsplits[0], nsplits[1])
-#         if nsplits[1] > max_nsplits:
-#             return False
-#         else:
-#             return True
-#     else:
-#         return True
+    tsum.count_splits_on_trees(trees, split_distribution=sd,
+                               trees_splits_encoded=trees_splits_encoded)
+    consensus = tsum.tree_from_splits(sd, min_freq=min_freq)
+    consensus.write_to_path(os.path.join(outdir, 'consensus.tre'), "newick")
