@@ -32,7 +32,7 @@ class StopCodonRetriever(object):
     """Stop codon retrival class"""
     # ref: http://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi
     # Multiple lists referring to:
-    #  [0] Vertebrates (but Ascidia)
+    #  [0] Vertebrates (excl. Ascidia)
     #  [1] Ciliates, green algae and diplomonads
     #  [2] All other Eukaryotes (incl. Ascidia)
     mt_txids = [[7742], [5878, 3135, 5738], [2759, 30275]]
@@ -43,7 +43,7 @@ class StopCodonRetriever(object):
     def __init__(self):
         pass
 
-    def pattern(self, ids, genome_type):
+    def pattern(self, ids, genome_type='mt'):
         """Return stop pattern for lowest matching id"""
         # assumes lower taxonomic levels are at higher indexes
         if genome_type == 'mt':
@@ -66,24 +66,31 @@ class AlignmentStore(dict):
     """Alignment holding class"""
     retriever = StopCodonRetriever()
 
-    def __init__(self, genes, genedict, genekeys, allrankids, indir):
-        # Read in alignments for each gene
-        for gene in genes:
-            self[gene] = {'alignments': [], 'files': [], 'counters': []}
-            self[gene]['stop'] =\
-                self.retriever.pattern(allrankids,
-                                       genedict[genekeys[gene]]['partition'].
+    def __init__(self, clusters, genedict, allrankids, indir):
+        # Read in alignments for each cluster
+        # first find corresponding gene name for each cluster
+        genes = []
+        for cluster in clusters:
+            genes.append(re.sub('_cluster[0-9]+', '', cluster))
+        for cluster, gene in zip(clusters, genes):
+            # add a key to the AlignmentStore dict
+            self[cluster] = {'alignments': [], 'files': [], 'counters': []}
+            # retrieve its stop codon if it's mt
+            self[cluster]['stop'] =\
+                self.retriever.pattern(allrankids, genedict[gene]['partition'].
                                        lower())
-            gene_dir = os.path.join(indir, gene)
-            alignment_files = os.listdir(gene_dir)
+            # find corresponding input dir and read in alignments
+            cluster_dir = os.path.join(indir, cluster)
+            alignment_files = os.listdir(cluster_dir)
             alignment_files = [e for e in alignment_files if
                                not re.search("^\.", e)]
             for alignment_file in alignment_files:
-                with open(os.path.join(gene_dir, alignment_file), "r") as file:
+                with open(os.path.join(cluster_dir, alignment_file), "r") \
+                        as file:
                     alignment = AlignIO.read(file, "fasta")
-                self[gene]['alignments'].append(alignment)
-                self[gene]['files'].append(alignment_file)
-                self[gene]['counters'].append(0)
+                self[cluster]['alignments'].append(alignment)
+                self[cluster]['files'].append(alignment_file)
+                self[cluster]['counters'].append(0)
 
     def count(self):
         """Add to alignments' counters"""

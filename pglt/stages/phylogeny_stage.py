@@ -39,14 +39,11 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     ptools.logger = logger
 
     # READ ALIGMENTS
-    genes = sorted(os.listdir(alignment_dir))
-    genes = [e for e in genes if not re.search("^\.|^log\.txt$", e)]
-    genekeys = {}
-    for gene in genes:
-        genekeys[gene] = re.sub('_cluster[0-9]+', '', gene)
+    clusters = sorted(os.listdir(alignment_dir))
+    clusters = [e for e in clusters if not re.search("^\.|^log\.txt$", e)]
     logging.info("Reading in alignments ....")
-    alignment_store = ptools.AlignmentStore(genes=genes, genedict=genedict,
-                                            genekeys=genekeys,
+    alignment_store = ptools.AlignmentStore(clusters=clusters,
+                                            genedict=genedict,
                                             allrankids=allrankids,
                                             indir=alignment_dir)
 
