@@ -102,8 +102,8 @@ fewer matches than target nseqs"""
         """Filter sequences by BLASTing"""
         # choose random species for query
         randn = random.randint(0, len(sequences)-1)
-        query = [sequences[randn]]
-        subj = sequences
+        query = sequences
+        subj = [sequences[randn]]
         # blast rand seq against all other seqs
         blast_bool, _ = atools.blast(query, subj, self.minoverlap)
         # filtered are all sequences that are true
