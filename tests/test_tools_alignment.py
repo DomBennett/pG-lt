@@ -46,9 +46,24 @@ def dummy_blast(query, subj, minoverlap):
     return bools, positions
 
 
+def dummy_align(command, sequences, timeout):
+    return test_alignment
+
+
+def dummy_add(alignment, sequence, timeout):
+    return test_alignment
+
+
+def dummy_check_alignment(alignment, mingaps, minoverlap, minlen):
+    return True
+
+
 class AlignmentTestSuite(unittest.TestCase):
 
     def setUp(self):
+        self.true_align = atools.align
+        self.true_add = atools.add
+        self.true_check_alignment = atools.checkAlignment
         self.true_blast = atools.blast
         atools.blast = dummy_blast
         genedir = os.path.join(working_dir, 'data', 'test_sequences')
@@ -66,6 +81,9 @@ class AlignmentTestSuite(unittest.TestCase):
 
     def tearDown(self):
         atools.blast = self.true_blast
+        atools.align = self.true_align
+        atools.add = self.true_add
+        atools.checkAlignment = self.true_check_alignment
 
     def test_gennonalignment(self):
         alignment = atools.genNonAlignment(1, 100)
@@ -265,19 +283,70 @@ class AlignmentTestSuite(unittest.TestCase):
         self.assertEqual(len(alignment), 12)
 
     def test_aligner_private_calctimeout(self):
-        pass
+        # dummy of 10 sequences of length 100
+        dummy_alignment = [[1 for b in range(100)] for s in range(10)]
+        self.aligner._calcTimeout(seconds=10, alignment=dummy_alignment)
+        self.aligner._calcTimeout(seconds=10, alignment=dummy_alignment,
+                                  align=False)
+        # both should be 0.1 seconds -- the average number of seconds per b*10
+        # 1000 bases takes 10 seconds. So per base it is 0.01.
+        # Multiplying by buffer gives 0.1 seconds
+        self.assertEqual(self.aligner.tadd, 0.1)
+        self.assertEqual(self.aligner.talign, 0.1)
 
     def test_aligner_private_gettimeout(self):
-        pass
+        # dummy of 10 sequences of length 100
+        dummy_sequences = [[1 for b in range(100)] for s in range(10)]
+        dummy_sequence = [1 for b in range(100)]
+        self.aligner.tadd = 0.1
+        self.aligner.talign = 0.1
+        tadd = self.aligner._getTimeout(sequences=dummy_sequences,
+                                        sequence=dummy_sequence)
+        talign = self.aligner._getTimeout(sequences=dummy_sequences)
+        # number of nucleotides by tadd and talign
+        self.assertEqual(tadd, 1100*0.1)
+        self.assertEqual(talign, 1000*0.1)
 
-    def test_aligner_private_calcseedseize(self):
-        pass
+    def test_aligner_private_calcseedsize(self):
+        seedsize = self.aligner.seedsize
+        # fail buffer times in a row, seedsize should drop
+        for i in range(self.aligner.buffer):
+            # will return 0s
+            self.assertFalse(self.aligner._calcSeedsize(False))
+        # now seedsize will have dropped
+        self.assertEqual(self.aligner.seedsize, seedsize-1)
+        # success buffer times in a row, seedsize should increase
+        for i in range(self.aligner.buffer):
+            # will return 0s
+            self.assertFalse(self.aligner._calcSeedsize(True))
+        # after buffer times, seedsize should have increased
+        self.assertEqual(self.aligner.seedsize, seedsize)
 
     def test_aligner_private_seed(self):
-        pass
+        # switch to dummies
+        atools.align = dummy_align
+        atools.checkAlignment = dummy_check_alignment
+        self.aligner.store = []
+        # run seed which will be a success and add test_alignment to store
+        success, trys = self.aligner._seed(0)
+        self.assertTrue(success)
+        self.assertFalse(trys)
+        self.assertEqual(self.aligner.store[0], test_alignment)
 
     def test_aligner_private_add(self):
-        pass
+        # switch to dummies
+        atools.add = dummy_add
+        atools.checkAlignment = dummy_check_alignment
+        # set up so that SeqStore methods work
+        self.aligner.seqstore.sppool = self.aligner.seqstore.keys()
+        self.aligner.seqstore.sequences_in_alignment = []
+        self.aligner.store = [test_alignment[-1]]
+        # run add which will not be finished
+        finished, trys = self.aligner._add(0)
+        self.assertFalse(finished)
+        self.assertFalse(trys)
+        # last store entry will be test_alignment
+        self.assertEqual(self.aligner.store[-1], test_alignment)
 
     def test_aligner_run(self):
         # all the outgroup seqs should not align, alignment
