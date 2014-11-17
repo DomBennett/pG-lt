@@ -39,7 +39,7 @@ with open(os.path.join(working_dir, "data", "test_alignment.p"),
 # MOCK
 def dummy_blast(query, subj, minoverlap):
     # should return bools and positions
-    bools = [True for e in subj]
+    bools = [True for e in query]
     positions = [0 for e in subj]
     max_positions = [len(e) for e in subj]
     positions.extend(max_positions)
