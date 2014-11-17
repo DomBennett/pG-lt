@@ -228,7 +228,7 @@ class Aligner(object):
         mean_len = np.mean([len(e) for e in sequences])
         size = mean_len*len(sequences)
         if sequence and self.tadd:
-            return (self.tadd*size) + len(sequence)
+            return self.tadd*(size + len(sequence))
         elif self.talign:
             return self.talign*size
         return self.timeout
@@ -287,7 +287,7 @@ seedsize. Return 1 if trys must increase, else 0."""
                 self.buffer_counter = 0
             else:
                 # here seedsize must be reduced, but has hit
-                #  midseedsize, add 1 to trys
+                #  minseedsize, add 1 to trys
                 return 1
         return 0
 
