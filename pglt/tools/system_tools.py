@@ -153,8 +153,6 @@ class Stager(object):
     @classmethod
     def run_all(klass, wd, stage, verbose):
         for s in sorted(Stager.STAGES.keys()[stage:]):
-            if not verbose:
-                print '  Stage [{0}]'.format(Stager.STAGES[s][1])
             Stager(wd, s).run()
 
 
@@ -198,7 +196,6 @@ class Runner(object):
             # if failed, remove folder from list
             if failed:
                 self.folders.remove(folder)
-                break
             self.q.task_done()
 
     def run(self, folders, stage, parallel=False):
@@ -224,7 +221,7 @@ class Runner(object):
         main = threading.Thread(target=self.q.join)
         main.daemon = True
         main.start()
-        while (main.isAlive()):
+        while main.isAlive():
             main.join(3600)
 
 
@@ -255,7 +252,6 @@ written by W.D. Pearse."""
         else:
             thread = threading.Thread(target=loudTarget)
         thread.start()
-        # TODO: how to handle the main thread being killed?
         thread.join(self.timeout)
         if thread.is_alive():
             self.process.terminate()
