@@ -28,7 +28,7 @@ def genPhylogeny():
 
 # DUMMIES
 class DummyAlignmentStore(object):
-    def __init__(self, genes, genedict, genekeys, allrankids, indir):
+    def __init__(self, clusters, genedict, allrankids, indir):
         pass
 
 
