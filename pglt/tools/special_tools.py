@@ -32,7 +32,7 @@ def timeit(func, **kwargs):
 
 def getThreads(local=False):
     """Find number of cores on machine (platform independent). If local, \
-search cwd for pickled .threads.p"""
+search cwd for pickled .threads.p."""
     if local:
         if os.path.isfile('.threads.p'):
             with open('.threads.p', "rb") as file:
