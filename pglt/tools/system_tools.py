@@ -245,7 +245,7 @@ written by W.D. Pearse."""
             self.output = self.process.communicate()
 
         def loudTarget():
-            self.process = subprocess.Popen(self.cmd, shell=False)
+            self.process = subprocess.Popen(self.cmd, shell=True)
             self.output = self.process.communicate()
         if self.silent:
             thread = threading.Thread(target=silentTarget)
