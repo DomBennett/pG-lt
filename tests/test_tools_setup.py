@@ -12,6 +12,9 @@ import shutil
 import logging
 import pglt.tools.setup_tools as stools
 
+# GLOBALS
+working_dir = os.path.dirname(__file__)
+
 
 # DUMMIES
 def dummyGetThreads():
@@ -171,16 +174,19 @@ class SetupTestSuite(unittest.TestCase):
 
     def test_read_in_gene_pars(self):
         # read in test parameters in /data
-        default_file = os.path.join('data', 'test_default_gene_parameters.csv')
-        test_file = os.path.join('data', 'test_gene_parameters.csv')
+        default_file = os.path.join(working_dir, 'data',
+                                    'test_default_gene_parameters.csv')
+        test_file = os.path.join(working_dir, 'data',
+                                 'test_gene_parameters.csv')
         res = stools.readInGenePars(test_file, default_file)
         # COI minlen should be 'a different value'
         self.assertEqual(res['COI']['minlen'], 'a different value')
 
     def test_read_in_pars(self):
         # read in test parameters in /data
-        default_file = os.path.join('data', 'test_default_parameters.csv')
-        test_file = os.path.join('data', 'test_parameters.csv')
+        default_file = os.path.join(working_dir, 'data',
+                                    'test_default_parameters.csv')
+        test_file = os.path.join(working_dir, 'data', 'test_parameters.csv')
         res = stools.readInPars(test_file, default_file)
         # nseqs should be 'a different value'
         self.assertEqual(res['nseqs'], 'a different value')
@@ -191,8 +197,9 @@ class SetupTestSuite(unittest.TestCase):
         email = 'an.email'
         logger = stools.setUpLogging(verbose=False, debug=False,
                                      logname='testlogger')
-        default_pars_file = os.path.join('data', 'test_default_parameters.csv')
-        default_gpars_file = os.path.join('data',
+        default_pars_file = os.path.join(working_dir, 'data',
+                                         'test_default_parameters.csv')
+        default_gpars_file = os.path.join(working_dir, 'data',
                                           'test_default_gene_parameters.csv')
         with self.assertRaises(stools.PrimingError):
             stools.sortArgs(directory, email, logger, default_pars_file,
