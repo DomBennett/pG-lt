@@ -103,7 +103,7 @@ numbers 1 through 4.'
         sys.exit(stages_err_msg)
     # check threads is a valid argument
     if args.threads == 0 or args.threads < -1:
-        sys.exit('Invalid threads argument.')
+        sys.exit('Invalid threads argument, must be -1 or >0.')
     return args.email, args.threads, args.verbose, args.debug, stages
 
 
