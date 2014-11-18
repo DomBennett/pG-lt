@@ -24,6 +24,8 @@ from special_tools import getThreads
 
 # GLOBALS
 threads = getThreads(True)
+if threads == 1:
+    threads = 2
 logger = logging.getLogger('')
 
 
@@ -212,17 +214,16 @@ multiple genes."""
         # otherwise find the species(s) with the fewest shared
         #  taxonomic groups
         if self.constraint:
-            with open(".constraint.tre", "w") as file:
+            with open(".constraint.tre", "r") as file:
                 constraint = Phylo.read(file, "newick")
             distances = [constraint.distance(e) for e in spp]
             index = [i for i, e in enumerate(distances) if e ==
                      min(distances)]
-            # always choose the first, even if multiple species are
-            #  returned
-            return spp[index[0]]
+            # choose one at random
+            ri = random.sample(index, 1)[0]
+            return spp[ri]
         else:
             return False
-
 
     def _findORF(self, alignment, stop):
         """Return ORF of alignment based on absence of stop codons"""
@@ -235,7 +236,7 @@ multiple genes."""
                 alignment = alignment[:, :-offset]
             return alignment
         if not stop:
-            return alignment
+            return alignment, False
         # Unpack stop patterns
         fstop, rstop = stop
         frame_stops = [0, 0, 0, 0, 0, 0]
@@ -259,17 +260,17 @@ multiple genes."""
         # if more than one frame wo stop codon
         #  return wo codon partitions
         if sum([e == 0 for e in frame_stops]) > 1:
-            return alignment
+            return alignment, False
         # if no frames wo stop codons, return wo codon partitions
         if sum([e == 0 for e in frame_stops]) == 0:
-            return alignment
+            return alignment, False
         # else return frame and reframed alignment
         if frame_stops[0] == 0 or frame_stops[3] == 0:
-            return reframe(alignment, 0)
+            return reframe(alignment, 0), True
         if frame_stops[1] == 0 or frame_stops[4] == 0:
-            return reframe(alignment, 1)
+            return reframe(alignment, 1), True
         if frame_stops[2] == 0 or frame_stops[5] == 0:
-            return reframe(alignment, 2)
+            return reframe(alignment, 2), True
 
     def _partition(self, alignments, stops):
         """Return partition argument, write out partition postitions
@@ -277,15 +278,15 @@ to .partitions.txt"""
         if len(alignments) == 1:
             if not stops[0]:
                 return alignments, None
-        nbp = 1
+        begin = 1
+        nbp = 0
         ngene = 1
         text = ''
         reframed = []
         for alignment, stop in zip(alignments, stops):
-            begin = nbp
             # if stop pattern gets ORF, partition by codon ...
-            alignment = self._findORF(alignment, stop)
-            if alignment:
+            alignment, partitioned = self._findORF(alignment, stop)
+            if partitioned:
                 end = alignment.get_alignment_length() + nbp
                 text += 'DNA, gene{0}codon1 = {1}-{2}\\3\n'.\
                     format(ngene, begin, end)
@@ -298,7 +299,9 @@ to .partitions.txt"""
                 end = alignment.get_alignment_length() + nbp
                 text += 'DNA, gene{0} = {1}-{2}\n'.\
                     format(ngene, begin, end)
-            nbp = end + 1
+            nbp += end
+            begin = end + 1
+            ngene += 1
             reframed.append(alignment)
         with open('.partitions.txt', 'w') as file:
             file.write(text)
@@ -343,6 +346,7 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None,
           timeout=999999999):
     """Adapted pG function: Generate phylogeny from alignment using
 RAxML (external program)."""
+    # TODO: too complex, consider breaking up
     input_file = '.phylogeny_in.phylip'
     output_file = '.phylogeny_out'
     file_line = ' -s ' + input_file + ' -n ' + output_file
@@ -362,7 +366,7 @@ RAxML (external program)."""
         options += constraint
     command_line = 'raxml' + file_line + dnamodel + options
     logger.debug(command_line)
-    pipe = TerminationPipe(command_line)
+    pipe = TerminationPipe(command_line, silent=True)
     pipe.run()
     if not pipe.failure:
         try:
@@ -370,18 +374,18 @@ RAxML (external program)."""
                 tree = Phylo.read(file, "newick")
         except IOError:
             return None
-        # finally:
-        #     if constraint:
-        #         os.remove('.constraint.tre')
-        #     if partitions:
-        #         os.remove(".partitions.txt")
-        #     os.remove(input_file)
-        #     all_files = os.listdir(os.getcwd())
-        #     for each in all_files:
-        #         if re.search("(RAxML)", each):
-        #             os.remove(each)
-        #         if re.search("\.reduced$", each):
-        #             os.remove(each)
+        finally:
+            if constraint:
+                os.remove('.constraint.tre')
+            if partitions:
+                os.remove(".partitions.txt")
+            os.remove(input_file)
+            all_files = os.listdir(os.getcwd())
+            for each in all_files:
+                if re.search("(RAxML)", each):
+                    os.remove(each)
+                if re.search("\.reduced$", each):
+                    os.remove(each)
         return tree
     else:
         raise RuntimeError()
