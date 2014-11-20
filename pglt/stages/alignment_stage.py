@@ -114,6 +114,9 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     alignment_dir = os.path.join(wd, '3_alignment')
     if not os.path.isdir(alignment_dir):
         os.mkdir(alignment_dir)
+    atools.wd = os.path.join(wd, 'tempfiles')
+    if not os.path.isdir(atools.wd):
+        os.mkdir(atools.wd)
 
     # INPUT
     with open(os.path.join(wd, ".genedict.p"), "rb") as file:

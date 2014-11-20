@@ -21,6 +21,9 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     download_dir = os.path.join(wd, '2_download')
     if not os.path.isdir(download_dir):
         os.mkdir(download_dir)
+    dtools.atools.wd = os.path.join(wd, 'tempfiles')
+    if not os.path.isdir(dtools.atools.wd):
+        os.mkdir(dtools.atools.wd)
 
     # INPUT
     with open(os.path.join(wd, ".genedict.p"), "rb") as file:

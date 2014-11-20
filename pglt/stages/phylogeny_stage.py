@@ -23,6 +23,9 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     alignment_dir = os.path.join(wd, '3_alignment')
     phylogeny_dir = os.path.join(wd, '4_phylogeny')
     outfile = os.path.join(phylogeny_dir, 'distribution.tre')
+    ptools.wd = os.path.join(wd, 'tempfiles')
+    if not os.path.isdir(ptools.wd):
+        os.mkdir(ptools.wd)
 
     # INPUT
     with open(os.path.join(wd, ".paradict.p"), "rb") as file:
