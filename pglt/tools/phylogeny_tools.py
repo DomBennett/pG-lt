@@ -27,6 +27,7 @@ threads = getThreads(True)
 if threads == 1:
     threads = 2
 logger = logging.getLogger('')
+wd = os.getcwd()
 
 
 # CLASSES
@@ -58,8 +59,8 @@ class StopCodonRetriever(object):
             match = max(matches)
             i = [i for i, e in enumerate(self.mt_txids) if ids[match] in e][0]
             # return reobjs
-            return re.compile(self.mt_fpattern[i], flags=re.IGNORECASE),
-            re.compile(self.mt_rpattern[i], flags=re.IGNORECASE)
+            return re.compile(self.mt_fpattern[i], flags=re.IGNORECASE), \
+                re.compile(self.mt_rpattern[i], flags=re.IGNORECASE)
         else:
             return None
 
@@ -198,13 +199,13 @@ multiple genes."""
         for tip in tips_to_drop:
             constraint.prune(tip)
         # write out tree
-        with open(".constraint.tre", "w") as file:
+        with open(os.path.join(wd, "constraint.tre"), "w") as file:
             Phylo.write(constraint, file, "newick")
         # return arg
         if constraint.is_bifurcating():
-            return " -r .constraint.tre"
+            return " -r constraint.tre"
         else:
-            return " -g .constraint.tre"
+            return " -g constraint.tre"
 
     def _outgroup(self, alignment):
         """Return arg for outgroup"""
@@ -214,7 +215,7 @@ multiple genes."""
         # otherwise find the species(s) with the fewest shared
         #  taxonomic groups
         if self.constraint:
-            with open(".constraint.tre", "r") as file:
+            with open(os.path.join(wd, "constraint.tre"), "r") as file:
                 constraint = Phylo.read(file, "newick")
             distances = [constraint.distance(e) for e in spp]
             index = [i for i, e in enumerate(distances) if e ==
@@ -279,7 +280,6 @@ to .partitions.txt"""
             if not stops[0]:
                 return alignments, None
         begin = 1
-        nbp = 0
         ngene = 1
         text = ''
         reframed = []
@@ -287,7 +287,7 @@ to .partitions.txt"""
             # if stop pattern gets ORF, partition by codon ...
             alignment, partitioned = self._findORF(alignment, stop)
             if partitioned:
-                end = alignment.get_alignment_length() + nbp
+                end = alignment.get_alignment_length() + begin - 1
                 text += 'DNA, gene{0}codon1 = {1}-{2}\\3\n'.\
                     format(ngene, begin, end)
                 text += 'DNA, gene{0}codon2 = {1}-{2}\\3\n'.\
@@ -296,16 +296,17 @@ to .partitions.txt"""
                     format(ngene, begin + 2, end)
             else:
                 # ... else just for the whole gene
-                end = alignment.get_alignment_length() + nbp
+                end = alignment.get_alignment_length() + begin - 1
                 text += 'DNA, gene{0} = {1}-{2}\n'.\
                     format(ngene, begin, end)
-            nbp += end
             begin = end + 1
             ngene += 1
             reframed.append(alignment)
-        with open('.partitions.txt', 'w') as file:
+        logging.debug([e.get_alignment_length() for e in alignments])
+        logging.debug(text)
+        with open(os.path.join(wd, 'partitions.txt'), 'w') as file:
             file.write(text)
-        return reframed, ' -q .partitions.txt'
+        return reframed, ' -q partitions.txt'
 
     def _setUp(self, alignments, stops):
         """Set up for RAxML"""
@@ -347,13 +348,13 @@ def RAxML(alignment, outgroup=None, partitions=None, constraint=None,
     """Adapted pG function: Generate phylogeny from alignment using
 RAxML (external program)."""
     # TODO: too complex, consider breaking up
-    input_file = '.phylogeny_in.phylip'
-    output_file = '.phylogeny_out'
+    input_file = 'phylogeny_in.phylip'
+    output_file = 'phylogeny_out'
     file_line = ' -s ' + input_file + ' -n ' + output_file
     options = ' -p ' + str(random.randint(0, 10000000)) + ' -T ' + str(threads)
     if outgroup:
         options += ' -o ' + outgroup
-    with open(input_file, "w") as file:
+    with open(os.path.join(wd, input_file), "w") as file:
         AlignIO.write(alignment, file, "phylip-relaxed")
     # only use GTRCAT for more than 100 taxa (ref RAxML manual)
     if len(alignment) > 100:
@@ -366,26 +367,27 @@ RAxML (external program)."""
         options += constraint
     command_line = 'raxml' + file_line + dnamodel + options
     logger.debug(command_line)
-    pipe = TerminationPipe(command_line, silent=True)
+    pipe = TerminationPipe(command_line, silent=True, cwd=wd)
     pipe.run()
     if not pipe.failure:
         try:
-            with open('RAxML_bestTree.' + output_file, "r") as file:
+            with open(os.path.join(wd, 'RAxML_bestTree.' + output_file), "r") \
+                    as file:
                 tree = Phylo.read(file, "newick")
         except IOError:
             return None
         finally:
             if constraint:
-                os.remove('.constraint.tre')
+                os.remove(os.path.join(wd, 'constraint.tre'))
             if partitions:
-                os.remove(".partitions.txt")
-            os.remove(input_file)
-            all_files = os.listdir(os.getcwd())
+                os.remove(os.path.join(wd, "partitions.txt"))
+            os.remove(os.path.join(wd, input_file))
+            all_files = os.listdir(wd)
             for each in all_files:
                 if re.search("(RAxML)", each):
-                    os.remove(each)
+                    os.remove(os.path.join(wd, each))
                 if re.search("\.reduced$", each):
-                    os.remove(each)
+                    os.remove(os.path.join(wd, each))
         return tree
     else:
         raise RuntimeError()
