@@ -151,8 +151,8 @@ class Stager(object):
         return failed
 
     @classmethod
-    def run_all(klass, wd, stage, verbose):
-        for s in sorted(Stager.STAGES.keys()[stage:]):
+    def run_all(klass, wd, stages):
+        for s in stages:
             Stager(wd, s).run()
 
 
@@ -228,8 +228,9 @@ class Runner(object):
 class TerminationPipe(object):
     """TerminationPipe class : exectute background programs. Adapted pG code \
 written by W.D. Pearse."""
-    def __init__(self, cmd, timeout=99999, silent=True):
+    def __init__(self, cmd, cwd=os.getcwd(), timeout=99999, silent=True):
         self.cmd = cmd
+        self.cwd = cwd
         self.timeout = timeout
         self.process = None
         self.output = None
@@ -241,11 +242,12 @@ written by W.D. Pearse."""
     def run(self):
         def silentTarget():
             self.process = subprocess.Popen(self.cmd, stdout=subprocess.PIPE,
-                                            shell=True, stderr=subprocess.PIPE)
+                                            shell=True, stderr=subprocess.PIPE,
+                                            cwd=self.cwd)
             self.output = self.process.communicate()
 
         def loudTarget():
-            self.process = subprocess.Popen(self.cmd, shell=True)
+            self.process = subprocess.Popen(self.cmd, shell=True, cwd=self.cwd)
             self.output = self.process.communicate()
         if self.silent:
             thread = threading.Thread(target=silentTarget)
