@@ -31,6 +31,7 @@ from special_tools import getThreads
 # GLOBALS
 threads = getThreads(True)
 logger = logging.getLogger('')
+wd = os.getcwd()
 
 
 # OBEJECTS
@@ -418,24 +419,24 @@ def genNonAlignment(nseqs, alen):
 def align(command, sequences, timeout):
     """Adapted pG function: Align sequences using mafft (external
 program)"""
-    input_file = ".sequences_in.fasta"
-    output_file = ".alignment_out.fasta"
+    input_file = "sequences_in.fasta"
+    output_file = "alignment_out.fasta"
     command_line = '{0} --thread {1} {2} > {3}'.format(command, threads,
                                                        input_file, output_file)
-    with open(input_file, "w") as file:
+    with open(os.path.join(wd, input_file), "w") as file:
         SeqIO.write(sequences, file, "fasta")
     logger.debug(command_line)
-    pipe = TerminationPipe(command_line, timeout=timeout)
+    pipe = TerminationPipe(command_line, timeout=timeout, cwd=wd)
     pipe.run()
-    os.remove(input_file)
+    os.remove(os.path.join(wd, input_file))
     if not pipe.failure:
         try:
-            res = AlignIO.read(output_file, 'fasta')
+            res = AlignIO.read(os.path.join(wd, output_file), 'fasta')
         except:
             logger.info(pipe.output)
             raise MafftError()
         else:
-            os.remove(output_file)
+            os.remove(os.path.join(wd, output_file))
     else:
         # if pipe.failure, runtime error, return non-alignment
         logger.debug('.... align timeout ....')
@@ -446,27 +447,27 @@ program)"""
 def add(alignment, sequence, timeout):
     """Align sequence(s) to an alignment using mafft (external
 program)"""
-    alignment_file = ".alignment_in.fasta"
-    sequence_file = ".sequence_in.fasta"
+    alignment_file = "alignment_in.fasta"
+    sequence_file = "sequence_in.fasta"
     output_file = "alignment_out.fasta" + '.fasta'
     command_line = 'mafft --auto --thread {0} --add {1} {2} > {3}'.\
                    format(threads, sequence_file, alignment_file, output_file)
-    with open(sequence_file, "w") as file:
+    with open(os.path.join(wd, sequence_file), "w") as file:
         SeqIO.write(sequence, file, "fasta")
-    with open(alignment_file, "w") as file:
+    with open(os.path.join(wd, alignment_file), "w") as file:
         AlignIO.write(alignment, file, "fasta")
-    pipe = TerminationPipe(command_line, timeout=timeout)
+    pipe = TerminationPipe(command_line, timeout=timeout, cwd=wd)
     pipe.run()
-    os.remove(alignment_file)
-    os.remove(sequence_file)
+    os.remove(os.path.join(wd, alignment_file))
+    os.remove(os.path.join(wd, sequence_file))
     if not pipe.failure:
         try:
-            res = AlignIO.read(output_file, 'fasta')
+            res = AlignIO.read(os.path.join(wd, output_file), 'fasta')
         except:
             logger.info(pipe.output)
             raise MafftError()
         else:
-            os.remove(output_file)
+            os.remove(os.path.join(wd, output_file))
     else:
         logger.debug('.... add timeout ....')
         return genNonAlignment(len(alignment) + 1,
@@ -477,13 +478,14 @@ program)"""
 def blast(query, subj, minoverlap):
     """Return bool and positions of query sequences that overlapped
 with subject given parameters."""
-    SeqIO.write(query, ".query.fasta", "fasta")
-    SeqIO.write(subj, ".subj.fasta", "fasta")
+    query_file = os.path.join(wd, 'query.fasta')
+    subj_file = os.path.join(wd, 'subj.fasta')
+    SeqIO.write(query, query_file, "fasta")
+    SeqIO.write(subj, subj_file, "fasta")
     try:
         # options: http://www.ncbi.nlm.nih.gov/books/NBK1763/
-        cline = NcbiblastnCommandline(query=".query.fasta",
-                                      subject=".subj.fasta", outfmt=5,
-                                      task='blastn', word_size=8,
+        cline = NcbiblastnCommandline(query=query_file, subject=subj_file,
+                                      outfmt=5, task='blastn', word_size=8,
                                       num_threads=threads)
         output = cline()[0]
     except ApplicationError:  # as error_msg:
@@ -493,8 +495,8 @@ with subject given parameters."""
         #  results though, low priority
         return [], []
     finally:
-        os.remove(".query.fasta")
-        os.remove(".subj.fasta")
+        os.remove(query_file)
+        os.remove(subj_file)
     # list of T or F for success of alignment between queries and
     #  subject
     bools = []
