@@ -49,7 +49,7 @@ def start():
     if verbose:
         printHeader()
     # create base logger -- messages in parent folder log.txt
-    base_logger = setUpLogging(not verbose, debug, 'base')
+    base_logger = setUpLogging(verbose, debug, 'base')
     # search cwd for folders that contain names and parameter files
     folders = getFolders()
     return email, threads, verbose, debug, base_logger, folders, stages
@@ -92,7 +92,7 @@ if __name__ == '__main__':
             base_logger=base_logger, folders=folders, stages=stages)
     except KeyboardInterrupt:
         base_logger.info('Execution halted by user')
-        if not verbose:
+        if verbose:
             sys.exit()
         else:
             sys.exit('Execution halted by user')

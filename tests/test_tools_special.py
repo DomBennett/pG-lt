@@ -24,7 +24,7 @@ class SpecialTestSuite(unittest.TestCase):
     def test_timeit(self):
         # time time.sleep for 0.1 second
         res, s = stools.timeit(sleep, seconds=0.1)
-        self.assertAlmostEqual(s, 0.1, places=2)
+        self.assertAlmostEqual(s, 0.1, places=1)
 
     def test_get_threads_local_false(self):
         res = stools.getThreads()
