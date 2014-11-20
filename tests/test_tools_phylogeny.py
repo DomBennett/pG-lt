@@ -66,6 +66,8 @@ def genAlignment(names):
 class PhylogenyTestSuite(unittest.TestCase):
 
     def setUp(self):
+        # ptools.wd
+        ptools.wd = os.getcwd()
         # stub out
         self.true_RAxML = ptools.RAxML
         ptools.RAxML = dummy_RAxML
@@ -94,8 +96,8 @@ class PhylogenyTestSuite(unittest.TestCase):
                                           rttpvalue=0.001, outdir=outdir,
                                           maxtrys=10)
         self.phylo = test_phylo
-        self.carg = ' -g .constraint.tre'
-        self.parg = ' -q .partitions.txt'
+        self.carg = ' -g constraint.tre'
+        self.parg = ' -q partitions.txt'
         self.constraint = constraint
         self.poutgroups = ['Ignatius_tetrasporus', 'Oltmannsiellopsis_viridis',
                            'Ulothrix_zonata']
@@ -166,8 +168,8 @@ class PhylogenyTestSuite(unittest.TestCase):
     def test_generator_private_constraint(self):
         # 4 tips in taxon tree not present in alignment
         carg = self.generator._constraint(test_alignment)
-        self.assertTrue(os.path.isfile('.constraint.tre'))
-        with open(".constraint.tre", "r") as file:
+        self.assertTrue(os.path.isfile('constraint.tre'))
+        with open("constraint.tre", "r") as file:
             constraint = Phylo.read(file, "newick")
         self.assertEqual(len(constraint.get_terminals()), 11)
         self.assertEqual(carg, self.carg)
@@ -205,8 +207,8 @@ class PhylogenyTestSuite(unittest.TestCase):
         # create partition text for the two genes, make sure they're correct
         alignment, parg = self.generator._partition(test_alignments,
                                                     [None, None])
-        self.assertTrue(os.path.isfile('.partitions.txt'))
-        with open('.partitions.txt', 'r') as file:
+        self.assertTrue(os.path.isfile('partitions.txt'))
+        with open('partitions.txt', 'r') as file:
             text = file.read()
         self.assertEqual(text, self.partition_text)
         self.assertEqual(parg, self.parg)

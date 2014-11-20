@@ -61,6 +61,8 @@ def dummy_check_alignment(alignment, mingaps, minoverlap, minlen):
 class AlignmentTestSuite(unittest.TestCase):
 
     def setUp(self):
+        # atools.wd
+        atools.wd = os.getcwd()
         self.true_align = atools.align
         self.true_add = atools.add
         self.true_check_alignment = atools.checkAlignment
