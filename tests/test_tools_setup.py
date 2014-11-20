@@ -114,7 +114,8 @@ class SetupTestSuite(unittest.TestCase):
         os.mkdir('folder_2')
         open(os.path.join('folder_2', 'names.txt'), 'w').close()
         folders = stools.getFolders()
-        self.assertEqual(folders, ['folder_1', 'folder_2'])
+        self.assertTrue('folder_1' in folders)
+        self.assertTrue('folder_2' in folders)
         shutil.rmtree('folder_1')
         shutil.rmtree('folder_2')
 
