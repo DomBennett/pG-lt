@@ -10,6 +10,7 @@ import os
 import re
 import copy
 import pickle
+import logging
 import random
 import pglt.tools.alignment_tools as atools
 from Bio import SeqIO
@@ -37,7 +38,7 @@ with open(os.path.join(working_dir, "data", "test_alignment.p"),
 
 
 # MOCK
-def dummy_blast(query, subj, minoverlap):
+def dummy_blast(query, subj, minoverlap, logger, wd, threads):
     # should return bools and positions
     bools = [True for e in query]
     positions = [0 for e in subj]
@@ -46,23 +47,23 @@ def dummy_blast(query, subj, minoverlap):
     return bools, positions
 
 
-def dummy_align(command, sequences, timeout):
+def dummy_align(command, sequences, timeout, logger, wd, threads):
     return test_alignment
 
 
-def dummy_add(alignment, sequence, timeout):
+def dummy_add(alignment, sequence, timeout, logger, wd, threads):
     return test_alignment
 
 
-def dummy_check_alignment(alignment, mingaps, minoverlap, minlen):
+def dummy_check_alignment(alignment, mingaps, minoverlap, minlen, logger):
     return True
 
 
 class AlignmentTestSuite(unittest.TestCase):
 
     def setUp(self):
-        # atools.wd
-        atools.wd = os.getcwd()
+        self.wd = os.getcwd()
+        self.logger = logging.getLogger()
         self.true_align = atools.align
         self.true_add = atools.add
         self.true_check_alignment = atools.checkAlignment
@@ -71,15 +72,14 @@ class AlignmentTestSuite(unittest.TestCase):
         genedir = os.path.join(working_dir, 'data', 'test_sequences')
         seqfiles = sorted(os.listdir(genedir))
         seqfiles = [e for e in seqfiles if not re.search("^\.|^log\.txt$", e)]
-        self.store = atools.SeqStore(genedir=genedir,
-                                     seqfiles=seqfiles,
-                                     minfails=10,
-                                     mingaps=0.5,
-                                     minoverlap=50)
+        self.store = atools.SeqStore(genedir=genedir, seqfiles=seqfiles,
+                                     minfails=10, mingaps=0.5, minoverlap=50,
+                                     logger=self.logger)
         self.aligner = atools.Aligner(self.store, mingaps=0.5, minoverlap=50,
                                       minseedsize=3, maxseedsize=20,
                                       maxtrys=10, maxseedtrys=10,
-                                      gene_type='shallow', outgroup=False)
+                                      gene_type='shallow', outgroup=False,
+                                      logger=self.logger)
 
     def tearDown(self):
         atools.blast = self.true_blast
@@ -105,13 +105,17 @@ class AlignmentTestSuite(unittest.TestCase):
 
     def test_align(self):
         # align and check if results exist
-        res = atools.align('mafft --auto', test_seqs, 99999)
+        res = atools.align(command='mafft --auto', sequences=test_seqs,
+                           timeout=99999, logger=self.logger, threads=2,
+                           wd=self.wd)
         self.assertTrue(res.__class__.__name__ == 'MultipleSeqAlignment')
 
     def test_add(self):
         # add to test_alignment and check if result
         #  exists
-        res = atools.add(test_alignment, test_seqs[0], 99999)
+        res = atools.add(alignment=test_alignment, sequence=test_seqs[0],
+                         timeout=99999, logger=self.logger, wd=self.wd,
+                         threads=2)
         self.assertTrue(res.__class__.__name__ == 'MultipleSeqAlignment')
 
     def test_blast(self):
@@ -120,7 +124,8 @@ class AlignmentTestSuite(unittest.TestCase):
         # choose sample of real seqs for speed
         queryseqs = random.sample(real_seqs, 5)
         subjseq = random.sample(real_seqs, 1)
-        res, _ = self.true_blast(query=queryseqs, subj=subjseq, minoverlap=50)
+        res, _ = self.true_blast(query=queryseqs, subj=subjseq, minoverlap=50,
+                                 logger=self.logger, wd=self.wd, threads=2)
         # all true
         self.assertTrue(all(res))
 
@@ -128,7 +133,7 @@ class AlignmentTestSuite(unittest.TestCase):
         # check mingaps argument (proportion of internal gaps)
         # check with good alignment
         res = atools.checkAlignment(test_alignment, mingaps=0.5, minoverlap=1,
-                                    minlen=1)
+                                    minlen=1, logger=self.logger)
         self.assertTrue(res)
         # check with bad alignment
         # this sequence has a large internal gap covering
@@ -138,7 +143,7 @@ class AlignmentTestSuite(unittest.TestCase):
         bad_alignment = test_alignment[:]
         bad_alignment.append(bad_seq)
         res = atools.checkAlignment(bad_alignment, mingaps=0.1, minoverlap=50,
-                                    minlen=1)
+                                    minlen=1, logger=self.logger)
         self.assertFalse(res)
 
     def test_checkalignment_arg_minoverlap(self):
@@ -151,13 +156,13 @@ class AlignmentTestSuite(unittest.TestCase):
         bad_alignment = test_alignment[:]
         bad_alignment.append(bad_seq)
         res = atools.checkAlignment(bad_alignment, mingaps=0.5, minoverlap=50,
-                                    minlen=1)
+                                    minlen=1, logger=self.logger)
         self.assertFalse(res)
 
     def test_checkalignment_arg_minlen(self):
         # check minlen argument
         res = atools.checkAlignment(test_alignment, mingaps=0.5, minoverlap=1,
-                                    minlen=101)
+                                    minlen=101, logger=self.logger)
         self.assertFalse(res)
 
     def test_seqstore_private_alignmentblast(self):

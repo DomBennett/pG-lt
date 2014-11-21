@@ -18,7 +18,8 @@ working_dir = os.path.dirname(__file__)
 
 # DUMMIES
 class Dummy_SeqStore(object):
-    def __init__(self, gene_dir, seq_files, minfails, mingaps, minoverlap):
+    def __init__(self, gene_dir, seq_files, minfails, mingaps, minoverlap,
+                 logger, wd):
         pass
 
     def __len__(self):
@@ -30,7 +31,8 @@ class Dummy_SeqStore(object):
 
 class Dummy_Aligner(object):
     def __init__(self, seqstore, mingaps, minoverlap, minseedsize,
-                 maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup):
+                 maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup,
+                 logger, wd):
         pass
 
     def run(self):

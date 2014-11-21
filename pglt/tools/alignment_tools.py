@@ -9,7 +9,6 @@ pglt alignment tools
 import os
 import re
 import random
-import logging
 import numpy as np
 from Bio import SeqIO
 from Bio import AlignIO
@@ -28,18 +27,17 @@ from system_tools import TrysError
 from special_tools import timeit
 from special_tools import getThreads
 
-# GLOBALS
-threads = getThreads(True)
-logger = logging.getLogger('')
-wd = os.getcwd()
-
 
 # OBEJECTS
 class SeqStore(dict):
     """Store species' gene sequences with functions for pulling \
 sequences for alignments and adding penalties for sequences that did \
 not align"""
-    def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap):
+    def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap,
+                 logger, wd=os.getcwd()):
+        self.wd = wd
+        self.logger = logger
+        self.threads = getThreads(True)
         self.minfails = minfails  # minimum number of fails in a row
         self.dspp = []  # species dropped
         self.nseqs = 0  # counter for seqs
@@ -110,7 +108,8 @@ sequences_in_alignment given set parameters using NCBI's BLAST"""
             # blast prospective next sequence against all sequences
             #  in alignment
             bools, positions = blast(query[i], sequences_in_alignment,
-                                     self.minoverlap)
+                                     self.minoverlap, self.logger, self.wd,
+                                     self.threads)
             # if more than prop overlap ...
             overlap = (float(sum(bools))/len(sequences_in_alignment)) >\
                 self.blast_prop
@@ -168,7 +167,7 @@ species"""
             to_drop = [ei for ei, e in enumerate(self[sp][0]) if e[1] >
                        self.minfails]
             for i in to_drop:
-                logger.info("Dropping [{0}] for [{1}] as nfails is \
+                self.logger.info("Dropping [{0}] for [{1}] as nfails is \
 [{2}]".format(self[sp][0][i][0].description, sp, self[sp][0][i][1]))
             self[sp][0] = [e for ei, e in enumerate(self[sp][0])
                            if ei not in to_drop]
@@ -176,7 +175,7 @@ species"""
                 if sp == "outgroup":
                     raise OutgroupError
                 else:
-                    logger.info("Dropped [{0}]".format(sp))
+                    self.logger.info("Dropped [{0}]".format(sp))
                     self.dspp.append(sp)
                     self.sppool = [e for e in self.sppool if e != sp]
                     del self[sp]
@@ -187,7 +186,11 @@ species"""
 class Aligner(object):
     """Build alignments from seqstore"""
     def __init__(self, seqstore, mingaps, minoverlap, minseedsize,
-                 maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup):
+                 maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup,
+                 logger, wd=os.getcwd()):
+        self.wd = wd
+        self.logger = logger
+        self.threads = getThreads(True)
         self.seqstore = seqstore
         self.mingaps = mingaps
         self.minoverlap = minoverlap
@@ -236,7 +239,7 @@ class Aligner(object):
 
     def _check(self, alignment):
         return checkAlignment(alignment, self.mingaps, self.minoverlap,
-                              self.minlen)
+                              self.minlen, self.logger)
 
     def _return(self):
         """Return best alignment from a list of alignments based on:\
@@ -250,12 +253,12 @@ presence of outgroup, number of species and length of alignment"""
             self.store = [a for a in self.store if "outgroup" in
                           [e.id for e in a._records]]
             if len(self.store) == 0:
-                logger.debug("........ no outgroup")
+                self.logger.debug("........ no outgroup")
                 self.total_trys += 1
                 return None
         self.store = [e for e in self.store if len(e) >= 5]
         if len(self.store) == 0:
-            logger.debug("........ too few species")
+            self.logger.debug("........ too few species")
             self.total_trys += 1
             return None
         # keep only alignments with lots of records
@@ -303,10 +306,12 @@ if successful"""
             try:
                 alignment, seconds = timeit(func=align, command=command,
                                             sequences=sequences,
+                                            logger=self.logger, wd=self.wd,
+                                            threads=self.threads,
                                             timeout=self._getTimeout(sequences)
                                             )
             except MafftError:
-                logger.debug('MAFTT error raised')
+                self.logger.debug('MAFTT error raised')
                 success = False
             else:
                 success = self._check(alignment)
@@ -331,15 +336,17 @@ if successful"""
             if not sequence:
                 # if no sequence is returned, nothing more can be
                 #  added
-                logger.debug('No new sequence added')
+                self.logger.debug('No new sequence added')
                 return True, trys
         try:
             new_alignment, seconds = timeit(func=add, alignment=alignment,
                                             sequence=sequence,
+                                            logger=self.logger, wd=self.wd,
+                                            threads=self.threads,
                                             timeout=self._getTimeout(alignment,
                                                                      sequence))
         except MafftError:
-            logger.debug('MAFTT error raised')
+            self.logger.debug('MAFTT error raised')
             success = False
         else:
             success = self._check(new_alignment)
@@ -367,18 +374,18 @@ seed alignment"""
             else:
                 raise TrysError
         # seed
-        logger.info("........ seed phase: [{0}] seed size".
-                    format(self.seedsize))
+        self.logger.info("........ seed phase: [{0}] seed size".
+                         format(self.seedsize))
         trys = 0
         success = False
         while not success:
             success, trys = self._seed(trys)
             if trys > self.maxtrys:
-                logger.debug("............ maxtrys hit")
+                self.logger.debug("............ maxtrys hit")
                 return self._return()
         # add
-        logger.info("........ add phase : [{0}] species".
-                    format(len(self.store[-1])))
+        self.logger.info("........ add phase : [{0}] species".
+                         format(len(self.store[-1])))
         trys = 0
         finished = False
         # if outgroup, force it for the first add after seed
@@ -387,7 +394,7 @@ seed alignment"""
         while not finished:
             finished, trys = self._add(trys)
             if trys > self.maxtrys:
-                logger.debug("............ maxtrys hit")
+                self.logger.debug("............ maxtrys hit")
                 return self._return()
         return self._return()
 
@@ -416,7 +423,7 @@ def genNonAlignment(nseqs, alen):
     return MultipleSeqAlignment(seqs)
 
 
-def align(command, sequences, timeout):
+def align(command, sequences, timeout, logger, wd, threads):
     """Adapted pG function: Align sequences using mafft (external
 program)"""
     input_file = "sequences_in.fasta"
@@ -444,7 +451,7 @@ program)"""
     return res
 
 
-def add(alignment, sequence, timeout):
+def add(alignment, sequence, timeout, logger, wd, threads):
     """Align sequence(s) to an alignment using mafft (external
 program)"""
     alignment_file = "alignment_in.fasta"
@@ -475,7 +482,7 @@ program)"""
     return res
 
 
-def blast(query, subj, minoverlap):
+def blast(query, subj, minoverlap, logger, wd, threads):
     """Return bool and positions of query sequences that overlapped
 with subject given parameters."""
     query_file = os.path.join(wd, 'query.fasta')
@@ -518,7 +525,7 @@ with subject given parameters."""
     return bools, positions
 
 
-def checkAlignment(alignment, mingaps, minoverlap, minlen):
+def checkAlignment(alignment, mingaps, minoverlap, minlen, logger):
     """Determine if an alignment is good or not based on given \
 parameters. Return bool"""
     # TODO: too complex, consider breaking up

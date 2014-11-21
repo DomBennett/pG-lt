@@ -17,7 +17,7 @@ import pglt.tools.alignment_tools as atools
 
 
 # FUNCTIONS
-def readSequences(download_dir, namesdict, genedict):
+def readSequences(download_dir, namesdict, genedict, logger, wd):
     """Read sequences into a genestore"""
     # add alignments key to namesdict
     for key in namesdict.keys():
@@ -35,12 +35,13 @@ def readSequences(download_dir, namesdict, genedict):
         mingaps = float(genedict[genekeys[gene]]["mingaps"])
         minoverlap = int(genedict[genekeys[gene]]["minoverlap"])
         seqstore = atools.SeqStore(gene_dir, seq_files, minfails=minfails,
-                                   mingaps=mingaps, minoverlap=minoverlap)
+                                   mingaps=mingaps, minoverlap=minoverlap,
+                                   logger=logger, wd=wd)
         genestore.append((gene, seqstore))
     return namesdict, genestore, genekeys
 
 
-def setUpAligner(gene, genedict, genekeys, seqstore):
+def setUpAligner(gene, genedict, genekeys, seqstore, logger, wd):
     """Set-up Aligner class for gene"""
     # get parameters
     mingaps = float(genedict[genekeys[gene]]["mingaps"])
@@ -55,7 +56,8 @@ def setUpAligner(gene, genedict, genekeys, seqstore):
     aligner = atools.Aligner(seqstore, mingaps=mingaps, minoverlap=minoverlap,
                              minseedsize=minseedsize, maxseedsize=maxseedsize,
                              maxtrys=maxtrys, maxseedtrys=maxseedtrys,
-                             gene_type=gene_type, outgroup=outgroup)
+                             gene_type=gene_type, outgroup=outgroup,
+                             logger=logger, wd=wd)
     return aligner
 
 
@@ -114,9 +116,6 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     alignment_dir = os.path.join(wd, '3_alignment')
     if not os.path.isdir(alignment_dir):
         os.mkdir(alignment_dir)
-    atools.wd = os.path.join(wd, 'tempfiles')
-    if not os.path.isdir(atools.wd):
-        os.mkdir(atools.wd)
 
     # INPUT
     with open(os.path.join(wd, ".genedict.p"), "rb") as file:
@@ -129,12 +128,11 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # PARAMETERS
     naligns = int(paradict["naligns"])
     all_counter = 0
-    atools.logger = logger
 
     # READ IN SEQUENCES
     logger.info('Reading in sequences ....')
     namesdict, genestore, genekeys = readSequences(download_dir, namesdict,
-                                                   genedict)
+                                                   genedict, logger, wd)
 
     # RUN ALIGNMENTS
     logger.info("Running alignments ....")
@@ -146,7 +144,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         gene_dir = os.path.join(alignment_dir, gene)
         if not os.path.isdir(gene_dir):
             os.mkdir(gene_dir)
-        aligner = setUpAligner(gene, genedict, genekeys, seqstore)
+        aligner = setUpAligner(gene, genedict, genekeys, seqstore, logger, wd)
         all_counter += runAligner(aligner, naligns, namesdict, gene_dir,
                                   logger)
 
