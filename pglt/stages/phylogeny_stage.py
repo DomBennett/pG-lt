@@ -48,13 +48,13 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     alignment_store = ptools.AlignmentStore(clusters=clusters,
                                             genedict=genedict,
                                             allrankids=allrankids,
-                                            indir=alignment_dir)
+                                            indir=alignment_dir, logger=logger)
 
     # GENERATE TREE DIST
     logging.info("Generating [{0}] phylogenies ....".format(nphylos))
     generator = ptools.Generator(alignment_store=alignment_store,
                                  rttpvalue=rttpvalue, outdir=phylogeny_dir,
-                                 maxtrys=maxtrys)
+                                 maxtrys=maxtrys, logger=logger, wd=wd)
     for i in range(nphylos):
         logging.info(".... Iteration [{0}]".format(i + 1))
         success = False

@@ -8,6 +8,7 @@ Tests for phylogeny tools.
 import unittest
 import pickle
 import os
+import logging
 import shutil
 import re
 from copy import deepcopy
@@ -45,8 +46,8 @@ genedict = {'gene1': {'partition': 'False'},
 
 
 # DUMMIES
-def dummy_RAxML(alignment, outgroup=None, partitions=None, constraint=None,
-                timeout=999999999):
+def dummy_RAxML(alignment, wd, logger, threads, outgroup=None, partitions=None,
+                constraint=None, timeout=999999999):
     return test_phylo
 
 
@@ -66,8 +67,8 @@ def genAlignment(names):
 class PhylogenyTestSuite(unittest.TestCase):
 
     def setUp(self):
-        # ptools.wd
-        ptools.wd = os.getcwd()
+        self.wd = os.getcwd()
+        self.logger = logging.getLogger()
         # stub out
         self.true_RAxML = ptools.RAxML
         ptools.RAxML = dummy_RAxML
@@ -91,10 +92,11 @@ class PhylogenyTestSuite(unittest.TestCase):
         self.alignment_store = ptools.AlignmentStore(clusters=clusters,
                                                      genedict=genedict,
                                                      allrankids=[],
-                                                     indir=indir)
+                                                     indir=indir,
+                                                     logger=self.logger)
         self.generator = ptools.Generator(alignment_store=self.alignment_store,
                                           rttpvalue=0.001, outdir=outdir,
-                                          maxtrys=10)
+                                          maxtrys=10, logger=self.logger)
         self.phylo = test_phylo
         self.carg = ' -g constraint.tre'
         self.parg = ' -q partitions.txt'
@@ -134,8 +136,9 @@ class PhylogenyTestSuite(unittest.TestCase):
         # eukaryota, diplomonad, Hexamitidae, h. inflata
         hinflata_ids = [2759, 5738, 5739, 28002]
         retriever = ptools.StopCodonRetriever()
-        human_pattern = retriever.pattern(ids=human_ids)
-        hinflata_pattern = retriever.pattern(ids=hinflata_ids)
+        human_pattern = retriever.pattern(ids=human_ids, logger=self.logger)
+        hinflata_pattern = retriever.pattern(ids=hinflata_ids,
+                                             logger=self.logger)
         # humans are vertebrates
         self.assertEqual(human_pattern[0].pattern, '(taa|tag|aga|agg)')
         # h.inflata are ciliates
@@ -234,7 +237,8 @@ class PhylogenyTestSuite(unittest.TestCase):
         # write out a .partitions.txt
         with open('.partitions.txt', 'w') as file:
             file.write(self.partition_text)
-        phylo = self.true_RAxML(test_alignment, partitions=self.parg,
+        phylo = self.true_RAxML(test_alignment, wd=self.wd, logger=self.logger,
+                                threads=2, partitions=self.parg,
                                 outgroup=self.poutgroups[0],
                                 constraint=self.carg)
         self.assertTrue(phylo)

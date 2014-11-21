@@ -45,7 +45,7 @@ def printHeader():
     print '#' * 70 + '\n'
 
 
-def calcWorkers(threads, nfolders, min_threads_per_worker=2,
+def calcWorkers(threads, nfolders, min_threads_per_worker=1,
                 max_threads_per_worker=100):
     """Calculate the number of workers for parallel running of folders"""
     # get available threads on machine

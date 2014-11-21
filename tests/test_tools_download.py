@@ -7,6 +7,7 @@ Tests for download tools.
 
 import unittest
 import pickle
+import logging
 import os
 import pglt.tools.download_tools as dtools
 
@@ -94,13 +95,13 @@ def dummy_eFetch(ncbi_id, db="nucleotide"):
         return [seq1, seq2, seq3]
 
 
-def dummy_blast(query, subj, minoverlap):
+def dummy_blast(query, subj, minoverlap, logger, wd, threads):
     # should return bools and positions
     # pretend they've matched from 0-100 base positions
     return query, [0, 100]
 
 
-def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen):
+def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen, logger):
     return alignment
 
 # downloader init variables
@@ -126,6 +127,8 @@ genedict = {'gene1': {'taxid': '3', 'names': ['name1', 'name2'],
 class DownloadTestSuite(unittest.TestCase):
 
     def setUp(self):
+        self.logger = logging.getLogger()
+        self.wd = os.getcwd()
         self.true_eSearch = dtools.etools.eSearch
         self.true_eFetch = dtools.etools.eFetch
         self.true_blast = dtools.atools.blast
@@ -141,7 +144,8 @@ class DownloadTestSuite(unittest.TestCase):
                                             maxpn=maxpn, seedsize=seedsize,
                                             maxtrys=maxtrys,
                                             minoverlap=minoverlap,
-                                            maxlen=maxlen, minlen=minlen)
+                                            maxlen=maxlen, minlen=minlen,
+                                            logger=self.logger, wd=self.wd)
         # expected search terms at different thoroughnesses
         self.t1_term = t1_term
         self.t2_term = t2_term
@@ -224,8 +228,8 @@ class DownloadTestSuite(unittest.TestCase):
 
     def test_findbestgenes(self):
         res = dtools.findBestGenes(self.namesdict, self.genedict, 3,
-                                   self.allrankids, minnseq=1, target=1,
-                                   minnspp=0)
+                                   self.allrankids, logger=self.logger,
+                                   minnseq=1, target=1, minnspp=0)
         self.assertEqual(res[0], 'gene1')
 
     def test_get_clusters(self):
@@ -234,7 +238,7 @@ class DownloadTestSuite(unittest.TestCase):
         names = ['sp1', 'sp2', 'sp3', 'sp4', 'sp5', 'sp6', 'sp7', 'sp8', 'sp9',
                  'sp10']*10
         gene_sequences = zip(names, self.sequences)
-        res = dtools.getClusters(gene_sequences, 0.5)
+        res = dtools.getClusters(gene_sequences, 0.5, self.logger, self.wd)
         self.assertEqual(len(res[0]), 80)
 
 

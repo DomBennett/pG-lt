@@ -21,9 +21,6 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     download_dir = os.path.join(wd, '2_download')
     if not os.path.isdir(download_dir):
         os.mkdir(download_dir)
-    dtools.atools.wd = os.path.join(wd, 'tempfiles')
-    if not os.path.isdir(dtools.atools.wd):
-        os.mkdir(dtools.atools.wd)
 
     # INPUT
     with open(os.path.join(wd, ".genedict.p"), "rb") as file:
@@ -39,8 +36,6 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     dtools.etools.Entrez.email = paradict["email"]
     nseqs = int(paradict['nseqs'])
     thoroughness = int(paradict['thoroughness'])
-    dtools.logger = logger
-    dtools.atools.logger = logger
     seedsize = 10
     maxtrys = 100
     minnseq = 1
@@ -52,7 +47,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # PROCESS
     logger.info('Determining best genes ....')
     genes = dtools.findBestGenes(namesdict, genedict, thoroughness, allrankids,
-                                 minnseq, target, minnspp)
+                                 logger, minnseq, target, minnspp)
     statement = 'Using genes:'
     for gene in genes:
         statement += " [" + gene + "]"
@@ -71,9 +66,13 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         for name in namesdict.keys():
             logger.info("..... [{0}]".format(name))
             taxids = namesdict[name]["txids"]
-            downloader = dtools.Downloader(gene_names, nseqs, thoroughness,
-                                           maxpn, seedsize, maxtrys,
-                                           minoverlap, maxlen, minlen)
+            downloader = dtools.Downloader(gene_names=gene_names, nseqs=nseqs,
+                                           thoroughness=thoroughness,
+                                           maxpn=maxpn, seedsize=seedsize,
+                                           maxtrys=maxtrys,
+                                           minoverlap=minoverlap,
+                                           maxlen=maxlen, minlen=minlen,
+                                           logger=logger, wd=wd)
             sequences = downloader.run(taxids)
             if not sequences:
                 noseqcounter_gene += 1
@@ -89,7 +88,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         else:
             seqcounter += seqcounter_gene
         logger.info('Checking for distinct clusters ....')
-        gene_sequences = dtools.getClusters(gene_sequences, minoverlap)
+        gene_sequences = dtools.getClusters(gene_sequences, minoverlap,
+                                            logger, wd)
         if not gene_sequences:
             logger.info('.... could not find any clustering sequences')
             continue

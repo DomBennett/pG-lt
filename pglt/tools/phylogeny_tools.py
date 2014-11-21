@@ -22,14 +22,6 @@ from system_tools import RAxMLError
 from special_tools import getThreads
 
 
-# GLOBALS
-threads = getThreads(True)
-if threads == 1:
-    threads = 2
-logger = logging.getLogger('')
-wd = os.getcwd()
-
-
 # CLASSES
 class StopCodonRetriever(object):
     """Stop codon retrival class"""
@@ -46,7 +38,7 @@ class StopCodonRetriever(object):
     def __init__(self):
         pass
 
-    def pattern(self, ids, genome_type='mt'):
+    def pattern(self, ids, logger, genome_type='mt'):
         """Return stop pattern for lowest matching id"""
         # assumes lower taxonomic levels are at higher indexes
         if genome_type == 'mt':
@@ -69,7 +61,8 @@ class AlignmentStore(dict):
     """Alignment holding class"""
     retriever = StopCodonRetriever()
 
-    def __init__(self, clusters, genedict, allrankids, indir):
+    def __init__(self, clusters, genedict, allrankids, indir, logger):
+        self.logger = logger
         # Read in alignments for each cluster
         # first find corresponding gene name for each cluster
         genes = []
@@ -80,8 +73,9 @@ class AlignmentStore(dict):
             self[cluster] = {'alignments': [], 'files': [], 'counters': []}
             # retrieve its stop codon if it's mt
             self[cluster]['stop'] =\
-                self.retriever.pattern(allrankids, genedict[gene]['partition'].
-                                       lower())
+                self.retriever.pattern(ids=allrankids, logger=self.logger,
+                                       genome_type=genedict[gene]
+                                       ['partition'].lower())
             # find corresponding input dir and read in alignments
             cluster_dir = os.path.join(indir, cluster)
             alignment_files = os.listdir(cluster_dir)
@@ -111,7 +105,7 @@ list of alignments and stop pattern if partition"""
         self.counters = []
         alignments = []
         stops = []
-        logger.info("........ Using alignments:")
+        self.logger.info("........ Using alignments:")
         for gene in self.keys():
             genedata = self[gene]
             i = random.randint(0, len(genedata['alignments']) - 1)
@@ -120,16 +114,20 @@ list of alignments and stop pattern if partition"""
             self.counters.append(genedata['counters'][i])
             afile = genedata['files'][i]
             if genedata['stop']:
-                logger.info("............ {0}(codon partitioned):\
+                self.logger.info("............ {0}(codon partitioned):\
 [{1}]".format(gene, afile))
             else:
-                logger.info("............ {0}:[{1}]".format(gene, afile))
+                self.logger.info("............ {0}:[{1}]".format(gene, afile))
         return alignments, stops
 
 
 class Generator(object):
     """Phylogeny generating class"""
-    def __init__(self, alignment_store, rttpvalue, outdir, maxtrys):
+    def __init__(self, alignment_store, rttpvalue, outdir, maxtrys, logger,
+                 wd=os.getcwd()):
+        self.logger = logger
+        self.wd = wd
+        self.threads = getThreads(True)
         self.trys = 0
         self.phylogenies = []
         self.maxtrys = maxtrys
@@ -199,7 +197,7 @@ multiple genes."""
         for tip in tips_to_drop:
             constraint.prune(tip)
         # write out tree
-        with open(os.path.join(wd, "constraint.tre"), "w") as file:
+        with open(os.path.join(self.wd, "constraint.tre"), "w") as file:
             Phylo.write(constraint, file, "newick")
         # return arg
         if constraint.is_bifurcating():
@@ -215,7 +213,7 @@ multiple genes."""
         # otherwise find the species(s) with the fewest shared
         #  taxonomic groups
         if self.constraint:
-            with open(os.path.join(wd, "constraint.tre"), "r") as file:
+            with open(os.path.join(self.wd, "constraint.tre"), "r") as file:
                 constraint = Phylo.read(file, "newick")
             distances = [constraint.distance(e) for e in spp]
             index = [i for i, e in enumerate(distances) if e ==
@@ -304,7 +302,7 @@ to .partitions.txt"""
             reframed.append(alignment)
         logging.debug([e.get_alignment_length() for e in alignments])
         logging.debug(text)
-        with open(os.path.join(wd, 'partitions.txt'), 'w') as file:
+        with open(os.path.join(self.wd, 'partitions.txt'), 'w') as file:
             file.write(text)
         return reframed, ' -q partitions.txt'
 
@@ -329,8 +327,9 @@ to .partitions.txt"""
         # set up
         alignment, carg, outgroup, parg = self._setUp(alignments, stops)
         # run RAxML
-        phylogeny = RAxML(alignment, constraint=carg, outgroup=outgroup,
-                          partitions=parg)
+        phylogeny = RAxML(alignment, wd=self.wd, logger=self.logger,
+                          threads=self.threads, constraint=carg,
+                          outgroup=outgroup, partitions=parg)
         # if successful return True
         # Phylo.draw_ascii(phylogeny)
         if self._test(phylogeny):
@@ -338,13 +337,13 @@ to .partitions.txt"""
             self.trys = 0
             return True
         else:
-            logger.info('........ poor phylogeny, retrying')
+            self.logger.info('........ poor phylogeny, retrying')
             self.trys += 1
             return False
 
 
-def RAxML(alignment, outgroup=None, partitions=None, constraint=None,
-          timeout=999999999):
+def RAxML(alignment, wd, logger, threads, outgroup=None, partitions=None,
+          constraint=None, timeout=999999999):
     """Adapted pG function: Generate phylogeny from alignment using
 RAxML (external program)."""
     # TODO: too complex, consider breaking up

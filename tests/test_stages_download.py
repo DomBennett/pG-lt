@@ -15,7 +15,7 @@ from Bio.SeqRecord import SeqRecord
 
 
 # DUMMIES
-def dummy_findBestGenes(namesdict, genedict, thoroughness, allrankids,
+def dummy_findBestGenes(namesdict, genedict, thoroughness, allrankids, logger,
                         minnseq, target, minnspp):
     # return a list of genes
     return ['rbcl', 'COI']
@@ -23,7 +23,7 @@ def dummy_findBestGenes(namesdict, genedict, thoroughness, allrankids,
 
 class Dummy_Downloader(object):
     def __init__(self, gene_names, nseqs, thoroughness, maxpn, seedsize,
-                 maxtrys, minoverlap, maxlen, minlen):
+                 maxtrys, minoverlap, maxlen, minlen, logger, wd):
         pass
 
     def run(self, taxids):

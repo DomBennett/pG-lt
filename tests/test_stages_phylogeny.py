@@ -28,14 +28,15 @@ def genPhylogeny():
 
 # DUMMIES
 class DummyAlignmentStore(object):
-    def __init__(self, clusters, genedict, allrankids, indir):
+    def __init__(self, clusters, genedict, allrankids, indir, logger):
         pass
 
 
 class DummyGenerator(object):
     phylogenies = [genPhylogeny()]
 
-    def __init__(self, alignment_store, rttpvalue, outdir, maxtrys):
+    def __init__(self, alignment_store, rttpvalue, outdir, maxtrys, logger,
+                 wd):
         pass
 
     def run(self):

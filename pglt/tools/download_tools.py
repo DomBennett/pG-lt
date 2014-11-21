@@ -6,23 +6,23 @@ pglt download tools
 """
 
 # PACKAGES
+import os
 import re
 import random
-import logging
 import entrez_tools as etools
 import alignment_tools as atools
+from special_tools import getThreads
 from Bio.SeqFeature import SeqFeature
-
-
-# GLOBALS
-logger = logging.getLogger('')
 
 
 # CLASSES
 class Downloader(object):
     """Download sequences given taxids and gene_names"""
     def __init__(self, gene_names, nseqs, thoroughness, maxpn, seedsize,
-                 maxtrys, minoverlap, maxlen, minlen):
+                 maxtrys, minoverlap, maxlen, minlen, logger, wd=os.getcwd()):
+        self.wd = wd
+        self.logger = logger
+        self.threads = getThreads(True)
         self.gene_names = gene_names
         self.nseqs = nseqs
         self.max_thoroughness = thoroughness
@@ -68,7 +68,7 @@ genome[TI] NOT unverified[TI]".format(taxids_term, gene_term))
             search_term = ("{0} AND ({1}) NOT predicted[TI] NOT \
 shotgun[TI] NOT scaffold[TI] NOT assembly[TI] NOT unverified[TI]".
                            format(taxids_term, gene_term))
-        # logger.debug(search_term)
+        # self.logger.debug(search_term)
         return search_term
 
     def _search(self, taxids):
@@ -105,7 +105,8 @@ fewer matches than target nseqs"""
         query = sequences
         subj = [sequences[randn]]
         # blast rand seq against all other seqs
-        blast_bool, _ = atools.blast(query, subj, self.minoverlap)
+        blast_bool, _ = atools.blast(query, subj, self.minoverlap, self.logger,
+                                     wd=self.wd, threads=self.threads)
         # filtered are all sequences that are true
         filtered = [sequences[i] for i, e in enumerate(blast_bool) if e]
         # sequence pool are all sequences that are false
@@ -198,7 +199,7 @@ by searching features."""
             seqids = self._search(taxids)
             # filter if there are 10 times target nseqs
             if len(seqids) >= self.nseqs*10:
-                logger.info("........ filtering")
+                self.logger.info("........ filtering")
                 downloaded = []
                 lower = 0
                 while len(sequences) < self.nseqs and lower != len(seqids):
@@ -220,8 +221,8 @@ by searching features."""
 
 
 # FUNCTIONS
-def findBestGenes(namesdict, genedict, thoroughness, allrankids, minnseq=1,
-                  target='all', minnspp=5):
+def findBestGenes(namesdict, genedict, thoroughness, allrankids, logger,
+                  minnseq=1, target='all', minnspp=5):
     """Return suitable genes for phylogeny by searching for \
 matches in GenBank"""
     # TODO: too complex, consider breaking up
@@ -268,7 +269,7 @@ matches in GenBank"""
                                         nseqs=minnseq + 1,
                                         thoroughness=thoroughness, maxpn=0,
                                         seedsize=0, maxtrys=0, minoverlap=0,
-                                        maxlen=0, minlen=0)
+                                        maxlen=0, minlen=0, logger=logger)
                 res = downloader._search(tipids)
                 # if gene is deep or both, then make sure it has
                 #  outgroup
@@ -305,13 +306,14 @@ matches in GenBank"""
     return genes
 
 
-def getClusters(gene_sequences, minoverlap):
+def getClusters(gene_sequences, minoverlap, logger, wd):
     """Identify clusters in sequences"""
     def findClusters(gene_sequences):
         # blast all against 1
         sequences = [e[1] for e in gene_sequences]
         randi = random.randint(0, len(sequences)-1)
-        bools, _ = atools.blast(sequences, sequences[randi], minoverlap)
+        bools, _ = atools.blast(sequences, sequences[randi], minoverlap,
+                                logger, wd, threads)
         # how many species had sequences in the cluster?
         cluster_sequences = [gene_sequences[i] for i, e in enumerate(bools)
                              if e]
@@ -324,6 +326,7 @@ def getClusters(gene_sequences, minoverlap):
                               if not e]
             return cluster_sequences, gene_sequences
         return None, gene_sequences
+    threads = getThreads(True)
     res = []
     tot_nspp = len(set([e[0] for e in gene_sequences]))
     # try max 5 times to get a cluster from randomly selecting a seq

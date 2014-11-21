@@ -10,7 +10,6 @@ import os
 import re
 import copy
 import pickle
-import logging
 import random
 import pglt.tools.alignment_tools as atools
 from Bio import SeqIO
@@ -38,6 +37,19 @@ with open(os.path.join(working_dir, "data", "test_alignment.p"),
 
 
 # MOCK
+# dummy logger needed because can't take copy of an object with a real logger
+class dummy_Logger(object):
+
+    def __init__(self):
+        pass
+
+    def info(self, msg):
+        pass
+
+    def debug(self, msg):
+        pass
+
+
 def dummy_blast(query, subj, minoverlap, logger, wd, threads):
     # should return bools and positions
     bools = [True for e in query]
@@ -63,7 +75,7 @@ class AlignmentTestSuite(unittest.TestCase):
 
     def setUp(self):
         self.wd = os.getcwd()
-        self.logger = logging.getLogger()
+        self.logger = dummy_Logger()
         self.true_align = atools.align
         self.true_add = atools.add
         self.true_check_alignment = atools.checkAlignment
@@ -86,6 +98,7 @@ class AlignmentTestSuite(unittest.TestCase):
         atools.align = self.true_align
         atools.add = self.true_add
         atools.checkAlignment = self.true_check_alignment
+        del self.logger
 
     def test_gennonalignment(self):
         alignment = atools.genNonAlignment(1, 100)
