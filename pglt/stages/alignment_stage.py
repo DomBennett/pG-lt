@@ -114,8 +114,11 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # DIRS
     download_dir = os.path.join(wd, '2_download')
     alignment_dir = os.path.join(wd, '3_alignment')
+    temp_dir = os.path.join(wd, 'tempfiles')
     if not os.path.isdir(alignment_dir):
         os.mkdir(alignment_dir)
+    if not os.path.isdir(temp_dir):
+        os.mkdir(temp_dir)
 
     # INPUT
     with open(os.path.join(wd, ".genedict.p"), "rb") as file:
@@ -132,7 +135,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # READ IN SEQUENCES
     logger.info('Reading in sequences ....')
     namesdict, genestore, genekeys = readSequences(download_dir, namesdict,
-                                                   genedict, logger, wd)
+                                                   genedict, logger, temp_dir)
 
     # RUN ALIGNMENTS
     logger.info("Running alignments ....")
@@ -144,7 +147,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         gene_dir = os.path.join(alignment_dir, gene)
         if not os.path.isdir(gene_dir):
             os.mkdir(gene_dir)
-        aligner = setUpAligner(gene, genedict, genekeys, seqstore, logger, wd)
+        aligner = setUpAligner(gene, genedict, genekeys, seqstore, logger,
+                               temp_dir)
         all_counter += runAligner(aligner, naligns, namesdict, gene_dir,
                                   logger)
 

@@ -97,7 +97,7 @@ class AlignmentStageTestSuite(unittest.TestCase):
                 os.remove(alignment_file)
             except OSError:
                 pass
-        alignment_folders = ['2_download', '3_alignment']
+        alignment_folders = ['2_download', '3_alignment', 'tempfiles']
         while alignment_folders:
             try:
                 alignment_folder = alignment_folders.pop()

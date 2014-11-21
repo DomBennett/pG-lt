@@ -19,8 +19,11 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
 
     # DIRS
     download_dir = os.path.join(wd, '2_download')
+    temp_dir = os.path.join(wd, 'tempfiles')
     if not os.path.isdir(download_dir):
         os.mkdir(download_dir)
+    if not os.path.isdir(temp_dir):
+        os.mkdir(temp_dir)
 
     # INPUT
     with open(os.path.join(wd, ".genedict.p"), "rb") as file:
@@ -72,7 +75,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
                                            maxtrys=maxtrys,
                                            minoverlap=minoverlap,
                                            maxlen=maxlen, minlen=minlen,
-                                           logger=logger, wd=wd)
+                                           logger=logger, wd=temp_dir)
             sequences = downloader.run(taxids)
             if not sequences:
                 noseqcounter_gene += 1
@@ -89,7 +92,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
             seqcounter += seqcounter_gene
         logger.info('Checking for distinct clusters ....')
         gene_sequences = dtools.getClusters(gene_sequences, minoverlap,
-                                            logger, wd)
+                                            logger, temp_dir)
         if not gene_sequences:
             logger.info('.... could not find any clustering sequences')
             continue

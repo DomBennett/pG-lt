@@ -23,9 +23,9 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     alignment_dir = os.path.join(wd, '3_alignment')
     phylogeny_dir = os.path.join(wd, '4_phylogeny')
     outfile = os.path.join(phylogeny_dir, 'distribution.tre')
-    ptools.wd = os.path.join(wd, 'tempfiles')
-    if not os.path.isdir(ptools.wd):
-        os.mkdir(ptools.wd)
+    temp_dir = os.path.join(wd, 'tempfiles')
+    if not os.path.isdir(temp_dir):
+        os.mkdir(temp_dir)
 
     # INPUT
     with open(os.path.join(wd, ".paradict.p"), "rb") as file:
@@ -54,7 +54,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     logging.info("Generating [{0}] phylogenies ....".format(nphylos))
     generator = ptools.Generator(alignment_store=alignment_store,
                                  rttpvalue=rttpvalue, outdir=phylogeny_dir,
-                                 maxtrys=maxtrys, logger=logger, wd=wd)
+                                 maxtrys=maxtrys, logger=logger, wd=temp_dir)
     for i in range(nphylos):
         logging.info(".... Iteration [{0}]".format(i + 1))
         success = False
