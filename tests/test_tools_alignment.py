@@ -109,12 +109,12 @@ class AlignmentTestSuite(unittest.TestCase):
         def genSequences(n, length):
             s = 'A' * length
             return [s for i in range(n)]
-        self.assertEqual(atools.version(genSequences(30, 800), 'deep'),
-                         'mafft-xinsi')
-        self.assertEqual(atools.version(genSequences(90, 800), 'deep'),
-                         'mafft-qinsi')
-        self.assertEqual(atools.version(genSequences(90, 2000), 'deep'),
-                         'mafft --auto')
+        res = atools.version(genSequences(30, 800), 'deep')
+        self.assertEqual(os.path.basename(res), 'mafft-xinsi')
+        res = atools.version(genSequences(90, 800), 'deep')
+        self.assertEqual(os.path.basename(res), 'mafft-qinsi')
+        res = atools.version(genSequences(90, 2000), 'deep')
+        self.assertEqual(os.path.basename(res), 'mafft --auto')
 
     def test_align(self):
         # align and check if results exist

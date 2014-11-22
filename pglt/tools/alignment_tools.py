@@ -27,6 +27,16 @@ from system_tools import TrysError
 from special_tools import timeit
 from special_tools import getThreads
 
+# GLOBALS
+mafft = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                  os.pardir)), 'mafft')
+mafftq = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                   os.pardir)), 'mafft-qinsi')
+mafftx = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                   os.pardir)), 'mafft-xinsi')
+blastn = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                   os.pardir)), 'blastn')
+
 
 # OBEJECTS
 class SeqStore(dict):
@@ -409,10 +419,10 @@ def version(sequences, gene_type):
         return 'mafft --auto'
     seqlens = [len(s) for s in sequences]
     if max(seqlens) > 1500:
-        return 'mafft --auto'
+        return mafft + ' --auto'
     if len(sequences) > 60:
-        return 'mafft-qinsi'
-    return 'mafft-xinsi'
+        return mafftq
+    return mafftx
 
 
 def genNonAlignment(nseqs, alen):
@@ -457,8 +467,9 @@ program)"""
     alignment_file = "alignment_in.fasta"
     sequence_file = "sequence_in.fasta"
     output_file = "alignment_out.fasta" + '.fasta'
-    command_line = 'mafft --auto --thread {0} --add {1} {2} > {3}'.\
-                   format(threads, sequence_file, alignment_file, output_file)
+    command_line = '{0} --auto --thread {1} --add {2} {3} > {4}'.\
+                   format(mafft, threads, sequence_file, alignment_file,
+                          output_file)
     with open(os.path.join(wd, sequence_file), "w") as file:
         SeqIO.write(sequence, file, "fasta")
     with open(os.path.join(wd, alignment_file), "w") as file:
@@ -492,7 +503,7 @@ with subject given parameters."""
     try:
         # options: http://www.ncbi.nlm.nih.gov/books/NBK1763/
         cline = NcbiblastnCommandline(query=query_file, subject=subj_file,
-                                      outfmt=5, task='blastn', word_size=8,
+                                      outfmt=5, cmd=blastn, word_size=8,
                                       num_threads=threads)
         output = cline()[0]
     except ApplicationError:  # as error_msg:

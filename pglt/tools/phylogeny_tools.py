@@ -21,6 +21,10 @@ from system_tools import TerminationPipe
 from system_tools import RAxMLError
 from special_tools import getThreads
 
+# GLOBALS
+raxml = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                  os.pardir)), 'raxml')
+
 
 # CLASSES
 class StopCodonRetriever(object):
@@ -364,7 +368,7 @@ RAxML (external program)."""
         options += partitions
     if constraint:
         options += constraint
-    command_line = 'raxml' + file_line + dnamodel + options
+    command_line = raxml + file_line + dnamodel + options
     logger.debug(command_line)
     pipe = TerminationPipe(command_line, silent=True, cwd=wd)
     pipe.run()

@@ -39,3 +39,8 @@ requires
 # Sublime
 *.sublime-workspace
 *.sublime-project
+
+# Externals
+mafft*
+raxml
+blastn
