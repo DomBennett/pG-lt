@@ -87,7 +87,8 @@ def clean():
                 pass
 
     # go through all subdirs and remove folders in list
-    folders_to_remove = ['1_names', '2_download', '3_alignment', '4_phylogeny']
+    folders_to_remove = ['1_names', '2_download', '3_alignment', '4_phylogeny',
+                         'tempfiles']
     folders = os.listdir(os.getcwd())
     while folders:
         temp_folder = folders.pop()
