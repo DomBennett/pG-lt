@@ -505,6 +505,7 @@ with subject given parameters."""
         cline = NcbiblastnCommandline(query=query_file, subject=subj_file,
                                       outfmt=5, cmd=blastn, word_size=8,
                                       num_threads=threads)
+        logger.debug(cline)
         output = cline()[0]
     except ApplicationError:  # as error_msg:
         # logger.debug(error_msg)
