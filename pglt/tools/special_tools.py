@@ -34,8 +34,9 @@ def getThreads(wd=None):
     """Find number of cores on machine (platform independent). If local, \
 search cwd for pickled .threads.p."""
     if wd:
-        if os.path.isfile(os.path.join(wd, 'threads.p')):
-            with open('threads.p', "rb") as file:
+        filepath = os.path.join(wd, 'threads.p')
+        if os.path.isfile(filepath):
+            with open(filepath, "rb") as file:
                 nthreads = pickle.load(file)
         else:
             nthreads = 1
