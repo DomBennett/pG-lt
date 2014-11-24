@@ -117,15 +117,13 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     temp_dir = os.path.join(wd, 'tempfiles')
     if not os.path.isdir(alignment_dir):
         os.mkdir(alignment_dir)
-    if not os.path.isdir(temp_dir):
-        os.mkdir(temp_dir)
 
     # INPUT
-    with open(os.path.join(wd, ".genedict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "genedict.p"), "rb") as file:
         genedict = pickle.load(file)
-    with open(os.path.join(wd, ".paradict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "paradict.p"), "rb") as file:
         paradict = pickle.load(file)
-    with open(os.path.join(wd, ".namesdict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "namesdict.p"), "rb") as file:
         namesdict = pickle.load(file)
 
     # PARAMETERS
@@ -161,7 +159,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
                     e in naligns_name]
 
     # OUTPUT
-    with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
+    with open(os.path.join(temp_dir, "namesdict.p"), "wb") as file:
         pickle.dump(namesdict, file)
 
     # FINISH MESSAGE

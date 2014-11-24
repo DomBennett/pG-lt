@@ -33,29 +33,27 @@ class SpecialTestSuite(unittest.TestCase):
 
     def test_get_threads_local_true(self):
         # create .threads.p
-        with open(".threads.p", "wb") as file:
+        with open("threads.p", "wb") as file:
             pickle.dump(2, file)
-        res = stools.getThreads(True)
+        res = stools.getThreads(wd=os.getcwd())
         self.assertEqual(res, 2)
-        os.remove(".threads.p")
+        os.remove("threads.p")
 
     def test_clean(self):
         # create dummy folders and files
-        threads_file = os.path.join('afolder', '.threads.p')
+        log_file = os.path.join('afolder', 'log.txt')
         names_folder = os.path.join('afolder', '1_names')
         os.mkdir('afolder')
         os.mkdir(names_folder)
-        with open(threads_file, "wb") as file:
-            pickle.dump(2, file)
+        with open(log_file, "wb") as file:
+            file.write('words words words ...\n')
         # clean
         stools.clean()
         # make sure they don't exist
-        self.assertFalse(os.path.isfile(threads_file))
+        self.assertFalse(os.path.isfile(log_file))
         self.assertFalse(os.path.isdir(names_folder))
 
     def tearDown(self):
-        if os.path.isfile('.threads.p'):
-            os.remove(".threads.p")
         if os.path.isdir('afolder'):
             shutil.rmtree('afolder')
 

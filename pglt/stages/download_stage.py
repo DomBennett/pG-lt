@@ -22,17 +22,15 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     temp_dir = os.path.join(wd, 'tempfiles')
     if not os.path.isdir(download_dir):
         os.mkdir(download_dir)
-    if not os.path.isdir(temp_dir):
-        os.mkdir(temp_dir)
 
     # INPUT
-    with open(os.path.join(wd, ".genedict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "genedict.p"), "rb") as file:
         genedict = pickle.load(file)
-    with open(os.path.join(wd, ".paradict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "paradict.p"), "rb") as file:
         paradict = pickle.load(file)
-    with open(os.path.join(wd, ".namesdict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "namesdict.p"), "rb") as file:
         namesdict = pickle.load(file)
-    with open(os.path.join(wd, ".allrankids.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "allrankids.p"), "rb") as file:
         allrankids = pickle.load(file)
 
     # PARAMETERS
@@ -117,7 +115,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
                 spcounter_gene += 1
         logger.info("Downloaded [{0}] sequences for gene [{1}] representing \
 [{2}] species".format(seqcounter_gene, gene, spcounter_gene))
-    with open(os.path.join(wd, ".namesdict.p"), "wb") as file:
+    with open(os.path.join(temp_dir, "namesdict.p"), "wb") as file:
         pickle.dump(namesdict, file)
     logger.info('Stage finished. Downloaded [{0}] bases for [{1}] \
 sequences for [{2}] species.'.format(basecounter, seqcounter,

@@ -326,7 +326,7 @@ def getClusters(gene_sequences, minoverlap, logger, wd):
                               if not e]
             return cluster_sequences, gene_sequences
         return None, gene_sequences
-    threads = getThreads(True)
+    threads = getThreads(wd=wd)
     res = []
     tot_nspp = len(set([e[0] for e in gene_sequences]))
     # try max 5 times to get a cluster from randomly selecting a seq

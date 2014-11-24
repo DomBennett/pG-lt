@@ -226,15 +226,20 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
         raise(ValueError('Unrecognised phase'))
 
 
-def prime(directory, arguments):
+def prime(directory, arguments, threads):
     """Write pickle files, print arguments"""
     # Write pickle files
-    with open(os.path.join(directory, ".genedict.p"), "wb") as file:
+    temp_dir = os.path.join(directory, 'tempfiles')
+    if not os.path.isdir(temp_dir):
+        os.mkdir(temp_dir)
+    with open(os.path.join(temp_dir, "genedict.p"), "wb") as file:
         pickle.dump(arguments['genedict'], file)
-    with open(os.path.join(directory, ".paradict.p"), "wb") as file:
+    with open(os.path.join(temp_dir, "paradict.p"), "wb") as file:
         pickle.dump(arguments['paradict'], file)
-    with open(os.path.join(directory, ".terms.p"), "wb") as file:
+    with open(os.path.join(temp_dir, "terms.p"), "wb") as file:
         pickle.dump(arguments['terms'], file)
+    with open(os.path.join(temp_dir, 'threads.p'), "wb") as file:
+        pickle.dump(threads, file)
     # Print arguments and parameters to file
     record = 'Working with [{0}] names\n'.format(len(arguments['terms']))
     record += recordPars(arguments['paradict'])

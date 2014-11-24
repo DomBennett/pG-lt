@@ -41,15 +41,7 @@ class SetupTestSuite(unittest.TestCase):
 
     def tearDown(self):
         stools.getThreads = self.true_getThreads
-        setup_files = ['.paradict.p', '.namesdict.p', '.genedict.p', 'log.txt',
-                       'info.txt', '.terms.p', 'names.txt']
-        while setup_files:
-            try:
-                setup_file = setup_files.pop()
-                os.remove(setup_file)
-            except OSError:
-                pass
-        setup_folders = ['folder_1', 'folder_2']
+        setup_folders = ['folder_1', 'folder_2', 'tempfiles']
         while setup_folders:
             try:
                 setup_folder = setup_folders.pop()
@@ -149,13 +141,17 @@ class SetupTestSuite(unittest.TestCase):
     def test_prime(self):
         arguments = {'genedict': {}, 'paradict': {}, 'terms': []}
         directory = '.'
-        stools.prime(directory, arguments)
-        self.assertTrue(os.path.isfile('.genedict.p'))
-        self.assertTrue(os.path.isfile('.paradict.p'))
-        self.assertTrue(os.path.isfile('.terms.p'))
-        os.remove('.genedict.p')
-        os.remove('.paradict.p')
-        os.remove('.terms.p')
+        stools.prime(directory, arguments, 2)
+        self.assertTrue(os.path.isfile(os.path.join('tempfiles',
+                                                    'genedict.p')))
+        self.assertTrue(os.path.isfile(os.path.join('tempfiles',
+                                                    'paradict.p')))
+        self.assertTrue(os.path.isfile(os.path.join('tempfiles',
+                                                    'terms.p')))
+        self.assertTrue(os.path.isfile(os.path.join('tempfiles',
+                                                    'threads.p')))
+        shutil.rmtree('tempfiles')
+        os.remove('info.txt')
 
     def test_record_pars(self):
         paradict = {'a_parameter': 'a_value'}
@@ -215,6 +211,8 @@ class SetupTestSuite(unittest.TestCase):
         self.assertTrue(isinstance(res['terms'], list))
         self.assertTrue(isinstance(res['genedict'], dict))
         self.assertTrue(isinstance(res['paradict'], dict))
+        os.remove('names.txt')
+        os.remove('log.txt')
 
 if __name__ == '__main__':
     unittest.main()

@@ -24,15 +24,13 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     phylogeny_dir = os.path.join(wd, '4_phylogeny')
     outfile = os.path.join(phylogeny_dir, 'distribution.tre')
     temp_dir = os.path.join(wd, 'tempfiles')
-    if not os.path.isdir(temp_dir):
-        os.mkdir(temp_dir)
 
     # INPUT
-    with open(os.path.join(wd, ".paradict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "paradict.p"), "rb") as file:
         paradict = pickle.load(file)
-    with open(os.path.join(wd, ".genedict.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "genedict.p"), "rb") as file:
         genedict = pickle.load(file)
-    with open(os.path.join(wd, ".allrankids.p"), "rb") as file:
+    with open(os.path.join(temp_dir, "allrankids.p"), "rb") as file:
         allrankids = pickle.load(file)
 
     # PARAMETERS

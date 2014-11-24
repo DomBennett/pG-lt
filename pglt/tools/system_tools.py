@@ -10,7 +10,6 @@ import subprocess
 import threading
 import os
 import Queue
-import pickle
 from datetime import datetime
 from setup_tools import setUpLogging
 from setup_tools import tearDownLogging
@@ -177,10 +176,7 @@ class Runner(object):
                                  logger=base_logger,
                                  default_pars_file=self._pars,
                                  default_gpars_file=self._gpars)
-            # save threads per worker in each folder
-            with open(os.path.join(folder, '.threads.p'), "wb") as file:
-                pickle.dump(self.threads_per_worker, file)
-            _ = prime(folder, arguments)
+            _ = prime(folder, arguments, self.threads_per_worker)
             del _
 
     def _worker(self):

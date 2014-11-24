@@ -34,8 +34,8 @@ def getThreads(wd=None):
     """Find number of cores on machine (platform independent). If local, \
 search cwd for pickled .threads.p."""
     if wd:
-        if os.path.isfile(os.path.join('.threads.p')):
-            with open('.threads.p', "rb") as file:
+        if os.path.isfile(os.path.join(wd, 'threads.p')):
+            with open('threads.p', "rb") as file:
                 nthreads = pickle.load(file)
         else:
             nthreads = 1
@@ -70,11 +70,7 @@ def clean():
         pass
 
     # go through all subdirs and remove files in list
-    files_to_remove = ['info.txt', 'log.txt', '.paradict.p', '.allrankids.p',
-                       '.namesdict.p', '.genedict.p', '.terms.p',
-                       '.constraint.tre', '.partitions.txt',
-                       '.phylogeny_in.phylip', '.alignment_out.fasta',
-                       '.threads.p']
+    files_to_remove = ['info.txt', 'log.txt']
     folders = os.listdir(os.getcwd())
     while folders:
         temp_folder = folders.pop()

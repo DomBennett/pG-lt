@@ -47,7 +47,7 @@ not align"""
                  logger, wd=os.getcwd()):
         self.wd = wd
         self.logger = logger
-        self.threads = getThreads(True)
+        self.threads = getThreads(wd)
         self.minfails = minfails  # minimum number of fails in a row
         self.dspp = []  # species dropped
         self.nseqs = 0  # counter for seqs
