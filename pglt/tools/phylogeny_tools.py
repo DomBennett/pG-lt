@@ -131,7 +131,7 @@ class Generator(object):
                  wd=os.getcwd()):
         self.logger = logger
         self.wd = wd
-        self.threads = getThreads(True)
+        self.threads = getThreads(wd=wd)
         self.trys = 0
         self.phylogenies = []
         self.maxtrys = maxtrys

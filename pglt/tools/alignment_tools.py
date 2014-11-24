@@ -200,7 +200,7 @@ class Aligner(object):
                  logger, wd=os.getcwd()):
         self.wd = wd
         self.logger = logger
-        self.threads = getThreads(True)
+        self.threads = getThreads(wd=wd)
         self.seqstore = seqstore
         self.mingaps = mingaps
         self.minoverlap = minoverlap

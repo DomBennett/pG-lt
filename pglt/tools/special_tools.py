@@ -30,11 +30,11 @@ def timeit(func, **kwargs):
     return output, t1-t0
 
 
-def getThreads(local=False):
+def getThreads(wd=None):
     """Find number of cores on machine (platform independent). If local, \
 search cwd for pickled .threads.p."""
-    if local:
-        if os.path.isfile('.threads.p'):
+    if wd:
+        if os.path.isfile(os.path.join('.threads.p')):
             with open('.threads.p', "rb") as file:
                 nthreads = pickle.load(file)
         else:

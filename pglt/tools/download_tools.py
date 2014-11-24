@@ -22,7 +22,7 @@ class Downloader(object):
                  maxtrys, minoverlap, maxlen, minlen, logger, wd=os.getcwd()):
         self.wd = wd
         self.logger = logger
-        self.threads = getThreads(True)
+        self.threads = getThreads(wd=wd)
         self.gene_names = gene_names
         self.nseqs = nseqs
         self.max_thoroughness = thoroughness
