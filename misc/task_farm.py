@@ -1,7 +1,9 @@
 #! /bin/usr/env python
+# G. Gorman
 
 import os
 from pglt.tools.system_tools import Stager
+
 
 def generate_trees(folder):
     '''Takes a setup folder containing a list of names and sequence data,
@@ -18,6 +20,7 @@ def generate_trees(folder):
     # Check with Dom that the data has also been written to disk at this point.
     return
 
+
 def dummy_job(folder):
     '''This only exists for testing the task farm.'''
     print "running job ", folder
@@ -27,12 +30,13 @@ from mpi4py import MPI
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
+
 def master(worklist):
     '''The task master takes a work list and farms it out to the workers.'''
 
     # Check we are not using more ranks than what we need.
     nranks = comm.Get_size()
-    if len(worklist)<(nranks-1):
+    if len(worklist) < (nranks-1):
         print "WARNING: There are fewer tasks than ranks. You are wasting resources!"
         for rank in range(len(worklist)+1, nranks):
             # Catch the send
@@ -60,6 +64,7 @@ def master(worklist):
 
     return
 
+
 def worker(task_operation):
     '''The worker takes as an input the operation it should apply to the tasks that it receives from the task master.'''
 
@@ -70,16 +75,18 @@ def worker(task_operation):
         # Wait for a task
         task = comm.recv()
 
-        if task=="":
+        if task == "":
             break
         else:
             task_operation(task)
     return
 
-# Dom: This is going to contain the list of folders/tasks
-worklist = ["wet", "wef", "rghtrh", "egerg"]
-
-if rank == 0:
-    master(worklist)
-else:
-    worker(generate_trees)
+if __name__ == '__main__':
+    # set parent folder here (use abs path)!
+    parent_folder = '/work/djb208/predicts_data1'
+    # obtain list of folders within parent_folder
+    worklist = os.listdir(parent_folder)
+    if rank == 0:
+        master(worklist)
+    else:
+        worker(generate_trees)
