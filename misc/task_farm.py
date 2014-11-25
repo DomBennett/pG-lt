@@ -10,6 +10,7 @@ def generate_trees(folder):
   generates a distribution of trees.
 
     '''
+    print "running job ", folder
     # Run stages 3 (alignment) and 4 (phylogeny)
     Stager.run_all(wd=folder, stages=['3', '4'])
 
@@ -83,6 +84,7 @@ if __name__ == '__main__':
     # obtain list of folders within parent_folder
     worklist = os.listdir(parent_folder)
     worklist = [os.path.join(parent_folder, e) for e in worklist]
+    worklist = [e for e in worklist if os.path.isdir(e)]
     if rank == 0:
         master(worklist)
     else:
