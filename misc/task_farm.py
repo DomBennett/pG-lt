@@ -10,12 +10,8 @@ def generate_trees(folder):
   generates a distribution of trees.
 
     '''
-
-    # Get working directory
-    wd = os.path.join(os.getcwd(), folder)
-
     # Run stages 3 (alignment) and 4 (phylogeny)
-    Stager.run_all(wd=wd, stages=['3', '4'])
+    Stager.run_all(wd=folder, stages=['3', '4'])
 
     # Check with Dom that the data has also been written to disk at this point.
     return
@@ -86,6 +82,7 @@ if __name__ == '__main__':
     parent_folder = '/work/djb208/predicts_data1'
     # obtain list of folders within parent_folder
     worklist = os.listdir(parent_folder)
+    worklist = [os.path.join(parent_folder, e) for e in worklist]
     if rank == 0:
         master(worklist)
     else:
