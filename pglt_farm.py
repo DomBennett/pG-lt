@@ -1,15 +1,27 @@
 #! /bin/usr/env python
-# G. Gorman
+# 25/11/2014
+# G. Gorman's script for running pG-lt stages 3-4 in parallel with MPI
+
+# Warning start
+print 'WARNING: This script is for running pG-lt in parallel. It must only be \
+run from a .sh script and for folders for which pG-lt stages 1-2 have already \
+been executed. It requires MPI and mpi4py.'
 
 import os
+import sys
+from mpi4py import MPI
 from pglt.tools.system_tools import Stager
 
 
+# GLOBALS
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+
+# FUNCTIONS
 def generate_trees(folder):
     '''Takes a setup folder containing a list of names and sequence data,
-  generates a distribution of trees.
-
-    '''
+        generates a distribution of trees.'''
     print "running job ", folder
     # Run stages 3 (alignment) and 4 (phylogeny)
     Stager.run_all(wd=folder, stages=['3', '4'])
@@ -22,11 +34,6 @@ def dummy_job(folder):
     '''This only exists for testing the task farm.'''
     print "running job ", folder
 
-from mpi4py import MPI
-
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-
 
 def master(worklist):
     '''The task master takes a work list and farms it out to the workers.'''
@@ -34,7 +41,8 @@ def master(worklist):
     # Check we are not using more ranks than what we need.
     nranks = comm.Get_size()
     if len(worklist) < (nranks-1):
-        print "WARNING: There are fewer tasks than ranks. You are wasting resources!"
+        print "WARNING: There are fewer tasks than ranks. You are wasting \
+resources!"
         for rank in range(len(worklist)+1, nranks):
             # Catch the send
             buff = comm.recv(source=rank)
@@ -63,7 +71,8 @@ def master(worklist):
 
 
 def worker(task_operation):
-    '''The worker takes as an input the operation it should apply to the tasks that it receives from the task master.'''
+    '''The worker takes as an input the operation it should apply to the tasks
+       that it receives from the task master.'''
 
     while True:
         # Alert master that we are waiting.
@@ -79,8 +88,9 @@ def worker(task_operation):
     return
 
 if __name__ == '__main__':
-    # set parent folder here (use abs path)!
-    parent_folder = '/work/djb208/predicts_data1'
+    # read parent folder here (use abs path)!
+    parent_folder = sys.argv[1]
+    print 'Using: ', parent_folder
     # obtain list of folders within parent_folder
     worklist = os.listdir(parent_folder)
     worklist = [os.path.join(parent_folder, e) for e in worklist]

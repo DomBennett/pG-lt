@@ -102,7 +102,7 @@ setup(
     package_dir=dict(zip(PACKAGES, PACKAGE_DIRS)),
     package_data={'pglt': ['parameters.csv', 'gene_parameters.csv', 'raxml',
                            'mafft', 'mafft-qinsi', 'mafft-xinsi', 'blastn']},
-    scripts=['run_pglt.py'],
+    scripts=['run_pglt.py', 'pglt_farm.py'],
     test_suite='tests',
     long_description=read('README.md'),
     classifiers=[
