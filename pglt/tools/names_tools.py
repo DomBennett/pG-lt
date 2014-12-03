@@ -14,11 +14,12 @@ import os
 from Bio import Phylo
 from cStringIO import StringIO
 import entrez_tools as etools
+from taxon_names_resolver.misc_tools import taxTree
 from system_tools import TaxonomicRankError
 
 
 # FUNCTIONS
-def genTaxTree(resolver, namesdict, draw=False):
+def genTaxTree(resolver, namesdict, taxonomy=None, draw=False):
     """Generate Newick tree from TaxonNamesResolver class.
 
         Arguments:
@@ -27,11 +28,10 @@ def genTaxTree(resolver, namesdict, draw=False):
          draw = Draw ascii tree (logical)
 
          Return:
-          (Newick Tree Object, [shared lineage])"""
-    # TODO: too complex, consider breaking up
+          Phylo"""
     ranks = resolver.retrieve('classification_path_ranks')
     qnames = resolver.retrieve('query_name')
-    lineages = resolver.retrieve('classification_path_ids')
+    lineages = resolver.retrieve('classification_path')
     # replace ' ' with '_' for taxon tree
     qnames = [re.sub("\s", "_", e) for e in qnames]
     resolved_names_bool = [e in namesdict.keys() for e in qnames]
@@ -45,51 +45,18 @@ def genTaxTree(resolver, namesdict, draw=False):
     for each in unresolved_names:
         statement += " " + each
     logging.debug(statement)
-    # reverse ranks and lineages
-    for i, lineage in enumerate(lineages):
-        lineage.reverse()
-        lineages[i] = lineage
-    for i, rank in enumerate(ranks):
-        rank.reverse()
-        ranks[i] = rank
-    # make lineages of same ranks
-    all_ranks = [e2 for e1 in ranks for e2 in e1]
-    rank_freq = collections.Counter(all_ranks).items()
-    shared_ranks = [e for e, f in rank_freq if f == len(idents)]
-    line_bool = [[1 if e2 in shared_ranks else 0 for e2 in e1] for e1 in ranks]
-    lineages = [[lineages[i1][i2] for i2, e2 in enumerate(e1) if e2 == 1] for
-                i1, e1 in enumerate(line_bool)]
-    all_lines = [e2 for e1 in lineages for e2 in e1]
-    line_freq = collections.Counter(all_lines).items()
-    shared_lineage = [e for e, f in line_freq if f == len(idents)]
-    # create line_obj, a tuple of ident and lineage
-    line_obj = zip(idents, lineages)
-    for i in range(len(lineages[0])):
-        for uniq in set([each[1][i] for each in line_obj]):
-            # find shared taxonomic groups
-            new_node = [each[0] for each in line_obj if each[1][i] == uniq]
-            if len(new_node) > 1:
-                # extract shared lineage
-                lineage = [each[1] for each in line_obj if each[0]
-                           == new_node[0]]
-                # remove shareds from line_obj
-                line_obj = [each for each in line_obj if not each[0] in
-                            new_node]
-                # convert to strings
-                new_node = [str(each) for each in new_node]
-                new_node = [re.sub("\\s", "_", each) for each in new_node]
-                # add new node to line_obj
-                new_node = ('(' + ','.join(new_node) + ')' + str(uniq),
-                            lineage[0])
-                line_obj.append(new_node)
-        if len(line_obj) < 1:
-            break
+    treestring = taxTree(idents=idents, ranks=ranks, lineages=lineages,
+                         taxonomy=taxonomy)
+    if not taxonomy:
+        d = 22  # default_taxonomy + 1 in tnr
+    else:
+        d = len(taxonomy) + 1
     # add outgroup
-    tree = '(outgroup,' + line_obj[0][0] + ')'
-    tree = Phylo.read(StringIO(tree + ';'), "newick")
+    treestring = '({0},outgroup:{1});'.format(treestring[:-1], float(d))
+    tree = Phylo.read(StringIO(treestring), "newick")
     if draw:
         Phylo.draw_ascii(tree)
-    return tree, shared_lineage
+    return tree
 
 
 def genNamesDict(resolver, parentid=None):

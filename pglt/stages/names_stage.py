@@ -40,6 +40,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     ntools.etools.Entrez.email = paradict["email"]
     minspecies = 5
     ntools.logger = logger
+    taxonomy = ['family', 'order', 'class', 'phylum', 'kingdom',
+                'superkingdom']
 
     # PROCESS
     logger.info('Searching for taxids ....')
@@ -60,7 +62,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # add outgroup ids to allrankids
     allrankids.extend(namesdict['outgroup']['txids'])
     logger.info('Generating taxonomic tree ....')
-    taxontree, shared_lineages = ntools.genTaxTree(resolver, namesdict)
+    taxontree = ntools.genTaxTree(resolver, namesdict, taxonomy)
 
     # OUTPUT
     # remove temp TNR folder

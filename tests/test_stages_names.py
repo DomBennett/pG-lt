@@ -36,11 +36,11 @@ def dummy_getOutgroup(namesdict, parentid, outgroupid):
     return namesdict
 
 
-def dummy_genTaxTree(resolver, namesdict):
+def dummy_genTaxTree(resolver, namesdict, taxonomy):
     treedata = "(A, (B, C), (D, E))"
     handle = StringIO(treedata)
     tree = Phylo.read(handle, "newick")
-    return tree, None
+    return tree
 
 
 class NamesStageTestSuite(unittest.TestCase):

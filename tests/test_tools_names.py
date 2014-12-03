@@ -101,10 +101,9 @@ class NamesTestSuite(unittest.TestCase):
         self.assertEqual(namesdict, exp_namesdict_wo)
 
     def test_gentaxtree(self):
-        tree, line = ntools.genTaxTree(self.resolver, exp_namesdict,
-                                       draw=False)
+        tree = ntools.genTaxTree(self.resolver, exp_namesdict,
+                                 taxonomy=None, draw=False)
         self.assertTrue(tree)
-        self.assertEqual(line, [u'51'])
 
     def test_write_namesdict(self):
         ntools.writeNamesDict(directory='.', namesdict=exp_namesdict_wo)
