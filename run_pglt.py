@@ -64,13 +64,14 @@ def run(email, threads, verbose, debug, base_logger, folders, stages):
     logMessage('program-start', logger=base_logger, folders=folders,
                threads=threads_per_worker*nworkers, stages=stages,
                spare_threads=spare_threads, email=email)
+    # logMessage('start', logger=base_logger, directory=dirs[i])
+    base_logger.info('Setting up files and folders ....')
     # setup runner
     runner = Runner(folders=folders, nworkers=nworkers,
                     threads_per_worker=threads_per_worker, wd=os.getcwd(),
-                    email=email, verbose=verbose, debug=debug)
-    # logMessage('start', logger=base_logger, directory=dirs[i])
-    base_logger.info('Setting up files and folders ....')
-    runner.setup(folders=folders, base_logger=base_logger)
+                    email=email, verbose=verbose, debug=debug,
+                    logger=base_logger)
+    runner.setup(folders=folders)
     base_logger.info('Done.')
     # run stages
     for stage in stages:
@@ -80,7 +81,7 @@ def run(email, threads, verbose, debug, base_logger, folders, stages):
             parallel = False
         logMessage('stage-start', logger=base_logger, stage=stage)
         runner.run(folders=runner.folders, stage=stage, parallel=parallel)
-        logMessage('stage-end', logger=base_logger)
+        logMessage('stage-end', logger=base_logger, stage=stage)
     # finish
     logMessage('program-end', logger=base_logger)
     sys.exit('Exiting ....')

@@ -8,7 +8,6 @@ pglt Entrez tools
 # PACKAGES
 import time
 import random
-import logging
 from Bio import Entrez
 from Bio import SeqIO
 
@@ -18,11 +17,13 @@ download_counter = 0
 
 
 # FUNCTIONS
-def eSearch(term, retStart=0, retMax=1, usehistory="n", db="nucleotide"):
+def eSearch(term, logger, retStart=0, retMax=1, usehistory="n",
+            db="nucleotide"):
     """Use Entrez.esearch to search a term in an NCBI database.
 
     Arguments:
      term = string of term used in search
+     logger = logging object
      retStart = minimum returned ID of matching sequences IDs
      retMax = maximum returned ID of matching sequences IDs
      usehistory = record search in NCBI database ("y" or "n")
@@ -36,7 +37,7 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db="nucleotide"):
     global download_counter
     while finished <= max_check:
         if download_counter > 1000:
-            logging.info(" ---- download counter hit: waiting 60 seconds ----")
+            logger.info(" ---- download counter hit: waiting 60 seconds ----")
             download_counter = 0
             time.sleep(60)
         try:
@@ -53,16 +54,16 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db="nucleotide"):
                 results = Entrez.read(handle)
                 handle.close()
             else:
-                logging.warn("Invalid db argument!")
+                logger.warn("Invalid db argument!")
                 return()
             download_counter += 1
             finished = max_check + 1
         except:
             if finished == 0:
-                logging.debug(" ---- server error: retrying ----")
+                logger.debug(" ---- server error: retrying ----")
                 time.sleep(10)
             elif finished == max_check:
-                logging.debug(" ----- server error: no records retrieved ----")
+                logger.debug(" ----- server error: no records retrieved ----")
                 return()
             else:
                 finished += 1
@@ -70,11 +71,13 @@ def eSearch(term, retStart=0, retMax=1, usehistory="n", db="nucleotide"):
     return results
 
 
-def eFetch(ncbi_id, db="nucleotide"):
+def eFetch(ncbi_id, logger, db="nucleotide"):
     """Download NCBI record(s) using ID number(s).
 
     Arguments:
      ncbi_id = sequence identifier (list or string)
+     logger = logging object
+     db = NCBI database (default is nucleotide)
 
     Return:
      SeqRecord object
@@ -85,9 +88,9 @@ def eFetch(ncbi_id, db="nucleotide"):
     global download_counter
     while finished <= max_check:
         if download_counter > 1000:
-            logging.info(" ---- download counter hit: waiting 60 seconds ----")
+            logger.info(" ---- download counter hit: waiting 60 seconds ----")
             download_counter = 0
-            time.sleep(60)
+            time.sleep(120)
         try:
             if db is "nucleotide":
                 handle = Entrez.efetch(db="nucleotide", rettype='gb',
@@ -101,7 +104,7 @@ def eFetch(ncbi_id, db="nucleotide"):
                 results = Entrez.read(handle)
                 handle.close()
             else:
-                logging.warn("Invalid db argument!")
+                logger.warn("Invalid db argument!")
                 break
             download_counter += len(ncbi_id)
             finished = max_check + 1
@@ -111,22 +114,23 @@ def eFetch(ncbi_id, db="nucleotide"):
             finished = max_check + 1
         except:
             if finished == 0:
-                logging.debug(" ----- server error: retrying ----")
+                logger.debug(" ----- server error: retrying ----")
                 finished += 1
                 time.sleep(10)
             if finished == max_check:
-                logging.debug(" ----- server error: no sequences retrieved \
+                logger.debug(" ----- server error: no sequences retrieved \
 ----")
                 return ()
     return results
 
 
-def findChildren(taxid, target=100, next=False):
+def findChildren(taxid, logger, target=100, next=False):
     """
     Return all decendant genera (or below) of a taxonmic ID.
 
     Args:
      taxid = taxonomic ID
+     logger = logging object
      target = the target number of children returned (default 100)
      next = stop at all children in the rank below given id's rank
 
@@ -137,8 +141,8 @@ def findChildren(taxid, target=100, next=False):
     def findNext(frecord):
         term = "{0}[Next Level] AND {1}[Division]".\
             format(frecord[0]['ScientificName'], frecord[0]['Division'])
-        count = eSearch(term, db="taxonomy")["Count"]
-        srecord = eSearch(term, db="taxonomy", retMax=count)
+        count = eSearch(term, logger=logger, db="taxonomy")["Count"]
+        srecord = eSearch(term, logger=logger, db="taxonomy", retMax=count)
         return srecord['IdList']
 
     def findTillTarget(taxids):
@@ -148,7 +152,7 @@ def findChildren(taxid, target=100, next=False):
             if len(res) > target:
                 break
             taxid = taxids.pop()
-            frecord = eFetch(taxid, db="taxonomy")
+            frecord = eFetch(taxid, logger=logger, db="taxonomy")
             if frecord[0]['Rank'] in target_ranks:
                 res.append(taxid)
             else:
@@ -159,7 +163,7 @@ def findChildren(taxid, target=100, next=False):
     taxid = str(taxid)
     target_ranks = ['genus', 'subgenus', 'species', 'subspecies']
     if next:
-        frecord = eFetch(taxid, db="taxonomy")
+        frecord = eFetch(taxid, logger=logger, db="taxonomy")
         return findNext(frecord)
     else:
         return findTillTarget([taxid])

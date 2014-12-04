@@ -38,17 +38,32 @@ exp_parentid = 51
 
 
 # STUBS
-def dummy_eFetch(taxid, db):
+class dummy_Logger(object):
+
+    def __init__(self):
+        pass
+
+    def info(self, msg):
+        pass
+
+    def debug(self, msg):
+        pass
+
+    def warn(self, msg):
+        pass
+
+
+def dummy_eFetch(taxid, db, logger):
     # rank and sci name for the outgroup when getmetadata in findbestgenes
     return [{'ParentTaxId': '1', 'Rank': 'outgroup',
              'ScientificName': 'outgroup'}]
 
 
-def dummy_eSearch(term):
+def dummy_eSearch(term, logger):
     return {'Count': '10000'}
 
 
-def dummy_findChildren(taxid, next):
+def dummy_findChildren(taxid, next, logger):
     return [60]
 
 
@@ -67,6 +82,7 @@ class Dummy_GnrDataSources(object):
 class NamesTestSuite(unittest.TestCase):
 
     def setUp(self):
+        self.logger = dummy_Logger()
         self.True_GnrDataSources = tnr.gnr_tools.GnrDataSources
         self.true_eFetch = ntools.etools.eFetch
         self.true_eSearch = ntools.etools.eSearch
@@ -91,18 +107,20 @@ class NamesTestSuite(unittest.TestCase):
         ntools.etools.eSearch = self.true_eSearch
 
     def test_gennamesdict(self):
-        namesdict, allrankids, parentid = ntools.genNamesDict(self.resolver)
+        namesdict, allrankids, parentid = \
+            ntools.genNamesDict(self.resolver, logger=self.logger)
         self.assertEqual(allrankids, exp_allrankids)
         self.assertEqual(namesdict, exp_namesdict)
         self.assertEqual(parentid, exp_parentid)
 
     def test_getoutgroup(self):
-        namesdict = ntools.getOutgroup(exp_namesdict.copy(), exp_parentid)
+        namesdict = ntools.getOutgroup(exp_namesdict.copy(), exp_parentid,
+                                       logger=self.logger)
         self.assertEqual(namesdict, exp_namesdict_wo)
 
     def test_gentaxtree(self):
         tree = ntools.genTaxTree(self.resolver, exp_namesdict,
-                                 taxonomy=None, draw=False)
+                                 logger=self.logger, taxonomy=None, draw=False)
         self.assertTrue(tree)
 
     def test_write_namesdict(self):

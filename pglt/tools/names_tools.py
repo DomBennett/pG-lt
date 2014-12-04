@@ -6,9 +6,7 @@ pglt names tools
 """
 
 # PACKAGES
-import collections
 import re
-import logging
 import csv
 import os
 from Bio import Phylo
@@ -19,7 +17,7 @@ from system_tools import TaxonomicRankError
 
 
 # FUNCTIONS
-def genTaxTree(resolver, namesdict, taxonomy=None, draw=False):
+def genTaxTree(resolver, namesdict, logger, taxonomy=None, draw=False):
     """Generate Newick tree from TaxonNamesResolver class.
 
         Arguments:
@@ -44,7 +42,7 @@ def genTaxTree(resolver, namesdict, taxonomy=None, draw=False):
     statement = "Unresolved names: "
     for each in unresolved_names:
         statement += " " + each
-    logging.debug(statement)
+    logger.debug(statement)
     treestring = taxTree(idents=idents, ranks=ranks, lineages=lineages,
                          taxonomy=taxonomy)
     if not taxonomy:
@@ -59,7 +57,7 @@ def genTaxTree(resolver, namesdict, taxonomy=None, draw=False):
     return tree
 
 
-def genNamesDict(resolver, parentid=None):
+def genNamesDict(resolver, logger, parentid=None):
     """Return a dictionary containtaining all names and metadata"""
     # TODO: too complex, consider breaking up
     q_names = resolver.retrieve('query_name')
@@ -102,7 +100,8 @@ def genNamesDict(resolver, parentid=None):
         while len(nul_ids) > 0:
             temp_id = nul_ids.pop(0)
             # find ids in the next level
-            temp_children = etools.findChildren(str(temp_id), next=True)
+            temp_children = etools.findChildren(str(temp_id), logger=logger,
+                                                next=True)
             temp_children = [int(e) for e in temp_children]
             # if none are in allrankids, must be unique
             temp_children = [e for e in temp_children if e not in allrankids]
@@ -119,18 +118,19 @@ me": "Non-unique resolution", "rank": nul_ranks[i]}
     return namesdict, allrankids, parentid
 
 
-def getOutgroup(namesdict, parentid, outgroupid=None, minrecords=1000):
+def getOutgroup(namesdict, parentid, logger, outgroupid=None, minrecords=1000):
     """Return namesdict with suitable outgroup"""
     # TODO: too complex, consider breaking up
     def findParent(parentid):
-        return etools.eFetch(parentid, db="taxonomy")[0]['ParentTaxId']
+        return etools.eFetch(parentid, logger=logger,
+                             db="taxonomy")[0]['ParentTaxId']
 
     def getTaxIdMetaData(ncbi_id):
         etal_bool = False
         if len(ncbi_id) > 1:
             ncbi_id = ncbi_id[0]
             etal_bool = True
-        record = etools.eFetch(ncbi_id, db="taxonomy")[0]
+        record = etools.eFetch(ncbi_id, logger=logger, db="taxonomy")[0]
         metadata = [record['Rank'], record['ScientificName']]
         if etal_bool:
             metadata = [e + ' et al.' for e in metadata]
@@ -153,13 +153,14 @@ def getOutgroup(namesdict, parentid, outgroupid=None, minrecords=1000):
             # get parent of parent
             grandparentid = findParent(parentid)
             # find all children
-            candidates = etools.findChildren(grandparentid, next=True)
+            candidates = etools.findChildren(grandparentid, logger=logger,
+                                             next=True)
             # filter out children that are in ingroup
             candidates = [e for e in candidates if e != parentid]
             # search genbank for nuc records
             for candidate in candidates:
                 term = 'txid' + str(candidate) + '[PORGN]'
-                nuc_record = etools.eSearch(term)
+                nuc_record = etools.eSearch(term, logger=logger)
                 # there must be more than 1000 nuc records
                 if int(nuc_record['Count']) > minrecords:
                     outgroup_ids.append(candidate)

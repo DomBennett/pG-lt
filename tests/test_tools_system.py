@@ -13,6 +13,19 @@ import shutil
 import pglt.tools.system_tools as stools
 
 
+# DUMMIES
+class dummy_Logger(object):
+
+    def __init__(self):
+        pass
+
+    def info(self, msg):
+        pass
+
+    def debug(self, msg):
+        pass
+
+
 # FUNCTIONS
 def dummyNamesStageWError(wd, logger):
     raise(stools.TooFewSpeciesError)
@@ -30,6 +43,7 @@ def dummyPrime(folders, arguments):
 class SetupTestSuite(unittest.TestCase):
 
     def setUp(self):
+        self.logger = dummy_Logger()
         # replace names stage tuple
         self.true_names_stage = stools.Stager.STAGES['1']
         stools.Stager.STAGES['1'] = (dummyNamesStageWError, '1_names')
@@ -84,7 +98,8 @@ class SetupTestSuite(unittest.TestCase):
             os.mkdir(folder)
         runner = stools.Runner(folders=folders, nworkers=10,
                                threads_per_worker=1, wd='.',
-                               email='an.email', verbose=False, debug=False)
+                               email='an.email', verbose=False, debug=False,
+                               logger=self.logger)
         runner.run(folders=folders, stage='1')
         # check each folder has a 1_names
         for folder in folders:

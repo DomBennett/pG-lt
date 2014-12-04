@@ -23,20 +23,20 @@ class Dummy_Resolver(object):
         pass
 
 
-def dummy_genNamesDict(resolver, parentid):
+def dummy_genNamesDict(resolver, parentid, logger):
     namesdict = {}
     namesdict['query_name'] = {"txids": [1, 2], "unique_name": 'returned_name',
                                "rank": 'species'}
     return namesdict, [], None
 
 
-def dummy_getOutgroup(namesdict, parentid, outgroupid):
+def dummy_getOutgroup(namesdict, parentid, outgroupid, logger):
     namesdict['outgroup'] = {"txids": [3], "unique_name": 'outgroup',
                              "rank": 'genus'}
     return namesdict
 
 
-def dummy_genTaxTree(resolver, namesdict, taxonomy):
+def dummy_genTaxTree(resolver, namesdict, taxonomy, logger):
     treedata = "(A, (B, C), (D, E))"
     handle = StringIO(treedata)
     tree = Phylo.read(handle, "newick")

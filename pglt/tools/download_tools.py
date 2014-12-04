@@ -86,11 +86,11 @@ fewer matches than target nseqs"""
                 #  found or until the max thoroughness has been hit
                 break
             search_term = self._buildSearchTerm(taxids, self.thoroughness)
-            seqcount = etools.eSearch(search_term)['Count']
+            seqcount = etools.eSearch(search_term, logger=self.logger)['Count']
             if int(seqcount) >= 1:
                 # return ALL matching seqids if more than 0
-                seqids.extend(etools.eSearch(search_term, retMax=seqcount)
-                              ['IdList'])
+                seqids.extend(etools.eSearch(search_term, logger=self.logger,
+                                             retMax=seqcount)['IdList'])
                 # filter those that have already been seen
                 seqids = [e for e in seqids if e not in self.deja_vues]
             self.thoroughness += 1
@@ -184,7 +184,7 @@ by searching features."""
             for _ in range(n):
                 randi = random.randint(0, len(seqids)-1)
                 seqs.append(seqids.pop(randi))
-            for record in etools.eFetch(seqs):
+            for record in etools.eFetch(seqs, logger=self.logger):
                 record = self._parse(record)
                 if record:
                     records.append(record)

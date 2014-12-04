@@ -19,8 +19,12 @@ from special_tools import clean
 from special_tools import getThreads
 
 # MESSAGES
-description = """pG-lt: A pipeline for the automated generation of phylogenies
-from taxonomic names through \'Mass Phylogeny Estimation\'"""
+description = """pG-lt version 1, Copyright (C) 2014 Bennett
+
+This program comes with ABSOLUTELY NO WARRANTY. This is free software,
+and you are welcome to redistribute it under certain conditions.
+For details, check LICENSE.txt at:
+    https://github.com/DomBennett/MassPhylogenyEstimation"""
 nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files \
 found! All taxonomic names should be placed in subdirectories and \
 called: \'names.txt\''
@@ -40,9 +44,9 @@ class PrimingError(Exception):
 def printHeader():
     """Print a nice program description header"""
     # use 70 cols as I think this is standard
-    print '\n' + '#' * 70
+    print '-' * 70
     print description
-    print '#' * 70 + '\n'
+    print '-' * 70 + '\n'
 
 
 def calcWorkers(threads, nfolders, min_threads_per_worker=2,
@@ -188,9 +192,9 @@ folders (developer only)", action="store_true")
 def logMessage(phase, logger, folders=None, stage=None, threads=None,
                spare_threads=None, email=None, stages=None):
     if phase == 'program-start':
-        logger.info('#' * 70)
+        logger.info('-' * 70)
         logger.info(description)
-        logger.info('#' * 70 + '\n')
+        logger.info('-' * 70 + '\n')
         logger.info('-' * 28 + ' Run details ' + '-' * 29)
         logger.info('Running on [{0}] [{1}]'.format(platform.node(),
                     platform.platform()))
@@ -221,7 +225,7 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
     elif phase == 'stage-start':
         logger.info('Stage [{0}] started at [{1}]'.format(stage, timestamp()))
     elif phase == 'stage-end':
-        logger.info('.... finished at [{0}]'.format(timestamp()))
+        logger.info('Stage [{0}] finished at [{1}]'.format(stage, timestamp()))
     else:
         raise(ValueError('Unrecognised phase'))
 

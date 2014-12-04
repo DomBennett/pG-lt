@@ -160,7 +160,8 @@ class Runner(object):
     # _pars and _gpars is added at __init__.py
 
     def __init__(self, folders, nworkers, threads_per_worker, wd, email,
-                 verbose=False, debug=False):
+                 logger, verbose=False, debug=False):
+        self.logger = logger
         self.wd = wd
         self.nworkers = nworkers
         self.threads_per_worker = threads_per_worker
@@ -169,11 +170,11 @@ class Runner(object):
         self.debug = debug
         self.email = email
 
-    def setup(self, folders, base_logger):
+    def setup(self, folders):
         """Setup files across folders"""
         for folder in folders:
             arguments = sortArgs(directory=folder, email=self.email,
-                                 logger=base_logger,
+                                 logger=self.logger,
                                  default_pars_file=self._pars,
                                  default_gpars_file=self._gpars)
             _ = prime(folder, arguments, self.threads_per_worker)
@@ -183,6 +184,8 @@ class Runner(object):
         while True:
             # get folder and stages from queue
             folder, stage = self.q.get()
+            # log folder
+            self.logger.info('.... working on [{0}]'.format(folder))
             # get a working dir for folder
             stage_wd = os.path.join(self.wd, folder)
             # run stage for folder

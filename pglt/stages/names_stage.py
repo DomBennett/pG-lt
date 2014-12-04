@@ -56,13 +56,17 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     resolver.main()
     logger.info('------TaxonNamesResolver:End------')
     logger.info("Generating names dictionary ....")
-    namesdict, allrankids, parentid = ntools.genNamesDict(resolver, parentid)
+    namesdict, allrankids, parentid = ntools.genNamesDict(resolver=resolver,
+                                                          parentid=parentid,
+                                                          logger=logger)
     logger.info("Finding an outgroup ....")
-    namesdict = ntools.getOutgroup(namesdict, parentid, outgroupid)
+    namesdict = ntools.getOutgroup(namesdict=namesdict, parentid=parentid,
+                                   outgroupid=outgroupid, logger=logger)
     # add outgroup ids to allrankids
     allrankids.extend(namesdict['outgroup']['txids'])
     logger.info('Generating taxonomic tree ....')
-    taxontree = ntools.genTaxTree(resolver, namesdict, taxonomy)
+    taxontree = ntools.genTaxTree(resolver=resolver, namesdict=namesdict,
+                                  taxonomy=taxonomy, logger=logger)
 
     # OUTPUT
     # remove temp TNR folder

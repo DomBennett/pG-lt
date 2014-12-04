@@ -71,7 +71,7 @@ sequences.extend([False for i in range(20)])
 
 
 # Dependent stubs
-def dummy_eSearch(term, retStart=0, retMax=1, usehistory="n",
+def dummy_eSearch(term, logger, retStart=0, retMax=1, usehistory="n",
                   db="nucleotide"):
     if term == t1_term:
         return t1_search_res
@@ -83,7 +83,7 @@ def dummy_eSearch(term, retStart=0, retMax=1, usehistory="n",
         return outgroup_res
 
 
-def dummy_eFetch(ncbi_id, db="nucleotide"):
+def dummy_eFetch(ncbi_id, logger, db="nucleotide"):
     if ncbi_id == 'seq1':
         return seq1
     elif ncbi_id == 'seq2':
