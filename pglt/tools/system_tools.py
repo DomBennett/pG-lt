@@ -10,9 +10,11 @@ import subprocess
 import threading
 import os
 import Queue
+import pickle
 from datetime import datetime
 from setup_tools import setUpLogging
 from setup_tools import tearDownLogging
+from pglt.tools.setup_tools import logMessage
 from setup_tools import sortArgs
 from setup_tools import prime
 
@@ -37,6 +39,9 @@ consecutively, consider reducing rttpvalue.'
 unexpected_msg = '\nERROR: The following unexpected error occurred:\n\
 \"{0}\" \n\
 Please email details to the program maintainer for help.'
+
+# PROGRESS DICT
+progress = {'1': 'not run', '2': 'not run', '3': 'not run', '4': 'not run'}
 
 
 # ERROR CLASSES
@@ -157,10 +162,11 @@ class Stager(object):
 
 class Runner(object):
     """Runner class : run stages across folders"""
-    # _pars and _gpars is added at __init__.py
+    # _pars and _gpars are added at __init__.py
 
-    def __init__(self, folders, nworkers, threads_per_worker, wd, email,
-                 logger, verbose=False, debug=False):
+    def __init__(self, stages, folders, nworkers, threads_per_worker, wd,
+                 email, logger, verbose=False, debug=False):
+        self.stages = stages
         self.logger = logger
         self.wd = wd
         self.nworkers = nworkers
@@ -170,36 +176,65 @@ class Runner(object):
         self.debug = debug
         self.email = email
 
-    def setup(self, folders):
+    def setup(self):
         """Setup files across folders"""
-        for folder in folders:
+        # pickle progress dict
+        with open(os.path.join(os.getcwd(), 'tempfiles', 'progress.p'),
+                  "wb") as file:
+            pickle.dump(progress, file)
+        # set up each folder
+        for folder in self.folders:
             arguments = sortArgs(directory=folder, email=self.email,
                                  logger=self.logger,
                                  default_pars_file=self._pars,
                                  default_gpars_file=self._gpars)
-            _ = prime(folder, arguments, self.threads_per_worker)
-            del _
+            prime(folder, arguments, self.threads_per_worker)
+
+    def _clock(self, stage, failed=False, directory=os.getcwd()):
+        '''Clock stage'''
+        directory = os.path.join(directory, 'tempfiles')
+        with open(os.path.join(directory, 'progress.p'), "rb") as file:
+            progress = pickle.load(file)
+        if not failed:
+            progress[stage] = 'success'
+        else:
+            # set all subsquent stages as false to stop them being run
+            for s in range(int(stage), 5):
+                progress[str(s)] = 'failed'
+        with open(os.path.join(directory, 'progress.p'), "wb") as file:
+            pickle.dump(progress, file)
+
+    def _check(self, stage, directory=os.getcwd()):
+        '''Check stage'''
+        directory = os.path.join(directory, 'tempfiles')
+        with open(os.path.join(directory, 'progress.p'), "rb") as file:
+            progress = pickle.load(file)
+        if progress[stage] == 'not run':
+            return False
+        else:
+            return True
 
     def _worker(self):
+        '''Worker'''
         while True:
             # get folder and stages from queue
             folder, stage = self.q.get()
-            # log folder
-            self.logger.info('.... working on [{0}]'.format(folder))
             # get a working dir for folder
-            stage_wd = os.path.join(self.wd, folder)
-            # run stage for folder
-            stager = Stager(wd=stage_wd, stage=stage, verbose=self.verbose,
-                            debug=self.debug)
-            failed = stager.run()
-            # if failed, remove folder from list
-            if failed:
-                self.folders.remove(folder)
+            wd = os.path.join(self.wd, folder)
+            finished = self._check(directory=wd, stage=stage)
+            if not finished:
+                # log folder
+                self.logger.info('.... working on [{0}]'.format(folder))
+                # run stage for folder
+                stager = Stager(wd=wd, stage=stage, verbose=self.verbose,
+                                debug=self.debug)
+                failed = stager.run()
+                self._clock(failed=failed, directory=wd, stage=stage)
             self.q.task_done()
 
-    def run(self, folders, stage, parallel=False):
-        """Run folders and stages"""
-        if parallel:
+    def _runstage(self, folders, stage):
+        """Run stage across folders"""
+        if stage in ['3', '4']:
             nworkers = self.nworkers
         else:
             nworkers = 1
@@ -222,6 +257,16 @@ class Runner(object):
         main.start()
         while main.isAlive():
             main.join(3600)
+
+    def run(self):
+        '''Run stages across folders'''
+        for stage in self.stages:
+            if not self._check(stage=stage):
+                logMessage('stage-start', logger=self.logger, stage=stage)
+                self._runstage(folders=self.folders, stage=stage)
+                self._clock(stage=stage)
+                logMessage('stage-end', logger=self.logger, stage=stage)
+        logMessage('program-end', logger=self.logger)
 
 
 class TerminationPipe(object):

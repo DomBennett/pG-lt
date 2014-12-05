@@ -19,12 +19,16 @@ from special_tools import clean
 from special_tools import getThreads
 
 # MESSAGES
-description = """pG-lt version 1, Copyright (C) 2014 Bennett
-
+description = """
+----------------------------------------------------------------------
+pG-lt version 1, Copyright (C) 2014 Bennett
+----------------------------------------------------------------------
 This program comes with ABSOLUTELY NO WARRANTY. This is free software,
 and you are welcome to redistribute it under certain conditions.
-For details, check LICENSE.txt at:
-    https://github.com/DomBennett/MassPhylogenyEstimation"""
+For details, refer to LICENSE.txt at:
+ https://github.com/DomBennett/MassPhylogenyEstimation
+----------------------------------------------------------------------
+"""
 nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files \
 found! All taxonomic names should be placed in subdirectories and \
 called: \'names.txt\''
@@ -34,19 +38,19 @@ priming_msg = '\nERROR: The program was unable to start due to a \
 problem with the files and folders in the study directory. Check the \
 parameters and gene parameters .csv for any potential conflicts.'
 
+# PROGRESS DICT
+progress = {'1': 'not run', '2': 'not run', '3': 'not run', '4': 'not run'}
+
 
 # ERROR CLASSES
 class PrimingError(Exception):
     pass
 
 
-# EXPORTED FUNCTIONS
+# FUNCTIONS
 def printHeader():
     """Print a nice program description header"""
-    # use 70 cols as I think this is standard
-    print '-' * 70
     print description
-    print '-' * 70 + '\n'
 
 
 def calcWorkers(threads, nfolders, min_threads_per_worker=2,
@@ -95,6 +99,8 @@ numbers 1 through 4.'
     if args.clean:
         clean()
         sys.exit('Files and folders deleted')
+    if args.restart:
+        return True, None, None, None, None, None
     if not args.email:
         # stop if no email
         sys.exit('An email address must be provided. Use \'-e\'.')
@@ -108,7 +114,7 @@ numbers 1 through 4.'
     # check threads is a valid argument
     if args.threads == 0 or args.threads < -1:
         sys.exit('Invalid threads argument, must be -1 or >0.')
-    return args.email, args.threads, args.verbose, args.debug, stages
+    return False, args.email, args.threads, args.verbose, args.debug, stages
 
 
 def getFolders():
@@ -167,13 +173,14 @@ def tearDownLogging(logname):
         logger.removeHandler(h)
 
 
-# NON-EXPORTED FUNCTIONS
 def createParser():
     """Create parser for command-line"""
     # Add new arg for threads
     parser = argparse.ArgumentParser()
     parser.add_argument("-email", "-e", help="please provide email \
 for NCBI")
+    parser.add_argument('--restart', help='restart pipeline if stopped',
+                        action='store_true')
     parser.add_argument("-threads", "-t", help="number of threads, default\
  \'-1\' will use all available on machine.", default=-1, type=int)
     parser.add_argument("-stages", "-s", help="stages to run, default \
@@ -192,9 +199,7 @@ folders (developer only)", action="store_true")
 def logMessage(phase, logger, folders=None, stage=None, threads=None,
                spare_threads=None, email=None, stages=None):
     if phase == 'program-start':
-        logger.info('-' * 70)
         logger.info(description)
-        logger.info('-' * 70 + '\n')
         logger.info('-' * 28 + ' Run details ' + '-' * 29)
         logger.info('Running on [{0}] [{1}]'.format(platform.node(),
                     platform.platform()))
@@ -226,6 +231,8 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
         logger.info('Stage [{0}] started at [{1}]'.format(stage, timestamp()))
     elif phase == 'stage-end':
         logger.info('Stage [{0}] finished at [{1}]'.format(stage, timestamp()))
+    elif phase == 'program-restart':
+        logger.info('{0}- Restarting [{1}] {0}'.format('-' * 11, timestamp()))
     else:
         raise(ValueError('Unrecognised phase'))
 
@@ -244,14 +251,14 @@ def prime(directory, arguments, threads):
         pickle.dump(arguments['terms'], file)
     with open(os.path.join(temp_dir, 'threads.p'), "wb") as file:
         pickle.dump(threads, file)
+    with open(os.path.join(temp_dir, 'progress.p'), "wb") as file:
+        pickle.dump(progress, file)
     # Print arguments and parameters to file
     record = 'Working with [{0}] names\n'.format(len(arguments['terms']))
     record += recordPars(arguments['paradict'])
     record += recordGpars(arguments['genedict'])
     with open(os.path.join(directory, 'info.txt'), 'wd') as file:
         file.write(record)
-    # TODO return the starting stage
-    # TODO create other functions for creating hidden files
 
 
 def timestamp():

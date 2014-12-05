@@ -10,6 +10,7 @@ import unittest
 import re
 import os
 import shutil
+import pickle
 import pglt.tools.system_tools as stools
 
 
@@ -36,8 +37,13 @@ def dummySortArgs(directory, email, logger, default_pars_file,
     pass
 
 
-def dummyPrime(folders, arguments):
-    pass
+def dummyPrime(directory, arguments, threads):
+    progress = {'1': 'not run', '2': 'not run', '3': 'not run', '4': 'not run'}
+    temp_dir = os.path.join(directory, 'tempfiles')
+    if not os.path.isdir(temp_dir):
+        os.mkdir(temp_dir)
+    with open(os.path.join(temp_dir, 'progress.p'), "wb") as file:
+        pickle.dump(progress, file)
 
 
 class SetupTestSuite(unittest.TestCase):
@@ -66,7 +72,8 @@ class SetupTestSuite(unittest.TestCase):
                 pass
         system_folders = ['1_names', '4_phylogeny', 'folder1', 'folder2',
                           'folder3', 'folder4', 'folder5', 'folder6',
-                          'folder7', 'folder8', 'folder9', 'folder10']
+                          'folder7', 'folder8', 'folder9', 'folder10',
+                          'tempfiles']
         # system_folders = []
         while system_folders:
             try:
@@ -93,14 +100,17 @@ class SetupTestSuite(unittest.TestCase):
     def test_runner(self):
         # run for 10 folders using dummy names stage
         folders = ['folder1', 'folder2', 'folder3', 'folder4', 'folder5',
-                   'folder6', 'folder7', 'folder8', 'folder9', 'folder10']
+                   'folder6', 'folder7', 'folder8', 'folder9', 'folder10',
+                   'tempfiles']
         for folder in folders:
             os.mkdir(folder)
-        runner = stools.Runner(folders=folders, nworkers=10,
+        stages = ['1']
+        runner = stools.Runner(folders=folders, nworkers=10, stages=stages,
                                threads_per_worker=1, wd='.',
                                email='an.email', verbose=False, debug=False,
                                logger=self.logger)
-        runner.run(folders=folders, stage='1')
+        runner.setup()
+        runner.run()
         # check each folder has a 1_names
         for folder in folders:
             self.assertTrue(os.path.isdir(os.path.join(folder, '1_names')))

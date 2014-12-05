@@ -31,8 +31,8 @@ def timeit(func, **kwargs):
 
 
 def getThreads(wd=None):
-    """Find number of cores on machine (platform independent). If local, \
-search cwd for pickled .threads.p."""
+    """Find number of cores on machine (platform independent). If wd, \
+search wd for pickled threads.p."""
     if wd:
         filepath = os.path.join(wd, 'threads.p')
         if os.path.isfile(filepath):
@@ -67,6 +67,18 @@ def clean():
     # remove log.txt in parent folder
     try:
         os.remove('log.txt')
+    except OSError:
+        pass
+
+    # remove tempfiles
+    try:
+        shutil.rmtree('tempfiles')
+    except OSError:
+        pass
+
+    # remove resolved_names
+    try:
+        shutil.rmtree('resolved_names')
     except OSError:
         pass
 
