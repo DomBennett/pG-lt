@@ -33,13 +33,14 @@ def eSearch(term, logger, retStart=0, retMax=1, usehistory="n",
      dictionary
 
     Adapted pG code written by W.D. Pearse."""
+    # TODO: too complex, consider breaking up
     finished = 0
     global download_counter
     while finished <= max_check:
         if download_counter > 1000:
-            logger.info(" ---- download counter hit: waiting 60 seconds ----")
+            logger.info(" ---- download counter hit: waiting 5 minutes ----")
             download_counter = 0
-            time.sleep(60)
+            time.sleep(300)
         try:
             if db is "nucleotide":
                 handle = Entrez.esearch(db="nucleotide", term=term,
@@ -54,21 +55,21 @@ def eSearch(term, logger, retStart=0, retMax=1, usehistory="n",
                 results = Entrez.read(handle)
                 handle.close()
             else:
-                logger.warn("Invalid db argument!")
-                return()
+                raise(ValueError('Invalid db argument!'))
             download_counter += 1
-            finished = max_check + 1
-        except:
+            return results
+        except ValueError:  # if parsing fails, value error raised
+            handle.close()
+            logger.warn('Parsing failed!')
+            return ()
+        except:  # else server error
             if finished == 0:
                 logger.debug(" ---- server error: retrying ----")
-                time.sleep(10)
             elif finished == max_check:
                 logger.debug(" ----- server error: no records retrieved ----")
                 return()
-            else:
-                finished += 1
-                time.sleep(10)
-    return results
+        time.sleep(60)
+        finished += 1
 
 
 def eFetch(ncbi_id, logger, db="nucleotide"):
@@ -88,9 +89,9 @@ def eFetch(ncbi_id, logger, db="nucleotide"):
     global download_counter
     while finished <= max_check:
         if download_counter > 1000:
-            logger.info(" ---- download counter hit: waiting 60 seconds ----")
+            logger.info(" ---- download counter hit: waiting 5 minutes ----")
             download_counter = 0
-            time.sleep(120)
+            time.sleep(300)
         try:
             if db is "nucleotide":
                 handle = Entrez.efetch(db="nucleotide", rettype='gb',
@@ -104,24 +105,21 @@ def eFetch(ncbi_id, logger, db="nucleotide"):
                 results = Entrez.read(handle)
                 handle.close()
             else:
-                logger.warn("Invalid db argument!")
-                break
+                raise(ValueError('Invalid db argument!'))
             download_counter += len(ncbi_id)
-            finished = max_check + 1
+            return results
         except ValueError:  # if parsing fails, value error raised
             handle.close()
-            results = ()
-            finished = max_check + 1
-        except:
+            logger.warn('Parsing failed!')
+            return ()
+        except:  # else server error
             if finished == 0:
                 logger.debug(" ----- server error: retrying ----")
-                finished += 1
-                time.sleep(10)
-            if finished == max_check:
-                logger.debug(" ----- server error: no sequences retrieved \
-----")
+            elif finished == max_check:
+                logger.debug(" ----- server error: no seqs retrieved ----")
                 return ()
-    return results
+        time.sleep(60)
+        finished += 1
 
 
 def findChildren(taxid, logger, target=100, next=False):
