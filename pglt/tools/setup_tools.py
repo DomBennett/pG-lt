@@ -197,7 +197,7 @@ folders (developer only)", action="store_true")
 
 
 def logMessage(phase, logger, folders=None, stage=None, threads=None,
-               spare_threads=None, email=None, stages=None):
+               spare_threads=None, email=None, stages=None, counter=None):
     if phase == 'program-start':
         logger.info(description)
         logger.info('-' * 28 + ' Run details ' + '-' * 29)
@@ -230,7 +230,8 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
     elif phase == 'stage-start':
         logger.info('Stage [{0}] started at [{1}]'.format(stage, timestamp()))
     elif phase == 'stage-end':
-        logger.info('Stage [{0}] finished at [{1}]'.format(stage, timestamp()))
+        logger.info('Stage [{0}] finished at [{1}] for [{2}] folders'.
+                    format(stage, timestamp(), counter))
     elif phase == 'program-restart':
         logger.info('{0}- Restarting [{1}] {0}'.format('-' * 11, timestamp()))
     else:

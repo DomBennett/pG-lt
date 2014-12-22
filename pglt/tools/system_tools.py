@@ -133,7 +133,7 @@ class Stager(object):
             error_raised = self._error(raxml_msg)
         except Exception as unexp_err:
             error_raised = self._error(unexpected_msg.format(unexp_err))
-        return error_raised
+        return bool(error_raised)
 
     def run(self):
         # make sure dir exists
@@ -175,6 +175,7 @@ class Runner(object):
         self.verbose = verbose
         self.debug = debug
         self.email = email
+        self.counter = 0  # count number of folders run successfully
 
     def setup(self):
         """Setup files across folders"""
@@ -229,6 +230,7 @@ class Runner(object):
                 stager = Stager(wd=wd, stage=stage, verbose=self.verbose,
                                 debug=self.debug)
                 failed = stager.run()
+                self.counter += not failed
                 self._clock(failed=failed, directory=wd, stage=stage)
             self.q.task_done()
 
@@ -265,7 +267,8 @@ class Runner(object):
                 logMessage('stage-start', logger=self.logger, stage=stage)
                 self._runstage(folders=self.folders, stage=stage)
                 self._clock(stage=stage)
-                logMessage('stage-end', logger=self.logger, stage=stage)
+                logMessage('stage-end', logger=self.logger, stage=stage,
+                           counter=self.counter)
         logMessage('program-end', logger=self.logger)
 
 
