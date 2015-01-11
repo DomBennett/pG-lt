@@ -1,0 +1,9 @@
+PROJECT_NAME         = pG-lt
+INPUT                = pglt tests
+GENERATE_HTML        = YES
+GENERATE_LATEX       = NO
+FILE_PATTERNS        = *.py
+RECURSIVE            = YES
+OPTIMIZE_OUTPUT_JAVA = YES
+QUIET                = YES
+JAVADOC_AUTOBRIEF    = NO
