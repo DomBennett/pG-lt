@@ -29,6 +29,7 @@ class DummyArgs(object):
     verbose = False
     debug = True
     restart = False
+    details = False
 
     def __init__(self):
         pass

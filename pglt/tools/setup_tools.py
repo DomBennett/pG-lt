@@ -25,8 +25,7 @@ pG-lt version 1, Copyright (C) 2014 Bennett
 ----------------------------------------------------------------------
 This program comes with ABSOLUTELY NO WARRANTY. This is free software,
 and you are welcome to redistribute it under certain conditions.
-For details, refer to LICENSE.txt at:
- https://github.com/DomBennett/MassPhylogenyEstimation
+For more details, type `run_pglt.py --details`.
 ----------------------------------------------------------------------
 """
 nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files \
@@ -95,6 +94,14 @@ numbers 1 through 4.'
     # get args
     if not args:
         args = createParser().parse_args()
+    if args.details:
+        print '\nThis is pG-lt version: ', open(os.path.join(
+                                                os.path.dirname(__file__),
+                                                '..', 'VERSION.txt')).read()
+        print open(os.path.join(os.path.dirname(__file__), '..',
+                                'DESCRIPTION.txt')).read()
+
+        sys.exit()
     # check them
     if args.clean:
         clean()
@@ -182,13 +189,13 @@ for NCBI")
     parser.add_argument('--restart', help='restart pipeline if stopped',
                         action='store_true')
     parser.add_argument("-threads", "-t", help="number of threads, default\
- \'-1\' will use all available on machine.", default=-1, type=int)
+ \'-1\', will use all available on machine", default=-1, type=int)
     parser.add_argument("-stages", "-s", help="stages to run, default \
 \'1-4\'", default='1-4')
-    parser.add_argument("-restart", "-r", help="restart from \
-specified stage")
     parser.add_argument("--verbose", help="increase output verbosity",
                         action="store_true")
+    parser.add_argument('--details', help='display information about the \
+program', action='store_true')
     parser.add_argument("--debug", help="log warnings (developer only)",
                         action="store_true")
     parser.add_argument("--clean", help="remove all pG-lt files and \
