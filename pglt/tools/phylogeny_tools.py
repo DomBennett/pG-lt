@@ -16,7 +16,7 @@ from Bio.SeqRecord import SeqRecord
 from Bio import Phylo
 from Bio import AlignIO
 import dendropy as dp
-from scipy.stats import chisquare
+from math import sqrt
 from system_tools import TerminationPipe
 from system_tools import RAxMLError
 from special_tools import getThreads
@@ -127,7 +127,7 @@ list of alignments and stop pattern if partition"""
 
 class Generator(object):
     """Phylogeny generating class"""
-    def __init__(self, alignment_store, rttpvalue, outdir, maxtrys, logger,
+    def __init__(self, alignment_store, pstat, outdir, maxtrys, logger,
                  wd=os.getcwd()):
         self.logger = logger
         self.wd = wd
@@ -137,23 +137,34 @@ class Generator(object):
         self.maxtrys = maxtrys
         self.alignment_store = alignment_store
         self.genes = alignment_store.keys()
-        self.rttpvalue = rttpvalue
+        self.pstat = pstat
         self.outdir = outdir
         self.taxontree = os.path.join(outdir, "taxontree.tre")
         self.constraint = os.path.isfile(self.taxontree)
 
     def _test(self, phylogeny):
-        """Return false if chisquare rejects uniform distribution of
-root to tip distances"""
-        # Make sure tree exists
-        if not phylogeny:
-            return False
-        # calc root to tip distance (rtt.dist) for each tip
-        rtt_dists = []
-        for terminal in phylogeny.get_terminals():
-            rtt_dists.append(phylogeny.distance(terminal))
-        _, pvalue = chisquare(rtt_dists)
-        return pvalue > self.rttpvalue
+        """Return phylogeny if sd of residuals of a uniformity test for rtt
+dists is less than pstat."""
+        if phylogeny:
+            # remove outgroup
+            try:
+                phylogeny.prune('outgroup')
+            except:
+                pass
+            # calc root to tip distance (rtt.dist) for each tip
+            rtt_dists = []
+            for terminal in phylogeny.get_terminals():
+                rtt_dists.append(phylogeny.distance(terminal))
+            # calculate SD of the residuals for a uniform dist
+            expected = float(sum(rtt_dists))/len(rtt_dists)
+            residuals = [abs(e-expected) for e in rtt_dists]
+            mean_residual = sum(residuals)/len(residuals)
+            sd = sqrt(sum([(e-mean_residual)**2 for e in residuals]) /
+                      len(residuals))
+            # Phylo.draw_ascii(phylogeny)
+            self.logger.debug('..... [{0}] sd'.format(sd))
+            if sd < self.pstat:
+                return phylogeny
 
     def _concatenate(self, alignments):
         """Return single alignment from list of alignments for
@@ -334,9 +345,8 @@ to .partitions.txt"""
         phylogeny = RAxML(alignment, wd=self.wd, logger=self.logger,
                           threads=self.threads, constraint=carg,
                           outgroup=outgroup, partitions=parg)
-        # if successful return True
-        # Phylo.draw_ascii(phylogeny)
-        if self._test(phylogeny):
+        phylogeny = self._test(phylogeny)
+        if phylogeny:
             self.phylogenies.append(phylogeny)
             self.trys = 0
             return True

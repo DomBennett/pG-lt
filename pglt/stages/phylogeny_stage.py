@@ -36,7 +36,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # PARAMETERS
     nphylos = int(paradict["nphylos"])
     maxtrys = int(paradict["maxtrys"])
-    rttpvalue = float(paradict["rttpvalue"])
+    pstat = float(paradict["pstat"])
     ptools.logger = logger
 
     # READ ALIGMENTS
@@ -51,7 +51,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # GENERATE TREE DIST
     logging.info("Generating [{0}] phylogenies ....".format(nphylos))
     generator = ptools.Generator(alignment_store=alignment_store,
-                                 rttpvalue=rttpvalue, outdir=phylogeny_dir,
+                                 pstat=pstat, outdir=phylogeny_dir,
                                  maxtrys=maxtrys, logger=logger, wd=temp_dir)
     for i in range(nphylos):
         logging.info(".... Iteration [{0}]".format(i + 1))

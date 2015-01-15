@@ -8,7 +8,6 @@ Tests for phylogeny tools.
 import unittest
 import pickle
 import os
-import logging
 import shutil
 import re
 from copy import deepcopy
@@ -46,6 +45,18 @@ genedict = {'gene1': {'partition': 'False'},
 
 
 # DUMMIES
+class dummy_Logger(object):
+
+    def __init__(self):
+        pass
+
+    def info(self, msg):
+        pass
+
+    def debug(self, msg):
+        pass
+
+
 def dummy_RAxML(alignment, wd, logger, threads, outgroup=None, partitions=None,
                 constraint=None, timeout=999999999):
     return test_phylo
@@ -68,7 +79,7 @@ class PhylogenyTestSuite(unittest.TestCase):
 
     def setUp(self):
         self.wd = os.getcwd()
-        self.logger = logging.getLogger()
+        self.logger = dummy_Logger()
         # stub out
         self.true_RAxML = ptools.RAxML
         ptools.RAxML = dummy_RAxML
@@ -95,8 +106,8 @@ class PhylogenyTestSuite(unittest.TestCase):
                                                      indir=indir,
                                                      logger=self.logger)
         self.generator = ptools.Generator(alignment_store=self.alignment_store,
-                                          rttpvalue=0.001, outdir=outdir,
-                                          maxtrys=10, logger=self.logger)
+                                          pstat=5, outdir=outdir, maxtrys=10,
+                                          logger=self.logger)
         self.phylo = test_phylo
         self.carg = ' -g constraint.tre'
         self.parg = ' -q partitions.txt'
@@ -159,7 +170,7 @@ class PhylogenyTestSuite(unittest.TestCase):
         # make one branch really big, new phylo should fail
         bad_phylo = deepcopy(self.phylo)
         bad_phylo.get_terminals()[0].branch_length = 100000
-        self.assertFalse(self.generator._test(phylogeny=bad_phylo))
+        self.assertIsNone(self.generator._test(phylogeny=bad_phylo))
 
     def test_generator_private_concatenate(self):
         # give it the test_alignments and a bigger alignment should return

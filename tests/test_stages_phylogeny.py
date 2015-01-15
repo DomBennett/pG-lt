@@ -35,7 +35,7 @@ class DummyAlignmentStore(object):
 class DummyGenerator(object):
     phylogenies = [genPhylogeny()]
 
-    def __init__(self, alignment_store, rttpvalue, outdir, maxtrys, logger,
+    def __init__(self, alignment_store, pstat, outdir, maxtrys, logger,
                  wd):
         pass
 
@@ -48,7 +48,7 @@ with open(os.path.join(working_dir, 'data', 'test_alignment_ref.faa'), 'r')\
         as file:
     alignment = AlignIO.read(file, 'fasta')
 
-paradict = {'nphylos': 1, 'maxtrys': 1, 'rttpvalue': 0.5}
+paradict = {'nphylos': 1, 'maxtrys': 1, 'pstat': 5}
 genedict = {}
 allrankids = []
 
