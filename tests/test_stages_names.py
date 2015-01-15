@@ -16,7 +16,7 @@ from cStringIO import StringIO
 
 # DUMMIES
 class Dummy_Resolver(object):
-    def __init__(self, terms, datasource, taxon_id):
+    def __init__(self, terms, datasource, taxon_id, logger):
         pass
 
     def main(self):

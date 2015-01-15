@@ -52,7 +52,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         parentid = False
     if len(terms) < minspecies:
         raise TooFewSpeciesError
-    resolver = Resolver(terms=terms, datasource="NCBI", taxon_id=parentid)
+    resolver = Resolver(terms=terms, datasource="NCBI", taxon_id=parentid,
+                        logger=logger)
     resolver.main()
     logger.info('------TaxonNamesResolver:End------')
     logger.info("Generating names dictionary ....")

@@ -69,7 +69,7 @@ def dummy_findChildren(taxid, next, logger):
 
 class Dummy_GnrDataSources(object):
 
-    def __init__(self):
+    def __init__(self, logger):
         pass
 
     def byName(self, names, invert=False):
@@ -91,8 +91,9 @@ class NamesTestSuite(unittest.TestCase):
         ntools.etools.eFetch = dummy_eFetch
         ntools.etools.eSearch = dummy_eSearch
         ntools.etools.findChildren = dummy_findChildren
-        self.resolver = tnr.resolver.Resolver(terms=terms, taxon_id=51)
-        test_store = tnr.gnr_tools.GnrStore(terms)
+        self.resolver = tnr.resolver.Resolver(terms=terms, taxon_id=51,
+                                              logger=self.logger)
+        test_store = tnr.gnr_tools.GnrStore(terms, logger=self.logger)
         test_store.add(res)
         self.resolver._store = test_store
 
