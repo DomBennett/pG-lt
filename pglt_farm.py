@@ -9,6 +9,7 @@ been executed. It requires MPI and mpi4py.'
 
 import os
 import sys
+import pickle
 from mpi4py import MPI
 from pglt.tools.system_tools import Stager
 
@@ -87,14 +88,30 @@ def worker(task_operation):
             task_operation(task)
     return
 
+
+def getWorklist(folder):
+    '''Return list of stage folders'''
+    worklist = os.listdir(folder)
+    res = []
+    for each in worklist:
+        directory = os.path.join(folder, each, 'tempfiles')
+        try:
+            with open(os.path.join(directory, 'progress.p'), "rb") as file:
+                progress = pickle.load(file)
+            if progress['2'] != 'not run':
+                res.append(each)
+        except:
+            pass
+    return res
+
+
 if __name__ == '__main__':
     # read parent folder here (use abs path)!
     parent_folder = sys.argv[1]
     print 'Using: ', parent_folder
-    # obtain list of folders within parent_folder
-    worklist = os.listdir(parent_folder)
+    # obtain list of stage folders within parent_folder
+    worklist = getWorklist(parent_folder)
     worklist = [os.path.join(parent_folder, e) for e in worklist]
-    worklist = [e for e in worklist if os.path.isdir(e)]
     if rank == 0:
         master(worklist)
     else:
