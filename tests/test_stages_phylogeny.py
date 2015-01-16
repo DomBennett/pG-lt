@@ -35,7 +35,7 @@ class DummyAlignmentStore(object):
 class DummyGenerator(object):
     phylogenies = [genPhylogeny()]
 
-    def __init__(self, alignment_store, pstat, outdir, maxtrys, logger,
+    def __init__(self, alignment_store, rttstat, outdir, maxtrys, logger,
                  wd):
         pass
 

@@ -106,8 +106,8 @@ class PhylogenyTestSuite(unittest.TestCase):
                                                      indir=indir,
                                                      logger=self.logger)
         self.generator = ptools.Generator(alignment_store=self.alignment_store,
-                                          pstat=5, outdir=outdir, maxtrys=10,
-                                          logger=self.logger)
+                                          rttstat=0.5, outdir=outdir,
+                                          maxtrys=10, logger=self.logger)
         self.phylo = test_phylo
         self.carg = ' -g constraint.tre'
         self.parg = ' -q partitions.txt'

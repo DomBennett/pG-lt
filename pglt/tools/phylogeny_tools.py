@@ -127,7 +127,7 @@ list of alignments and stop pattern if partition"""
 
 class Generator(object):
     """Phylogeny generating class"""
-    def __init__(self, alignment_store, pstat, outdir, maxtrys, logger,
+    def __init__(self, alignment_store, rttstat, outdir, maxtrys, logger,
                  wd=os.getcwd()):
         self.logger = logger
         self.wd = wd
@@ -137,16 +137,15 @@ class Generator(object):
         self.maxtrys = maxtrys
         self.alignment_store = alignment_store
         self.genes = alignment_store.keys()
-        self.pstat = pstat
+        self.rttstat = rttstat
         self.outdir = outdir
         self.taxontree = os.path.join(outdir, "taxontree.tre")
         self.constraint = os.path.isfile(self.taxontree)
 
     def _test(self, phylogeny):
-        """Return phylogeny if sd of residuals of a uniformity test for rtt
-dists is less than pstat."""
+        """Return phylogeny if RTT stat is below max RTT stat"""
         if phylogeny:
-            # remove outgroup
+            # remove outgroup, reduces RTT variance
             try:
                 phylogeny.prune('outgroup')
             except:
@@ -155,15 +154,17 @@ dists is less than pstat."""
             rtt_dists = []
             for terminal in phylogeny.get_terminals():
                 rtt_dists.append(phylogeny.distance(terminal))
-            # calculate SD of the residuals for a uniform dist
-            expected = float(sum(rtt_dists))/len(rtt_dists)
-            residuals = [abs(e-expected) for e in rtt_dists]
-            mean_residual = sum(residuals)/len(residuals)
-            sd = sqrt(sum([(e-mean_residual)**2 for e in residuals]) /
-                      len(residuals))
+            # normalise RTT dists
+            maxdist = max(rtt_dists)
+            normalised = [e/maxdist for e in rtt_dists]
+            # calculate CoV
+            mean = sum(normalised)/len(normalised)
+            sd = sqrt(sum([(e-mean)**2 for e in normalised]) /
+                      len(normalised))
+            rttstat = sd/mean  # CoV
             # Phylo.draw_ascii(phylogeny)
-            self.logger.debug('..... [{0}] sd'.format(sd))
-            if sd < self.pstat:
+            self.logger.debug('..... [{0}] RTT stat'.format(rttstat))
+            if rttstat < self.pstat:
                 return phylogeny
 
     def _concatenate(self, alignments):
