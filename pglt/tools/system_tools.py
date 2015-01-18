@@ -230,6 +230,8 @@ class Runner(object):
                 stager = Stager(wd=wd, stage=stage, verbose=self.verbose,
                                 debug=self.debug)
                 failed = stager.run()
+                if failed:
+                    self.logger.info('........ failed')
                 self.counter += not failed
                 self._clock(failed=failed, directory=wd, stage=stage)
             self.q.task_done()
