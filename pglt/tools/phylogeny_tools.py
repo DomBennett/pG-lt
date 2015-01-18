@@ -161,7 +161,7 @@ class Generator(object):
             rttstat = sd/mean  # CoV
             # Phylo.draw_ascii(phylogeny)
             self.logger.debug('..... [{0}] RTT stat'.format(rttstat))
-            if rttstat < self.pstat:
+            if rttstat < self.rttstat:
                 return phylogeny
 
     def _concatenate(self, alignments):

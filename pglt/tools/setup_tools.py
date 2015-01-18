@@ -366,7 +366,7 @@ def readInPars(pars_file, default_pars_file):
         return readInPars(default_pars_file, None)
     # template
     paradict = {'nseqs': None, 'naligns': None, 'nphylos': None,
-                'thoroughness': None, 'maxtrys': None, 'rttpvalue': None,
+                'thoroughness': None, 'maxtrys': None, 'rttstat': None,
                 'parentid': None, 'outgroupid': None}
     # open file, read each row, extract value
     paradict = _read(pars_file, paradict)

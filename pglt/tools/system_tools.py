@@ -35,7 +35,7 @@ due to too few sequence data available for outgroup or a failure to \
 align sequences that are available. If outgroup has been \
 automatically selected, consider manually choosing an outgroup.'
 raxml_msg = '\nERROR: Generated maxtrys poor phylogenies \
-consecutively, consider reducing rttpvalue.'
+consecutively, consider increasing rttstat.'
 unexpected_msg = '\nERROR: The following unexpected error occurred:\n\
 \"{0}\" \n\
 Please email details to the program maintainer for help.'
