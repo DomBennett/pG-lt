@@ -154,13 +154,10 @@ class Generator(object):
             rtt_dists = []
             for terminal in phylogeny.get_terminals():
                 rtt_dists.append(phylogeny.distance(terminal))
-            # normalise RTT dists
-            maxdist = max(rtt_dists)
-            normalised = [e/maxdist for e in rtt_dists]
             # calculate CoV
-            mean = sum(normalised)/len(normalised)
-            sd = sqrt(sum([(e-mean)**2 for e in normalised]) /
-                      len(normalised))
+            mean = sum(rtt_dists)/len(rtt_dists)
+            sd = sqrt(sum([(e-mean)**2 for e in rtt_dists]) /
+                      len(rtt_dists))
             rttstat = sd/mean  # CoV
             # Phylo.draw_ascii(phylogeny)
             self.logger.debug('..... [{0}] RTT stat'.format(rttstat))
