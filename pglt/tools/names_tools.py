@@ -12,21 +12,14 @@ import os
 from Bio import Phylo
 from cStringIO import StringIO
 import entrez_tools as etools
-from taxon_names_resolver.misc_tools import taxTree
+from taxon_names_resolver import TaxDict
+from taxon_names_resolver import taxTree
 from system_tools import TaxonomicRankError
 
 
 # FUNCTIONS
 def genTaxTree(resolver, namesdict, logger, taxonomy=None, draw=False):
-    """Generate Newick tree from TaxonNamesResolver class.
-
-        Arguments:
-         resolver = TaxonNamesResolver class
-         by = Tip labels, either 'qnames', 'taxids' or 'name_string'
-         draw = Draw ascii tree (logical)
-
-         Return:
-          Phylo"""
+    """Return Phylo from TaxonNamesResolver class."""
     ranks = resolver.retrieve('classification_path_ranks')
     qnames = resolver.retrieve('query_name')
     lineages = resolver.retrieve('classification_path')
@@ -43,8 +36,11 @@ def genTaxTree(resolver, namesdict, logger, taxonomy=None, draw=False):
     for each in unresolved_names:
         statement += " " + each
     logger.debug(statement)
-    treestring = taxTree(idents=idents, ranks=ranks, lineages=lineages,
-                         taxonomy=taxonomy)
+    # make taxdict
+    taxdict = TaxDict(idents=idents, ranks=ranks, lineages=lineages,
+                      taxonomy=taxonomy)
+    # make treestring
+    treestring = taxTree(taxdict)
     if not taxonomy:
         d = 22  # default_taxonomy + 1 in tnr
     else:
@@ -58,63 +54,54 @@ def genTaxTree(resolver, namesdict, logger, taxonomy=None, draw=False):
 
 
 def genNamesDict(resolver, logger, parentid=None):
-    """Return a dictionary containtaining all names and metadata"""
-    # TODO: too complex, consider breaking up
-    q_names = resolver.retrieve('query_name')
-    q_names = [re.sub("\s", "_", e) for e in q_names]
-    r_names = resolver.retrieve('classification_path')
+    """Return a dictionary containing all names and metadata"""
+    # extract lists from resolver
+    qnames = resolver.retrieve('query_name')
+    qnames = [re.sub("\s", "_", e) for e in qnames]  # no spaces
     ranks = resolver.retrieve('classification_path_ranks')
-    lineages = resolver.retrieve('classification_path_ids')
-    lineages = [[int(e2) for e2 in e1] for e1 in lineages]
+    # in order to get name, ID and rank for the context let's use a zipped
+    #  lineage IDs
+    lids = resolver.retrieve('classification_path_ids')
+    lineages = zip(resolver.retrieve('classification_path'), lids,
+                   resolver.retrieve('classification_path_ranks'))
+    lineages = [zip(e1, e2, e3) for e1, e2, e3 in lineages]
+    # make taxdict
+    taxdict = TaxDict(idents=qnames, ranks=ranks, lineages=lineages)
+    # get all ranks
     allrankids = []
-    [allrankids.extend(e) for e in lineages]
+    [allrankids.extend(e) for e in lids]
+    allrankids = [int(e) for e in allrankids]  # make sure ints
     allrankids = list(set(allrankids))
+    # init namesdict
     namesdict = {}
-    non_unique_lineages = []
-    for i in range(len(lineages)):
-        query_line = lineages.pop(i)
-        best_bool = [True] * len(lineages)
-        j = 0
-        while j < len(lineages):
-            subj_line = lineages[j]
-            match_bool = [e not in subj_line for e in query_line]
-            if sum(match_bool) < sum(best_bool):
-                best_bool = match_bool
-            if not any(best_bool):
-                non_unique_lineages.append(i)
-                break
-            j += 1
-        lineages.insert(i, query_line)
-        if i in non_unique_lineages:
-            continue
-        txid = query_line[best_bool.index(True)]
-        rank = ranks[i][best_bool.index(True)]
-        rname = r_names[i][best_bool.index(True)]
-        namesdict[q_names[i]] = {"txids": [txid], "unique_name": rname,
-                                 "rank": rank}
-    if non_unique_lineages:
-        nul_ids = [lineages[e][-1] for e in non_unique_lineages]
-        nul_qnames = [q_names[e] for e in non_unique_lineages]
-        nul_ranks = [ranks[e][-1] for e in non_unique_lineages]
-        i = 0
-        while len(nul_ids) > 0:
-            temp_id = nul_ids.pop(0)
+    # loop through taxdict
+    for key in taxdict.keys():
+        cident = taxdict[key]['cident']  # Contextual data
+        if cident:
+            # if there is context data ....
+            cname, cident, crank = cident  # unpack context name, ID and rank
+            namesdict[key] = {"txids": [int(cident)], "unique_name": cname,
+                              "rank": crank}
+        else:
+            # find unclaimed IDs using allrankids and searching children
+            rident = taxdict[key]['ident']  # Resolved ID
+            rank = taxdict[key]['rank']  # Resolved rank
             # find ids in the next level
-            temp_children = etools.findChildren(str(temp_id), logger=logger,
-                                                next=True)
-            temp_children = [int(e) for e in temp_children]
-            # if none are in allrankids, must be unique
-            temp_children = [e for e in temp_children if e not in allrankids]
-            if len(temp_children) > 0:
-                namesdict[nul_qnames[i]] = {"txids": temp_children, "unique_na\
-me": "Non-unique resolution", "rank": nul_ranks[i]}
-            i += 1
+            unclaimed = etools.findChildren(rident, logger=logger,
+                                            next=True)
+            unclaimed = [int(e) for e in unclaimed]
+            # if none are in ignore, must be unique
+            unclaimed = [e for e in unclaimed if e not in allrankids]
+            namesdict[key] = {"txids": [unclaimed],
+                              "unique_name": 'Non-unique resolution',
+                              "rank": rank}
     # if no parent id given, work one out
     if not parentid:
         shared_bool = []
         for each in lineages[0]:
             shared_bool.append(all([each in e for e in lineages]))
         parentid = lineages[0][shared_bool.index(False) - 1]
+        parentid = int(parentid[1])  # second one in tuple
     return namesdict, allrankids, parentid
 
 

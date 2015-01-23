@@ -12,7 +12,7 @@ import json
 import pglt.tools.names_tools as ntools
 import taxon_names_resolver as tnr
 
-ntools.etools.Entrez.email = "python.unittests@mpe.program"
+ntools.etools.Entrez.email = "python.unittests@pglt.program"
 
 # DIRS
 working_dir = os.path.dirname(__file__)
@@ -93,6 +93,7 @@ class NamesTestSuite(unittest.TestCase):
         ntools.etools.findChildren = dummy_findChildren
         self.resolver = tnr.resolver.Resolver(terms=terms, taxon_id=51,
                                               logger=self.logger)
+        # add results to resolver
         test_store = tnr.gnr_tools.GnrStore(terms, logger=self.logger)
         test_store.add(res)
         self.resolver._store = test_store
