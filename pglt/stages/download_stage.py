@@ -10,6 +10,7 @@ import os
 import pickle
 import logging
 import pglt.tools.download_tools as dtools
+from pglt.tools.system_tools import TooFewSpeciesError
 
 
 def run(wd=os.getcwd(), logger=logging.getLogger('')):
@@ -49,6 +50,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     logger.info('Determining best genes ....')
     genes = dtools.findBestGenes(namesdict, genedict, thoroughness, allrankids,
                                  logger, minnseq, target, minnspp)
+    if not genes:
+        raise TooFewSpeciesError
     statement = 'Using genes:'
     for gene in genes:
         statement += " [" + gene + "]"
