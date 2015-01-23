@@ -20,8 +20,8 @@ from setup_tools import prime
 
 # MESSAGES
 toofewspecies_msg = '\nERROR: The program halted as there are too few \
-species left of phylogeny building -- five is the minimum. You may \
-have started with too few names, or names given could not be \
+species left for phylogeny building -- five is the minimum. You may \
+have started with too few names, names given may not have been \
 taxonomically resolved or there may be too little sequence data \
 available.'
 taxonomicrank_msg = '\nERROR: It is likely that one or more names\

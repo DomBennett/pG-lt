@@ -55,6 +55,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     resolver = Resolver(terms=terms, datasource="NCBI", taxon_id=parentid,
                         logger=logger)
     resolver.main()
+    if len(resolver.retrieve('query_name')) < minspecies:
+        raise TooFewSpeciesError
     logger.info('------TaxonNamesResolver:End------')
     logger.info("Generating names dictionary ....")
     namesdict, allrankids, parentid = ntools.genNamesDict(resolver=resolver,

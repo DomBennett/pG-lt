@@ -22,6 +22,10 @@ class Dummy_Resolver(object):
     def main(self):
         pass
 
+    def retrieve(self, item):
+        # return a list of 5
+        return ['A', 'B', 'C', 'D', 'E']
+
 
 def dummy_genNamesDict(resolver, parentid, logger):
     namesdict = {}
