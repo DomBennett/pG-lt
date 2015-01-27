@@ -14,6 +14,13 @@ import pglt.tools.entrez_tools as etools
 etools.Entrez.email = "entrez.unittests@pglt.program"
 
 
+# FUNCTIONS
+def foo(arg1):
+    '''Simple function to test safeConnect'''
+    raise IOError()
+    return arg1
+
+
 # DUMMIES
 class dummy_Logger(object):
 
@@ -31,6 +38,13 @@ class EntrezTestSuite(unittest.TestCase):
 
     def setUp(self):
         self.logger = dummy_Logger()
+
+    def test_safeconnect(self):
+        # test safeconnect by passing it a failing function
+        res = etools.safeConnect(efunc=foo, logger=self.logger, arg1='arg1',
+                                 waittime=0.1, max_check=1)
+        # if fails to connect, returns ()
+        self.assertEqual(res, ())
 
     def test_efetch_taxonomy(self):
         # 9606 is humans
