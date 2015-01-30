@@ -61,7 +61,8 @@ def eSearch(term, logger, retStart=0, retMax=1, db="nucleotide"):
                          retmode="text")
     try:
         results = Entrez.read(handle)
-    except:
+    except Exception as errmsg:
+        logger.warn(errmsg)  # in order to see what the error is when server gets overloaded
         logger.warn('Parsing failed!')
     handle.close()
     time.sleep(1)  # always wait 1 second between URL requests
