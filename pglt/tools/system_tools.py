@@ -165,7 +165,7 @@ class Runner(object):
     # _pars and _gpars are added at __init__.py
 
     def __init__(self, stages, folders, nworkers, threads_per_worker, wd,
-                 email, logger, verbose=False, debug=False):
+                 email, logger, retry, verbose=False, debug=False):
         self.stages = stages
         self.logger = logger
         self.wd = wd
@@ -175,6 +175,7 @@ class Runner(object):
         self.verbose = verbose
         self.debug = debug
         self.email = email
+        self.retry = retry
         self.counter = 0  # count number of folders run successfully
 
     def setup(self):
@@ -211,6 +212,8 @@ class Runner(object):
         with open(os.path.join(directory, 'progress.p'), "rb") as file:
             progress = pickle.load(file)
         if progress[stage] == 'not run':
+            return False
+        elif progress[stage] == 'failed' and self.retry:
             return False
         else:
             return True

@@ -15,9 +15,9 @@ from pglt.tools.setup_tools import logMessage
 from pglt.tools.system_tools import Runner
 
 
-def main(restart, email, threads, verbose, debug, stages, base_logger):
+def main(restart, retry, email, threads, verbose, debug, stages, base_logger):
     '''Run pG-lt'''
-    # setup folder to hold pickled runner
+    # setup folder to hold pickled args
     temp_dir = os.path.join(os.getcwd(), 'tempfiles')
     if not os.path.isdir(temp_dir):
         os.mkdir(temp_dir)
@@ -33,7 +33,7 @@ pG-lt?')
         runner = Runner(folders=folders, nworkers=nworkers, stages=stages,
                         threads_per_worker=threads_per_worker, wd=os.getcwd(),
                         email=email, verbose=verbose, debug=debug,
-                        logger=base_logger)
+                        logger=base_logger, retry=retry)
     else:
         if verbose:
             printHeader()
@@ -51,7 +51,7 @@ pG-lt?')
         runner = Runner(folders=folders, nworkers=nworkers, stages=stages,
                         threads_per_worker=threads_per_worker, wd=os.getcwd(),
                         email=email, verbose=verbose, debug=debug,
-                        logger=base_logger)
+                        logger=base_logger, retry=False)
         runner.setup()
         base_logger.info('Done.')
         # pickle runner for restart
@@ -64,11 +64,12 @@ pG-lt?')
 
 if __name__ == '__main__':
     # parse args
-    restart, email, threads, verbose, debug, stages = parseArguments()
+    restart, retry, email, threads, verbose, debug, stages = parseArguments()
     # create base logger -- messages in parent folder log.txt
     base_logger = setUpLogging(verbose, debug, 'base')
     try:
-        main(restart, email, threads, verbose, debug, stages, base_logger)
+        main(restart, retry, email, threads, verbose, debug, stages,
+             base_logger)
     except KeyboardInterrupt:
         base_logger.info('Execution halted by user')
         if verbose:

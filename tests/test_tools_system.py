@@ -108,7 +108,7 @@ class SetupTestSuite(unittest.TestCase):
         runner = stools.Runner(folders=folders, nworkers=10, stages=stages,
                                threads_per_worker=1, wd='.',
                                email='an.email', verbose=False, debug=False,
-                               logger=self.logger)
+                               logger=self.logger, retry=False)
         runner.setup()
         runner.run()
         # check each folder has a 1_names

@@ -30,6 +30,7 @@ class DummyArgs(object):
     debug = True
     restart = False
     details = False
+    retry = False
 
     def __init__(self):
         pass
@@ -81,7 +82,7 @@ class SetupTestSuite(unittest.TestCase):
     def test_parse_arguments(self):
         # test the stages are returned correctly
         args = DummyArgs()
-        _, _, _, _, _, stages = stools.parseArguments(args)
+        _, _, _, _, _, _, stages = stools.parseArguments(args)
         self.assertEqual(stages, ['1', '2', '3', '4'])
         # test bad args
         with self.assertRaises(SystemExit):

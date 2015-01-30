@@ -107,7 +107,7 @@ numbers 1 through 4.'
         clean()
         sys.exit('Files and folders deleted')
     if args.restart:
-        return True, None, None, None, None, None
+        return True, args.retry, None, None, None, None, None
     if not args.email:
         # stop if no email
         sys.exit('An email address must be provided. Use \'-e\'.')
@@ -121,7 +121,8 @@ numbers 1 through 4.'
     # check threads is a valid argument
     if args.threads == 0 or args.threads < -1:
         sys.exit('Invalid threads argument, must be -1 or >0.')
-    return False, args.email, args.threads, args.verbose, args.debug, stages
+    return False, False, args.email, args.threads, args.verbose, args.debug,\
+        stages
 
 
 def getFolders():
@@ -188,6 +189,8 @@ def createParser():
 for NCBI")
     parser.add_argument('--restart', help='restart pipeline if stopped',
                         action='store_true')
+    parser.add_argument('--retry', help='if restarting, retry failed stages \
+and folders?', action='store_true')
     parser.add_argument("-threads", "-t", help="number of threads, default\
  \'-1\', will use all available on machine", default=-1, type=int)
     parser.add_argument("-stages", "-s", help="stages to run, default \
@@ -204,7 +207,8 @@ folders (developer only)", action="store_true")
 
 
 def logMessage(phase, logger, folders=None, stage=None, threads=None,
-               spare_threads=None, email=None, stages=None, counter=None):
+               spare_threads=None, email=None, stages=None, counter=None,
+               retry=None):
     if phase == 'program-start':
         logger.info(description)
         logger.info('-' * 28 + ' Run details ' + '-' * 29)
@@ -240,7 +244,12 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
         logger.info('Stage [{0}] finished at [{1}] for [{2}] folders'.
                     format(stage, timestamp(), counter))
     elif phase == 'program-restart':
-        logger.info('{0}- Restarting [{1}] {0}'.format('-' * 11, timestamp()))
+        if retry:
+            xtrmsg = ' and retrying'
+        else:
+            xtrmsg = ''
+        logger.info('{0}- Restarting{2} [{1}] {0}'.
+                    format('-' * 11, timestamp(), xtrmsg))
     else:
         raise(ValueError('Unrecognised phase'))
 
