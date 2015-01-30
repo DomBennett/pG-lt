@@ -269,7 +269,7 @@ class Runner(object):
     def run(self):
         '''Run stages across folders'''
         for stage in self.stages:
-            if not self._check(stage=stage):
+            if self.retry or not self._check(stage=stage):
                 logMessage('stage-start', logger=self.logger, stage=stage)
                 self._runstage(folders=self.folders, stage=stage)
                 self._clock(stage=stage)
