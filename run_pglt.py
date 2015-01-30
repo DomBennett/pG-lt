@@ -26,7 +26,7 @@ def main(restart, retry, email, threads, verbose, debug, stages, base_logger):
         if not os.path.isfile(argspath):
             sys.exit('Cannot restart, are you sure you have already run \
 pG-lt?')
-        logMessage('program-restart', logger=base_logger)
+        logMessage('program-restart', logger=base_logger, retry=retry)
         with open(argspath, 'r') as file:
             nworkers, threads_per_worker, folders, email, threads, verbose,\
                 debug, stages = pickle.load(file)

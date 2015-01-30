@@ -245,11 +245,11 @@ def logMessage(phase, logger, folders=None, stage=None, threads=None,
                     format(stage, timestamp(), counter))
     elif phase == 'program-restart':
         if retry:
-            xtrmsg = ' and retrying'
+            logger.info('{0}- Restarting and retrying [{1}] {0}'.
+                        format('-' * 6, timestamp()))
         else:
-            xtrmsg = ''
-        logger.info('{0}- Restarting{2} [{1}] {0}'.
-                    format('-' * 11, timestamp(), xtrmsg))
+            logger.info('{0}- Restarting [{1}] {0}'.
+                        format('-' * 11, timestamp()))
     else:
         raise(ValueError('Unrecognised phase'))
 
