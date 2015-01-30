@@ -258,6 +258,7 @@ matches in GenBank"""
     # list of bools for number of genes w/o outgroup seqs
     outgroup_bool = []
     for gene in genedict.keys():
+        logger.info('.... checking [{0}]'.format(gene))
         # first check if its suitable for this taxonomic group
         taxid = genedict[gene]["taxid"]
         gene_type = genedict[gene]["type"]

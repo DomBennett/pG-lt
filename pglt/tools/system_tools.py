@@ -225,6 +225,7 @@ class Runner(object):
             finished = self._check(directory=wd, stage=stage)
             if not finished:
                 # log folder
+                # TODO: add ith/total
                 self.logger.info('.... working on [{0}]'.format(folder))
                 # run stage for folder
                 stager = Stager(wd=wd, stage=stage, verbose=self.verbose,
