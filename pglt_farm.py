@@ -89,7 +89,7 @@ def worker(task_operation):
     return
 
 
-def getWorklist(folder):
+def get_worklist(folder):
     '''Return list of stage folders'''
     worklist = os.listdir(folder)
     res = []
@@ -98,7 +98,7 @@ def getWorklist(folder):
         try:
             with open(os.path.join(directory, 'progress.p'), "rb") as file:
                 progress = pickle.load(file)
-            if progress['2'] != 'not run':
+            if progress['2'] == 'success':
                 res.append(each)
         except:
             pass
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     parent_folder = sys.argv[1]
     print 'Using: ', parent_folder
     # obtain list of stage folders within parent_folder
-    worklist = getWorklist(parent_folder)
+    worklist = get_worklist(parent_folder)
     worklist = [os.path.join(parent_folder, e) for e in worklist]
     if rank == 0:
         master(worklist)
