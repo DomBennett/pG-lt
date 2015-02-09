@@ -132,6 +132,7 @@ class Generator(object):
         self.logger = logger
         self.wd = wd
         self.threads = getThreads(wd=wd)
+        self.threads = self.threads + 1  # RAxML runs a small master process
         self.trys = 0
         self.phylogenies = []
         self.maxtrys = maxtrys
@@ -163,6 +164,10 @@ class Generator(object):
             self.logger.debug('..... [{0}] RTT stat'.format(rttstat))
             if rttstat < self.rttstat:
                 return phylogeny
+            else:
+                self.logger.info('........ poor phylogeny, retrying')
+        else:
+            self.logger.debug('.... no phylogeny, retrying')
 
     def _concatenate(self, alignments):
         """Return single alignment from list of alignments for
@@ -349,7 +354,6 @@ to .partitions.txt"""
             self.trys = 0
             return True
         else:
-            self.logger.info('........ poor phylogeny, retrying')
             self.trys += 1
             return False
 
