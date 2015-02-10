@@ -557,7 +557,7 @@ parameters. Return bool"""
     def calcNgap(sequence):
         # count the number of gaps
         gaps = re.subn('-+', '', sequence)[1]
-        return float(gaps)/len(sequence)
+        return float(gaps)
 
     # process
     if alignment is None:
