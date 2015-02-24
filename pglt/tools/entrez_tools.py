@@ -18,17 +18,26 @@ Entrez.tool = 'pglt'
 # FUNCTIONS
 def safeConnect(efunc, logger, max_check=100, waittime=1, power=2,
                 **kwargs):
-    '''Return Entrez URL handle safely'''
+    '''Return Entrez results safely'''
     # waitime should be min 1/3 second
     # no more than 3 URL requests per second
     # http://www.ncbi.nlm.nih.gov/books/NBK25497/
     i = 0
-    handle = ()
+    results = ()
     while i < max_check:
         try:
+            # open handle with Entrez function
             handle = efunc(**kwargs)
+            # if rettype is GenBank, read each seq into a list
+            if 'rettype' in kwargs.keys() and 'gb' == kwargs['rettype']:
+                results_iter = SeqIO.parse(handle, 'gb')
+                results = [x for x in results_iter]
+            else:
+                results = Entrez.read(handle)
+            handle.close()
             i = max_check
-        except IOError:
+        # catch IOErrors and RuntimeErrors; servers turns down occasionally
+        except (IOError, RuntimeError):
             logger.debug(" ---- server error: retrying in [{0}s]----".
                          format(waittime))
             if i == max_check:
@@ -36,7 +45,7 @@ def safeConnect(efunc, logger, max_check=100, waittime=1, power=2,
             time.sleep(waittime)
             waittime = waittime * power
             i += 1
-    return handle
+    return results
 
 
 def eSearch(term, logger, retStart=0, retMax=1, db="nucleotide"):
@@ -56,15 +65,9 @@ def eSearch(term, logger, retStart=0, retMax=1, db="nucleotide"):
     if db not in ['nucleotide', 'taxonomy']:
         raise(ValueError('Invalid db argument!'))
     results = ()
-    handle = safeConnect(efunc=Entrez.esearch, logger=logger, db=db, term=term,
-                         usehistory='n', retStart=retStart, retMax=retMax,
-                         retmode="text")
-    try:
-        results = Entrez.read(handle)
-    except Exception as errmsg:
-        logger.warn(errmsg)  # in order to see what the error is when server gets overloaded
-        logger.warn('Parsing failed!')
-    handle.close()
+    results = safeConnect(efunc=Entrez.esearch, logger=logger, db=db,
+                          term=term, usehistory='n', retStart=retStart,
+                          retMax=retMax, retmode="text")
     time.sleep(1)  # always wait 1 second between URL requests
     return results
 
@@ -84,22 +87,14 @@ def eFetch(ncbi_id, logger, db="nucleotide"):
     Adapted pG code written by W.D. Pearse."""
     if db not in ['nucleotide', 'taxonomy']:
         raise(ValueError('Invalid db argument!'))
-    if db == 'taxonomy':
-        handle = safeConnect(efunc=Entrez.efetch, logger=logger, db=db,
-                             retmode='xml', id=ncbi_id)
-    else:
-        handle = safeConnect(efunc=Entrez.efetch, logger=logger, db=db,
-                             rettype='gb', retmode='text', id=ncbi_id)
     results = ()
-    try:
-        if db == 'taxonomy':
-            results = Entrez.read(handle)
-        else:
-            results_iter = SeqIO.parse(handle, 'gb')
-            results = [x for x in results_iter]
-    except:
-        logger.warn('Parsing failed!')
-    handle.close()
+    if db == 'taxonomy':
+        results = safeConnect(efunc=Entrez.efetch, logger=logger, db=db,
+                              retmode='xml', id=ncbi_id)
+    else:
+        results = safeConnect(efunc=Entrez.efetch, logger=logger, db=db,
+                              rettype='gb', retmode='text', id=ncbi_id)
+
     time.sleep(1)  # always wait 1 second between URL requests
     return results
 
