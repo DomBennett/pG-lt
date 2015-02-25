@@ -48,8 +48,11 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
 
     # PROCESS
     logger.info('Determining best genes ....')
-    genes = dtools.findBestGenes(namesdict, genedict, thoroughness, allrankids,
-                                 logger, minnseq, target, minnspp)
+    genes = dtools.findBestGenes(namesdict=namesdict, genedict=genedict,
+                                 thoroughness=thoroughness,
+                                 allrankids=allrankids, logger=logger,
+                                 minnseq=minnseq, target=target,
+                                 minnspp=minnspp)
     if not genes:
         raise TooFewSpeciesError
     statement = 'Using genes:'

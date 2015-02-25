@@ -37,11 +37,11 @@ def safeConnect(efunc, logger, max_check=100, waittime=1, power=2,
             handle.close()
             i = max_check
         # catch IOErrors and RuntimeErrors; servers turns down occasionally
-        except (IOError, RuntimeError):
-            logger.debug(" ---- server error: retrying in [{0}s]----".
-                         format(waittime))
+        except (IOError, RuntimeError) as errmsg:
+            logger.debug(" ---- server error [{0}]: retrying in [{1}s]----".
+                         format(errmsg, waittime))
             if i == max_check:
-                logger.debug(" ----- server error: no records retrieved ----")
+                logger.debug(" ----- max attempts: no records retrieved ----")
             time.sleep(waittime)
             waittime = waittime * power
             i += 1
