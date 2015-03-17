@@ -6,12 +6,14 @@ pglt special tools
 """
 
 # PACKAGES
+import re
 import os
 import time
 import sys
 import subprocess
 import shutil
 import pickle
+from tabulate import tabulate
 
 
 # FUNCTIONS
@@ -108,3 +110,80 @@ def clean():
                 shutil.rmtree(os.path.join(temp_folder, temp_folder_to_remove))
             except OSError:
                 pass
+
+
+def reset(stage):
+    """Reset progress dict"""
+    folders = os.listdir(os.getcwd())
+    for folder in folders:
+        print (folder)
+        progress_path = os.path.join(folder, 'tempfiles', 'progress.p')
+        # if tempfiles exist, read in progress.p, delete stage folders
+        if not os.path.isfile(progress_path):
+            print('here')
+            continue
+        with open(progress_path, "rb") as file:
+            progress = pickle.load(file)
+        stages = range(int(stage), 5)
+        for s in stages:
+            print(s)
+            if s == 1:
+                stage_folder = os.path.join(folder, '1_names')
+                if os.path.isdir(stage_folder):
+                    shutil.rmtree(stage_folder)
+            if s == 2:
+                stage_folder = os.path.join(folder, '2_download')
+                if os.path.isdir(stage_folder):
+                    shutil.rmtree(stage_folder)
+            if s == 3:
+                stage_folder = os.path.join(folder, '3_alignment')
+                if os.path.isdir(stage_folder):
+                    shutil.rmtree(stage_folder)
+            if s == 4:
+                stage_folder = os.path.join(folder, '4_phylogeny')
+                if os.path.isdir(stage_folder):
+                    shutil.rmtree(stage_folder)
+            progress[str(s)] = 'not run'
+        with open(progress_path, "wb") as file:
+            progress = pickle.dump(progress, file)
+
+
+def check(stage, stagecounter, directory):
+        '''Check stage'''
+        progress_path = os.path.join(directory, 'tempfiles', 'progress.p')
+        if not os.path.isfile(progress_path):
+            stagecounter[stage]['not run'] += 1
+        else:
+            with open(progress_path, "rb") as file:
+                progress = pickle.load(file)
+            stagecounter[stage][progress[stage]] += 1
+        return stagecounter
+
+
+def stats():
+    """Print success status of folders"""
+    # counter dicts
+    statecounter = {'not run': 0, 'failed': 0, 'success': 0}
+    stagecounter = {'1': statecounter.copy(), '2': statecounter.copy(),
+                    '3': statecounter.copy(), '4': statecounter.copy()}
+    consensus_counter = 0
+    # get all folders
+    folders = os.listdir(os.getcwd())
+    avoid_pattern = "^\.|^log\.txt$|resolved_names|README|tempfiles"
+    folders = [e for e in folders if not re.search(avoid_pattern, e)]
+    stages = ['1', '2', '3', '4']
+    for folder in folders:
+        for stage in stages:
+            stagecounter = check(stage=stage, stagecounter=stagecounter,
+                                 directory=os.path.join(os.getcwd(), folder))
+        if os.path.isfile(os.path.join(os.getcwd(), folder, '4_phylogeny',
+                                       'consensus.tre')):
+            consensus_counter += 1
+    print ('\n{0}/{1} folders with phylogenetic trees....\n'.
+           format(consensus_counter, len(folders)))
+    headers = ['Stage', 'Not run', 'Failed', 'Success']
+    rows = []
+    for stage in stages:
+        sc = stagecounter[stage]
+        rows.append([stage, sc['not run'], sc['failed'], sc['success']])
+    print(tabulate(rows, headers, tablefmt="simple"))
