@@ -152,12 +152,15 @@ class Stager(object):
             self._end()
         # remove logger
         tearDownLogging(self.logname)
+        # clock success for stage and folder
+        clock(stage=self.stage, failed=failed, directory=self.wd)
         return failed
 
     @classmethod
     def run_all(klass, wd, stages):
         for s in stages:
-            Stager(wd, s).run()
+            if check(stage=s, directory=wd):
+                Stager(wd, s).run()
 
 
 class Runner(object):
@@ -186,37 +189,13 @@ class Runner(object):
             pickle.dump(progress, file)
         # set up each folder
         for folder in self.folders:
-            arguments = sortArgs(directory=folder, email=self.email,
-                                 logger=self.logger,
-                                 default_pars_file=self._pars,
-                                 default_gpars_file=self._gpars)
-            prime(folder, arguments, self.threads_per_worker)
-
-    def _clock(self, stage, failed=False, directory=os.getcwd()):
-        '''Clock stage'''
-        directory = os.path.join(directory, 'tempfiles')
-        with open(os.path.join(directory, 'progress.p'), "rb") as file:
-            progress = pickle.load(file)
-        if not failed:
-            progress[stage] = 'success'
-        else:
-            # set all subsquent stages as false to stop them being run
-            for s in range(int(stage), 5):
-                progress[str(s)] = 'failed'
-        with open(os.path.join(directory, 'progress.p'), "wb") as file:
-            pickle.dump(progress, file)
-
-    def _check(self, stage, directory=os.getcwd()):
-        '''Check stage'''
-        directory = os.path.join(directory, 'tempfiles')
-        with open(os.path.join(directory, 'progress.p'), "rb") as file:
-            progress = pickle.load(file)
-        if progress[stage] == 'not run':
-            return False
-        elif progress[stage] == 'failed' and self.retry:
-            return False
-        else:
-            return True
+            temp_dir = os.path.join(folder, 'tempfiles')
+            if not os.path.isdir(temp_dir):
+                arguments = sortArgs(directory=folder, email=self.email,
+                                     logger=self.logger,
+                                     default_pars_file=self._pars,
+                                     default_gpars_file=self._gpars)
+                prime(folder, arguments, self.threads_per_worker)
 
     def _worker(self):
         '''Worker'''
@@ -225,10 +204,9 @@ class Runner(object):
             folder, stage = self.q.get()
             # get a working dir for folder
             wd = os.path.join(self.wd, folder)
-            finished = self._check(directory=wd, stage=stage)
+            finished = check(directory=wd, stage=stage, retry=self.retry)
             if not finished:
                 # log folder
-                # TODO: add ith/total
                 self.logger.info('.... working on [{0}]'.format(folder))
                 # run stage for folder
                 stager = Stager(wd=wd, stage=stage, verbose=self.verbose,
@@ -237,7 +215,6 @@ class Runner(object):
                 if failed:
                     self.logger.info('........ failed')
                 self.counter += not failed
-                self._clock(failed=failed, directory=wd, stage=stage)
             self.q.task_done()
 
     def _runstage(self, folders, stage):
@@ -269,10 +246,10 @@ class Runner(object):
     def run(self):
         '''Run stages across folders'''
         for stage in self.stages:
-            if self.retry or not self._check(stage=stage):
+            if self.retry or not check(stage=stage):
                 logMessage('stage-start', logger=self.logger, stage=stage)
                 self._runstage(folders=self.folders, stage=stage)
-                self._clock(stage=stage)
+                clock(stage=stage)  # clock stage for all folders
                 logMessage('stage-end', logger=self.logger, stage=stage,
                            counter=self.counter)
         logMessage('program-end', logger=self.logger)
@@ -312,3 +289,32 @@ written by W.D. Pearse."""
             self.process.terminate()
             thread.join()
             self.failure = True
+
+
+# FUNCTIONS
+def clock(stage, failed=False, directory=os.getcwd()):
+    '''Clock stage'''
+    directory = os.path.join(directory, 'tempfiles')
+    with open(os.path.join(directory, 'progress.p'), "rb") as file:
+        progress = pickle.load(file)
+    if not failed:
+        progress[stage] = 'success'
+    else:
+        # set all subsquent stages as false to stop them being run
+        for s in range(int(stage), 5):
+            progress[str(s)] = 'failed'
+    with open(os.path.join(directory, 'progress.p'), "wb") as file:
+        pickle.dump(progress, file)
+
+
+def check(stage, directory=os.getcwd(), retry=False):
+    '''Check stage'''
+    directory = os.path.join(directory, 'tempfiles')
+    with open(os.path.join(directory, 'progress.p'), "rb") as file:
+        progress = pickle.load(file)
+    if progress[stage] == 'not run':
+        return False
+    elif progress[stage] == 'failed' and retry:
+        return False
+    else:
+        return True
