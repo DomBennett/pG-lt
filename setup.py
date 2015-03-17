@@ -113,5 +113,5 @@ setup(
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     ],
     install_requires=['setuptools', 'taxon_names_resolver', 'biopython',
-                      'dendropy', 'numpy'],
+                      'dendropy', 'numpy', 'tabulate'],
 )
