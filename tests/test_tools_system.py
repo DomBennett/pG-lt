@@ -46,7 +46,7 @@ def dummyPrime(directory, arguments, threads):
         pickle.dump(progress, file)
 
 
-class SetupTestSuite(unittest.TestCase):
+class SystemTestSuite(unittest.TestCase):
 
     def setUp(self):
         self.logger = dummy_Logger()
@@ -83,6 +83,7 @@ class SetupTestSuite(unittest.TestCase):
                 pass
 
     def test_stager(self):
+        dummyPrime(directory='.', arguments=None, threads=None)
         # init should raise error for '6'
         with self.assertRaises(stools.StageError):
             stools.Stager('.', '6')

@@ -31,6 +31,8 @@ class DummyArgs(object):
     restart = False
     details = False
     retry = False
+    reset = False
+    stats = False
 
     def __init__(self):
         pass
