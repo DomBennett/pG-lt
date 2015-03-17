@@ -23,15 +23,16 @@ from special_tools import getThreads
 # GLOBALS
 pglt_version = None  # set at run_pglt.py
 pglt_doc = None
+pglt_year = None
 description = """
 ----------------------------------------------------------------------
-pG-lt version {0}, Copyright (C) 2014 Bennett
+pG-lt version {0}, Copyright (C) {1} Bennett
 ----------------------------------------------------------------------
 This program comes with ABSOLUTELY NO WARRANTY. This is free software,
 and you are welcome to redistribute it under certain conditions.
 For more details, type `run_pglt.py --details`.
 ----------------------------------------------------------------------
-""".format(pglt_version)
+""".format(pglt_version, pglt_year)
 # MESSAGES
 nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files \
 found! All taxonomic names should be placed in subdirectories and \

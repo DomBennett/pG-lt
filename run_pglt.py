@@ -8,6 +8,7 @@ import sys
 import pickle
 from pglt import __version__ as pglt_version
 from pglt import __doc__ as pglt_doc
+from pglt import __year__ as pglt_year
 import pglt.tools.setup_tools as stools
 from pglt.tools.system_tools import Runner
 
@@ -15,6 +16,7 @@ from pglt.tools.system_tools import Runner
 # GLOBALS
 stools.pglt_version = pglt_version
 stools.pglt_doc = pglt_doc
+stools.pglt_year = pglt_year
 
 
 def main(restart, retry, email, threads, verbose, debug, stages, base_logger):
