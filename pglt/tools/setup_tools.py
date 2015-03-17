@@ -16,6 +16,8 @@ import logging
 import platform
 from datetime import datetime
 from special_tools import clean
+from special_tools import reset
+from special_tools import stats
 from special_tools import getThreads
 
 # MESSAGES
@@ -103,10 +105,22 @@ numbers 1 through 4.'
 
         sys.exit()
     # check them
+    if args.stats:
+        stats()
+        sys.exit()
     if args.clean:
         clean()
         sys.exit('Files and folders deleted')
+    if args.reset:
+        stage = input('Enter stage from which to reset folders: ')
+        reset(stage)
+        sys.exit('Folders reset to [{0}], use --restart to re-run.'.
+                 format(stage))
     if args.restart:
+        if args.retry:
+            print('Restarting and retrying folders that failed ....')
+        else:
+            print('Restarting ....')
         return True, args.retry, None, None, None, None, None
     if not args.email:
         # stop if no email
@@ -191,6 +205,10 @@ for NCBI")
                         action='store_true')
     parser.add_argument('--retry', help='if restarting, retry failed stages \
 and folders?', action='store_true')
+    parser.add_argument('--reset', help='reset folders to previous stage',
+                        action='store_true')
+    parser.add_argument('--stats', help='get stats on status of folders',
+                        action='store_true')
     parser.add_argument("-threads", "-t", help="number of threads, default\
  \'-1\', will use all available on machine", default=-1, type=int)
     parser.add_argument("-stages", "-s", help="stages to run, default \
