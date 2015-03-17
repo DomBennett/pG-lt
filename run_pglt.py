@@ -6,13 +6,15 @@
 import os
 import sys
 import pickle
-from pglt.tools.setup_tools import setUpLogging
-from pglt.tools.setup_tools import printHeader
-from pglt.tools.setup_tools import getFolders
-from pglt.tools.setup_tools import calcWorkers
-from pglt.tools.setup_tools import parseArguments
-from pglt.tools.setup_tools import logMessage
+from pglt import __version__ as pglt_version
+from pglt import __doc__ as pglt_doc
+import pglt.tools.setup_tools as stools
 from pglt.tools.system_tools import Runner
+
+
+# GLOBALS
+stools.pglt_version = pglt_version
+stools.pglt_doc = pglt_doc
 
 
 def main(restart, retry, email, threads, verbose, debug, stages, base_logger):
@@ -26,7 +28,7 @@ def main(restart, retry, email, threads, verbose, debug, stages, base_logger):
         if not os.path.isfile(argspath):
             sys.exit('Cannot restart, are you sure you have already run \
 pG-lt?')
-        logMessage('program-restart', logger=base_logger, retry=retry)
+        stools.logMessage('program-restart', logger=base_logger, retry=retry)
         with open(argspath, 'r') as file:
             nworkers, threads_per_worker, folders, email, threads, verbose,\
                 debug, stages = pickle.load(file)
@@ -36,16 +38,16 @@ pG-lt?')
                         logger=base_logger, retry=retry)
     else:
         if verbose:
-            printHeader()
+            stools.printHeader()
         # search cwd for folders that contain names and parameter files
-        folders = getFolders()
+        folders = stools.getFolders()
         # calculate nworkers
         nworkers, threads_per_worker, spare_threads =\
-            calcWorkers(threads=threads, nfolders=len(folders))
+            stools.calcWorkers(threads=threads, nfolders=len(folders))
         # start message
-        logMessage('program-start', logger=base_logger, folders=folders,
-                   threads=threads_per_worker*nworkers, stages=stages,
-                   spare_threads=spare_threads, email=email)
+        stools.logMessage('program-start', logger=base_logger, folders=folders,
+                          threads=threads_per_worker*nworkers, stages=stages,
+                          spare_threads=spare_threads, email=email)
         # setup runner
         base_logger.info('Setting up files and folders ....')
         runner = Runner(folders=folders, nworkers=nworkers, stages=stages,
@@ -64,9 +66,10 @@ pG-lt?')
 
 if __name__ == '__main__':
     # parse args
-    restart, retry, email, threads, verbose, debug, stages = parseArguments()
+    restart, retry, email, threads, verbose, debug, stages = \
+        stools.parseArguments()
     # create base logger -- messages in parent folder log.txt
-    base_logger = setUpLogging(verbose, debug, 'base')
+    base_logger = stools.setUpLogging(verbose, debug, 'base')
     try:
         main(restart, retry, email, threads, verbose, debug, stages,
              base_logger)

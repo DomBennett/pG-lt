@@ -20,16 +20,19 @@ from special_tools import reset
 from special_tools import stats
 from special_tools import getThreads
 
-# MESSAGES
+# GLOBALS
+pglt_version = None  # set at run_pglt.py
+pglt_doc = None
 description = """
 ----------------------------------------------------------------------
-pG-lt version 1, Copyright (C) 2014 Bennett
+pG-lt version {0}, Copyright (C) 2014 Bennett
 ----------------------------------------------------------------------
 This program comes with ABSOLUTELY NO WARRANTY. This is free software,
 and you are welcome to redistribute it under certain conditions.
 For more details, type `run_pglt.py --details`.
 ----------------------------------------------------------------------
-"""
+""".format(pglt_version)
+# MESSAGES
 nonamestxt_msg = '\nERROR: No folders containing \'names.txt\' files \
 found! All taxonomic names should be placed in subdirectories and \
 called: \'names.txt\''
@@ -91,18 +94,15 @@ def calcWorkers(threads, nfolders, min_threads_per_worker=2,
 
 def parseArguments(args=None):
     """Read command-line arguments"""
+    # TODO: too complex
     stages_err_msg = 'Invalid stage argument. Use \'-s [from]-[to]\' for \
 numbers 1 through 4.'
     # get args
     if not args:
         args = createParser().parse_args()
     if args.details:
-        print '\nThis is pG-lt version: ', open(os.path.join(
-                                                os.path.dirname(__file__),
-                                                '..', 'VERSION.txt')).read()
-        print open(os.path.join(os.path.dirname(__file__), '..',
-                                'DESCRIPTION.txt')).read()
-
+        print '\nThis is pG-lt version: ', pglt_version
+        print pglt_doc
         sys.exit()
     # check them
     if args.stats:
@@ -227,6 +227,7 @@ folders (developer only)", action="store_true")
 def logMessage(phase, logger, folders=None, stage=None, threads=None,
                spare_threads=None, email=None, stages=None, counter=None,
                retry=None):
+    # TODO: too complex
     if phase == 'program-start':
         logger.info(description)
         logger.info('-' * 28 + ' Run details ' + '-' * 29)
@@ -302,7 +303,7 @@ def timestamp():
 
 
 def recordPars(paradict):
-    """Return mpe parameters string"""
+    """Return pglt parameters string"""
     record = '\nUsing the following parameters:\n'
     for key in paradict.keys():
         record += '    [{0}] = [{1}]\n'.format(key, paradict[key])

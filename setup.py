@@ -9,6 +9,7 @@ import subprocess
 import re
 import sys
 import shutil
+import pglt
 from setuptools import setup, find_packages
 
 
@@ -91,7 +92,7 @@ PACKAGE_DIRS = [p.replace(".", os.path.sep) for p in PACKAGES]
 # SETUP
 setup(
     name="pglt",
-    version=read(os.path.join('pglt', 'VERSION.txt')).strip(),
+    version=pglt.__version__,
     author="Dominic John Bennett",
     author_email="dominic.john.bennett@gmail.com",
     description=("pG-lt: An automated pipeline for phylogeney generation."),
@@ -100,12 +101,11 @@ setup(
     url="https://github.com/DomBennett/MassPhylogenyEstimation",
     packages=PACKAGES,
     package_dir=dict(zip(PACKAGES, PACKAGE_DIRS)),
-    package_data={'pglt': ['DESCRIPTION.txt', 'VERSION.txt', 'parameters.csv',
-                           'gene_parameters.csv', 'raxml', 'mafft',
-                           'mafft-qinsi', 'mafft-xinsi', 'blastn']},
+    package_data={'pglt': ['parameters.csv', 'gene_parameters.csv', 'raxml',
+                           'mafft', 'mafft-qinsi', 'mafft-xinsi', 'blastn']},
     scripts=['run_pglt.py', 'pglt_farm.py'],
     test_suite='tests',
-    long_description=read(os.path.join('pglt', 'DESCRIPTION.txt')),
+    long_description=pglt.__doc__,
     classifiers=[
         "Development Status :: 4 - Beta",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
