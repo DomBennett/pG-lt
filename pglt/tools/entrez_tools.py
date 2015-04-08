@@ -28,6 +28,7 @@ def safeConnect(efunc, logger, max_check=100, waittime=1, power=2,
         try:
             # open handle with Entrez function
             handle = efunc(**kwargs)
+            # print(handle.url)
             # if rettype is GenBank, read each seq into a list
             if 'rettype' in kwargs.keys() and 'gb' == kwargs['rettype']:
                 results_iter = SeqIO.parse(handle, 'gb')
@@ -68,7 +69,6 @@ def eSearch(term, logger, retStart=0, retMax=1, db="nucleotide"):
     results = safeConnect(efunc=Entrez.esearch, logger=logger, db=db,
                           term=term, usehistory='n', retStart=retStart,
                           retMax=retMax, retmode="text")
-    time.sleep(1)  # always wait 1 second between URL requests
     return results
 
 
@@ -94,8 +94,6 @@ def eFetch(ncbi_id, logger, db="nucleotide"):
     else:
         results = safeConnect(efunc=Entrez.efetch, logger=logger, db=db,
                               rettype='gb', retmode='text', id=ncbi_id)
-
-    time.sleep(1)  # always wait 1 second between URL requests
     return results
 
 
