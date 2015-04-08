@@ -9,6 +9,7 @@ pglt names tools
 import re
 import csv
 import os
+import random
 from Bio import Phylo
 from cStringIO import StringIO
 import entrez_tools as etools
@@ -90,9 +91,11 @@ def genNamesDict(resolver, logger, parentid=None):
             unclaimed = etools.findChildren(rident, logger=logger,
                                             next=True)
             unclaimed = [int(e) for e in unclaimed]
-            # if none are in ignore, must be unique
             unclaimed = [e for e in unclaimed if e not in allrankids]
-            namesdict[key] = {"txids": [unclaimed],
+            # choose random subset of unclaimed
+            if len(unclaimed) > 5:
+                unclaimed = random.sample(unclaimed, 5)
+            namesdict[key] = {"txids": unclaimed,
                               "unique_name": 'Non-unique resolution',
                               "rank": rank}
     # if no parent id given, work one out
