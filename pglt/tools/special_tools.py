@@ -116,17 +116,14 @@ def reset(stage):
     """Reset progress dict"""
     folders = os.listdir(os.getcwd())
     for folder in folders:
-        print (folder)
         progress_path = os.path.join(folder, 'tempfiles', 'progress.p')
         # if tempfiles exist, read in progress.p, delete stage folders
         if not os.path.isfile(progress_path):
-            print('here')
             continue
         with open(progress_path, "rb") as file:
             progress = pickle.load(file)
         stages = range(int(stage), 5)
         for s in stages:
-            print(s)
             if s == 1:
                 stage_folder = os.path.join(folder, '1_names')
                 if os.path.isdir(stage_folder):
