@@ -79,6 +79,12 @@ fewer matches than target nseqs"""
         # if _search is run again, will not return seqids of sequences
         #  that have already been found -- self.deja_vues records seen
         #  sequences
+        # limit number of taxids to 5, search recursively if more than 5
+        if len(taxids) > 5:
+            res = self._search(taxids[:5])
+            self.thoroughness = 1
+            res.extend(self._search(taxids[5:]))
+            return res
         seqids = []
         while len(seqids) < self.nseqs:
             if self.thoroughness > self.max_thoroughness:
