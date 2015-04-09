@@ -88,14 +88,21 @@ def genNamesDict(resolver, logger, parentid=None):
             rident = taxdict[key]['ident']  # Resolved ID
             rank = taxdict[key]['rank']  # Resolved rank
             # find ids in the next level
-            unclaimed = etools.findChildren(rident, logger=logger,
-                                            next=True)
-            unclaimed = [int(e) for e in unclaimed]
-            unclaimed = [e for e in unclaimed if e not in allrankids]
-            # choose random subset of unclaimed
-            if len(unclaimed) > 5:
-                unclaimed = random.sample(unclaimed, 5)
-            namesdict[key] = {"txids": unclaimed,
+            children = etools.findChildren(rident, logger=logger,
+                                           next=True)
+            if children:
+                unclaimed = [int(e) for e in children]
+                unclaimed = [e for e in unclaimed if e not in allrankids]
+                # choose random subset of unclaimed
+                if len(unclaimed) > 5:
+                    txids = random.sample(unclaimed, 5)
+                # if there are no unclaimed, just use children
+                if not unclaimed:
+                    txids = children
+            else:
+                # if no children, just use rident
+                txids = [str(rident)]
+            namesdict[key] = {"txids": txids,
                               "unique_name": 'Non-unique resolution',
                               "rank": rank}
     # if no parent id given, work one out
