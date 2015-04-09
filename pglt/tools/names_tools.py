@@ -160,6 +160,8 @@ def getOutgroup(namesdict, parentid, logger, outgroupid=None, minrecords=1000):
         outgroup_ids = [outgroupid]
     # add outgroup_ids to namesdict
     rank, unique_name = getTaxIdMetaData(outgroup_ids)
+    # convert to ints
+    outgroup_ids = [int(e) for e in outgroup_ids]
     namesdict["outgroup"] = {"txids": outgroup_ids, "unique_name": unique_name,
                              "rank": rank}
     return namesdict
