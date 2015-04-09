@@ -16,6 +16,193 @@ import pickle
 from tabulate import tabulate
 
 
+# CLASSES
+class Reseter(object):
+    '''Reseter class : change settings in pG-lt folders'''
+    options_msg = '''
+    Options:
+    1 - Reset to previous stage for all in `folders`
+    2 - Change general parameters for all in `folders`
+    3 - Change gene parameters for all in `folders`
+    4 - Specify `folders` and return to these options
+
+    By default, `folders` is a list of all pG-lt generated folders in current
+    directory. To specify the folders for which you want to change settings,
+    select option 4.
+
+    Current directory: {0}
+
+    To exit, press ctrl+c at any time.
+    '''.format(os.getcwd())
+    parameter_keys = ['nseqs', 'naligns', 'nphylos', 'thoroughness',
+                      'parentid', 'outgroupid', 'maxtrys', 'rttstat',
+                      'threads']
+    parameter_keys_str = 'nseqs, naligns, nphylos, throughness, parentid,\
+outgroupid, maxtrys, threads or rttstat'
+    # numerical only at this stage
+    gene_parameter_keys = ['minlen', 'maxlen', 'mingaps', 'minoverlap',
+                           'maxtrys', 'minseedsize', 'maxseedsize',
+                           'maxseedtrys']
+    gene_parameter_keys_str = 'minlen, maxlen, mingaps, minoverlap, maxtrys,\
+minseedsize, maxseedsize, maxseedtrys'
+    gene_keys = ['NADHs1', 'NADHs2', 'NADHs3', 'NADHs4', 'NADHs5', 'NADHs6',
+                 'NADHs7', 'NADHs8', 'NADHs9', 'NADHs10', 'NADHs11', 'NADHs12',
+                 'COI', 'CYTB', 'COII', '12S', '16S', '18S', '28S', 'rbcl',
+                 'matk']
+    genes_keys_str = ['NADHs1-12, COI, CYTB, COII, 12S, 16S, 18S, 28S, rbcl or \
+matk']
+
+    def __init__(self):
+        folders = os.listdir(os.getcwd())
+        avoid_pattern = "^\.|^log\.txt$|resolved_names|README|tempfiles"
+        folders = [e for e in folders if not re.search(avoid_pattern, e)]
+        self.folders = folders
+        self.backup_folders = folders
+
+    def _deleteStageFolder(self, study_folder, stage_folder):
+        '''Delete stage folder'''
+        stage_folder = os.path.join(study_folder, stage_folder)
+        if os.path.isdir(stage_folder):
+            shutil.rmtree(stage_folder)
+
+    def _readPickledFile(self, folder, filename):
+        '''Read in pickled tempfile'''
+        filepath = os.path.join(folder, 'tempfiles', filename)
+        if not os.path.isfile(filepath):
+            return None
+        with open(filepath, "rb") as file:
+            pickled = pickle.load(file)
+        return(pickled)
+
+    def _writePickledFile(self, folder, filename, pickled):
+        '''Write out pickled tempfile'''
+        filepath = os.path.join(folder, 'tempfiles', filename)
+        with open(filepath, "wb") as file:
+            pickle.dump(pickled, file)
+
+    def _resetstage(self):
+        """Reset `folders` to previous stage"""
+        while True:
+            stage = raw_input('Enter stage (1-4) from which to reset folders: ')
+            if int(stage) <= 4 and int(stage) > 0:
+                break
+            else:
+                print('Invalid stage!')
+        counter = 0
+        stagenames = {'1': '1_names', '2': '2_download', '3': '3_alignment',
+                      '4': '4_phylogeny'}
+        stages = range(int(stage), 5)
+        for folder in self.folders:
+            # if progress exists, read in progress.p, delete stage folders
+            progress = self._readPickledFile(folder=folder,
+                                             filename='progress.p')
+            if progress:
+                for s in stages:
+                    self._deleteStageFolder(folder, stagenames[str(s)])
+                    progress[str(s)] = 'not run'
+                self._writePickledFile(folder=folder, filename='progress.p',
+                                       pickled=progress)
+                counter += 1
+        # reset global progress
+        progress = self._readPickledFile(folder='', filename='progress.p')
+        for s in stages:
+            self._deleteStageFolder(folder, stagenames[str(s)])
+            progress[str(s)] = 'not run'
+        self._writePickledFile(folder='', filename='progress.p',
+                               pickled=progress)
+        print('    [{0}] folders reset to [{1}]'.format(counter, stage))
+
+    def _resetparameters(self):
+        '''Change key's value in all paradicts in `folders`'''
+        while True:
+            key = raw_input('Enter parameter name of setting to change: ')
+            if key not in self.parameter_keys:
+                print('Invalid parameter name! Must be one of: {0}'.
+                      format(self.parameter_keys_str))
+            else:
+                break
+        value = raw_input('Enter new parameter setting: ')
+        counter = 0
+        if key == 'threads':
+            for folder in self.folders:
+                threads = self._readPickledFile(folder=folder,
+                                                filename='threads.p')
+                if threads:
+                    threads = value
+                    self._writePickledFile(folder=folder, filename='threads.p',
+                                           pickled=threads)
+                    counter += 1
+        else:
+            for folder in self.folders:
+                paradict = self._readPickledFile(folder=folder,
+                                                 filename='paradict.p')
+                if paradict:
+                    paradict[key] = value
+                    self._writePickledFile(folder=folder,
+                                           filename='paradict.p',
+                                           pickled=paradict)
+                    counter += 1
+        print('    [{0}] set to [{1}] for [{2}] folders'.
+              format(key, value, counter))
+
+    def _resetgeneparameters(self):
+        '''Change key's value in a genedict in `folders`'''
+        while True:
+            gene = raw_input('Enter gene name to change: ')
+            if gene in self.gene_keys:
+                break
+            else:
+                print('Invalid gene name! Must be one of: {0}'.
+                      format(self.gene_keys_str))
+        while True:
+            key = raw_input('Enter parameter name of setting to change: ')
+            if key in self.gene_parameter_keys:
+                break
+            else:
+                print('Invalid parameter name! Must be one of: {0}'.
+                      format(self.gene_parameter_keys_str))
+        value = raw_input('Enter new parameter setting: ')
+        counter = 0
+        for folder in self.folders:
+            genedict = self._readPickledFile(folder=folder,
+                                             filename='genedict.p')
+            if genedict:
+                genedict[gene][key] = value
+                self._writePickledFile(folder=folder, filename='genedict.p',
+                                       pickled=genedict)
+                counter += 1
+        print('    [{0}] set to [{1}] for [{2}] gene for [{3}] folders'.
+              format(key, value, gene, counter))
+
+    def _setfolders(self):
+        '''Change `folders`'''
+        user_folders = raw_input('Enter folder names separated by spaces: ')
+        user_folders = user_folders.split(' ')
+        for folder in user_folders:
+            if folder not in self.backup_folders:
+                print('[{0}] not found -- did you spell it correctly?'.
+                      format(folder))
+        self.folders = user_folders
+
+    def run(self):
+        '''Run reset'''
+        print('\n{0} RESET MODE {0}'.format('-'*29))
+        try:
+            while True:
+                print(self.options_msg)
+                option = str(raw_input('Enter option number (1-4): '))
+                if '1' == option:
+                    self._resetstage()
+                if '2' == option:
+                    self._resetparameters()
+                if '3' == option:
+                    self._resetgeneparameters()
+                if '4' == option:
+                    self._setfolders()
+        except KeyboardInterrupt:
+            sys.exit('\nExiting ....')
+
+
 # FUNCTIONS
 def timeit(func, **kwargs):
     """Time a function (platform independent)"""
@@ -110,39 +297,6 @@ def clean():
                 shutil.rmtree(os.path.join(temp_folder, temp_folder_to_remove))
             except OSError:
                 pass
-
-
-def reset(stage):
-    """Reset progress dict"""
-    folders = os.listdir(os.getcwd())
-    for folder in folders:
-        progress_path = os.path.join(folder, 'tempfiles', 'progress.p')
-        # if tempfiles exist, read in progress.p, delete stage folders
-        if not os.path.isfile(progress_path):
-            continue
-        with open(progress_path, "rb") as file:
-            progress = pickle.load(file)
-        stages = range(int(stage), 5)
-        for s in stages:
-            if s == 1:
-                stage_folder = os.path.join(folder, '1_names')
-                if os.path.isdir(stage_folder):
-                    shutil.rmtree(stage_folder)
-            if s == 2:
-                stage_folder = os.path.join(folder, '2_download')
-                if os.path.isdir(stage_folder):
-                    shutil.rmtree(stage_folder)
-            if s == 3:
-                stage_folder = os.path.join(folder, '3_alignment')
-                if os.path.isdir(stage_folder):
-                    shutil.rmtree(stage_folder)
-            if s == 4:
-                stage_folder = os.path.join(folder, '4_phylogeny')
-                if os.path.isdir(stage_folder):
-                    shutil.rmtree(stage_folder)
-            progress[str(s)] = 'not run'
-        with open(progress_path, "wb") as file:
-            progress = pickle.dump(progress, file)
 
 
 def check(stage, stagecounter, directory):
