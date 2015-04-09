@@ -23,6 +23,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     alignment_dir = os.path.join(wd, '3_alignment')
     phylogeny_dir = os.path.join(wd, '4_phylogeny')
     outfile = os.path.join(phylogeny_dir, 'distribution.tre')
+    outfile_unconstrained = os.path.join(phylogeny_dir,
+                                         'distribution_unconstrained.tre')
     temp_dir = os.path.join(wd, 'tempfiles')
 
     # INPUT
@@ -38,6 +40,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     maxtrys = int(paradict["maxtrys"])
     rttstat = float(paradict["rttstat"])
     ptools.logger = logger
+    constraint = 3  # 1 - no constraint, 2 - constraint, 3 - both
 
     # READ ALIGMENTS
     clusters = sorted(os.listdir(alignment_dir))
@@ -53,6 +56,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     generator = ptools.Generator(alignment_store=alignment_store,
                                  rttstat=rttstat, outdir=phylogeny_dir,
                                  maxtrys=maxtrys, logger=logger, wd=temp_dir)
+    if 1 == constraint:
+        generator.constraint = False
     for i in range(nphylos):
         logging.info(".... Iteration [{0}]".format(i + 1))
         success = False
@@ -65,6 +70,19 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     logging.info('Generating consensus ....')
     ptools.consensus(generator.phylogenies, phylogeny_dir, min_freq=0.5,
                      is_rooted=True, trees_splits_encoded=False)
+
+    # RUN UNCONSTRAINED
+    if 3 == constraint:
+        logging.info('Repeating unconstrained ....')
+        generator.phylogenies = []
+        generator.constraint = False
+        for i in range(nphylos):
+            logging.info(".... Iteration [{0}]".format(i + 1))
+            success = False
+            while not success:
+                success = generator.run()
+        with open(outfile_unconstrained, "w") as file:
+            counter = Phylo.write(generator.phylogenies, file, 'newick')
 
     # FINISH MESSAGE
     logging.info('Stage finished. Generated [{0}] phylogenies.'.

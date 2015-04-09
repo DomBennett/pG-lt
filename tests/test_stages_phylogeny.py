@@ -100,6 +100,8 @@ class PhylogenyStageTestSuite(unittest.TestCase):
         res = pstage.run()
         # clean dir
         os.remove(os.path.join('4_phylogeny', 'distribution.tre'))
+        os.remove(os.path.join('4_phylogeny',
+                               'distribution_unconstrained.tre'))
         os.remove(os.path.join('4_phylogeny', 'consensus.tre'))
         os.rmdir('4_phylogeny')
         # assert
