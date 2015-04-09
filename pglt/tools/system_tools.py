@@ -293,7 +293,7 @@ written by W.D. Pearse."""
 
 # FUNCTIONS
 def clock(stage, failed=False, directory=os.getcwd()):
-    '''Clock stage'''
+    '''Clock stage, set as success, failed or not run'''
     directory = os.path.join(directory, 'tempfiles')
     with open(os.path.join(directory, 'progress.p'), "rb") as file:
         progress = pickle.load(file)
@@ -308,13 +308,24 @@ def clock(stage, failed=False, directory=os.getcwd()):
 
 
 def check(stage, directory=os.getcwd(), retry=False):
-    '''Check stage'''
+    '''Check stage, return True if stage has already run or shouldn't be run'''
     directory = os.path.join(directory, 'tempfiles')
     with open(os.path.join(directory, 'progress.p'), "rb") as file:
         progress = pickle.load(file)
-    if progress[stage] == 'not run':
+    # get current and previous stage progress
+    stage_progress = progress[stage]
+    if int(stage) > 1:
+        previous_stage_progress = progress[str(int(stage) - 1)]
+    else:
+        previous_stage_progress = 'success'
+    # only return false if this stage has not yet run and the previous stage
+    #  ran successfully
+    if stage_progress == 'not run' and previous_stage_progress == 'success':
         return False
-    elif progress[stage] == 'failed' and retry:
+    # unless retry is true, in which case we want to return False even if this
+    #  stage failed last time
+    elif stage_progress == 'failed' and previous_stage_progress == 'success'\
+            and retry:
         return False
     else:
         return True
