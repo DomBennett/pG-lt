@@ -37,20 +37,14 @@ class Reseter(object):
     parameter_keys = ['nseqs', 'naligns', 'nphylos', 'thoroughness',
                       'parentid', 'outgroupid', 'maxtrys', 'rttstat',
                       'threads']
-    parameter_keys_str = 'nseqs, naligns, nphylos, throughness, parentid,\
-outgroupid, maxtrys, threads or rttstat'
     # numerical only at this stage
     gene_parameter_keys = ['minlen', 'maxlen', 'mingaps', 'minoverlap',
                            'maxtrys', 'minseedsize', 'maxseedsize',
                            'maxseedtrys']
-    gene_parameter_keys_str = 'minlen, maxlen, mingaps, minoverlap, maxtrys,\
-minseedsize, maxseedsize, maxseedtrys'
     gene_keys = ['NADHs1', 'NADHs2', 'NADHs3', 'NADHs4', 'NADHs5', 'NADHs6',
                  'NADHs7', 'NADHs8', 'NADHs9', 'NADHs10', 'NADHs11', 'NADHs12',
                  'COI', 'CYTB', 'COII', '12S', '16S', '18S', '28S', 'rbcl',
                  'matk']
-    genes_keys_str = ['NADHs1-12, COI, CYTB, COII, 12S, 16S, 18S, 28S, rbcl or \
-matk']
 
     def __init__(self):
         folders = os.listdir(os.getcwd())
@@ -58,6 +52,10 @@ matk']
         folders = [e for e in folders if not re.search(avoid_pattern, e)]
         self.folders = folders
         self.backup_folders = folders
+
+    def _optionPrint(self, options):
+        for option in options:
+            print('    {0}'.format(option))
 
     def _deleteStageFolder(self, study_folder, stage_folder):
         '''Delete stage folder'''
@@ -82,9 +80,11 @@ matk']
 
     def _resetstage(self):
         """Reset `folders` to previous stage"""
+        print('-'*70)
         while True:
-            stage = raw_input('Enter stage (1-4) from which to reset folders: ')
-            if int(stage) <= 4 and int(stage) > 0:
+            print('Reset `folders` to previous stages.')
+            stage = raw_input('Enter stage (1-3): ')
+            if int(stage) <= 3 and int(stage) > 0:
                 break
             else:
                 print('Invalid stage!')
@@ -98,27 +98,29 @@ matk']
                                              filename='progress.p')
             if progress:
                 for s in stages:
-                    self._deleteStageFolder(folder, stagenames[str(s)])
-                    progress[str(s)] = 'not run'
+                    if progress[str(s)] != 'not run':
+                        progress[str(s)] = 'not run'
+                        self._deleteStageFolder(folder, stagenames[str(s)])
                 self._writePickledFile(folder=folder, filename='progress.p',
                                        pickled=progress)
                 counter += 1
         # reset global progress
         progress = self._readPickledFile(folder='', filename='progress.p')
         for s in stages:
-            self._deleteStageFolder(folder, stagenames[str(s)])
             progress[str(s)] = 'not run'
         self._writePickledFile(folder='', filename='progress.p',
                                pickled=progress)
-        print('    [{0}] folders reset to [{1}]'.format(counter, stage))
+        print('    [{0}] folders reset to stage [{1}]'.format(counter, stage))
 
     def _resetparameters(self):
         '''Change key's value in all paradicts in `folders`'''
+        print('-'*70)
         while True:
+            print('Change parameters for all `folders`. Available options:')
+            self._optionPrint(self.parameter_keys)
             key = raw_input('Enter parameter name of setting to change: ')
             if key not in self.parameter_keys:
-                print('Invalid parameter name! Must be one of: {0}'.
-                      format(self.parameter_keys_str))
+                print('Invalid parameter name!')
             else:
                 break
         value = raw_input('Enter new parameter setting: ')
@@ -147,20 +149,23 @@ matk']
 
     def _resetgeneparameters(self):
         '''Change key's value in a genedict in `folders`'''
+        print('-'*70)
         while True:
-            gene = raw_input('Enter gene name to change: ')
+            print('Enter name of gene to change. Available options:')
+            self._optionPrint(self.gene_keys)
+            gene = raw_input('Enter name: ')
             if gene in self.gene_keys:
                 break
             else:
-                print('Invalid gene name! Must be one of: {0}'.
-                      format(self.gene_keys_str))
+                print('Invalid gene name!')
         while True:
-            key = raw_input('Enter parameter name of setting to change: ')
+            print('Enter parameter name of setting to change. Available options:')
+            self._optionPrint(self.gene_parameter_keys)
+            key = raw_input('Enter name: ')
             if key in self.gene_parameter_keys:
                 break
             else:
-                print('Invalid parameter name! Must be one of: {0}'.
-                      format(self.gene_parameter_keys_str))
+                print('Invalid parameter name!')
         value = raw_input('Enter new parameter setting: ')
         counter = 0
         for folder in self.folders:
@@ -176,6 +181,7 @@ matk']
 
     def _setfolders(self):
         '''Change `folders`'''
+        print('-'*70)
         user_folders = raw_input('Enter folder names separated by spaces: ')
         user_folders = user_folders.split(' ')
         for folder in user_folders:
@@ -186,9 +192,11 @@ matk']
 
     def run(self):
         '''Run reset'''
-        print('\n{0} RESET MODE {0}'.format('-'*29))
         try:
             while True:
+                print('-'*70)
+                print('\n{0} RESET MODE {0}'.format(' '*29))
+                print('-'*70)
                 print(self.options_msg)
                 option = str(raw_input('Enter option number (1-4): '))
                 if '1' == option:
@@ -200,7 +208,7 @@ matk']
                 if '4' == option:
                     self._setfolders()
         except KeyboardInterrupt:
-            sys.exit('\nExiting ....')
+            sys.exit('\nExiting reset mode ....')
 
 
 # FUNCTIONS
