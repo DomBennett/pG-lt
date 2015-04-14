@@ -159,7 +159,7 @@ class Stager(object):
     @classmethod
     def run_all(klass, wd, stages):
         for s in stages:
-            if check(stage=s, directory=wd):
+            if not check(stage=s, directory=wd):
                 Stager(wd, s).run()
 
 
