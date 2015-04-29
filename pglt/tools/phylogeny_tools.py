@@ -20,10 +20,7 @@ from math import sqrt
 from system_tools import TerminationPipe
 from system_tools import RAxMLError
 from special_tools import getThreads
-
-# GLOBALS
-raxml = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                  os.pardir)), 'raxml')
+from pglt import _RAXML as raxml
 
 
 # CLASSES

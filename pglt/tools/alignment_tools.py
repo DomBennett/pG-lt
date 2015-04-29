@@ -26,16 +26,10 @@ from system_tools import MafftError
 from system_tools import TrysError
 from special_tools import timeit
 from special_tools import getThreads
-
-# GLOBALS
-mafft = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                  os.pardir)), 'mafft')
-mafftq = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                   os.pardir)), 'mafft-qinsi')
-mafftx = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                   os.pardir)), 'mafft-xinsi')
-blastn = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                   os.pardir)), 'blastn')
+from pglt import _MAFFT as mafft
+from pglt import _MAFFTQ as mafftq
+from pglt import _MAFFTX as mafftx
+from pglt import _BLASTN as blastn
 
 
 # OBEJECTS
@@ -415,6 +409,8 @@ def version(sequences, gene_type):
     # determine auto, qinsi or xinsi based on:
     # http://mafft.cbrc.jp/alignment/software/source66.html
     # always using default algorithms
+    if not mafftq and mafftx:  # return mafft, if no mafftq or x
+        return mafft
     if gene_type != 'deep' or len(sequences) > 250:
         return 'mafft --auto'
     seqlens = [len(s) for s in sequences]
