@@ -19,6 +19,8 @@ from setup_tools import sortArgs
 from setup_tools import prime
 
 # MESSAGES
+missingdep_msg = '\nERROR: Your machine is missing {0}, cannot run stage.\
+Use `pglt_set_dependencies.py`.'
 toofewspecies_msg = '\nERROR: The program halted as there are too few \
 species left for phylogeny building -- five is the minimum. You may \
 have started with too few names, names given may not have been \
@@ -71,6 +73,11 @@ class RAxMLError(Exception):
 
 class TrysError(Exception):
     pass
+
+
+class MissingDepError(Exception):
+    def __init__(self, dep):
+        self.dep = dep
 
 
 # OTHER CLASSES
@@ -131,6 +138,8 @@ class Stager(object):
             error_raised = self._error(outgroup_msg)
         except RAxMLError:
             error_raised = self._error(raxml_msg)
+        except MissingDepError as err:
+            error_raised = self._error(missingdep_msg.format(err.dep))
         except Exception as unexp_err:
             error_raised = self._error(unexpected_msg.format(unexp_err))
         return bool(error_raised)

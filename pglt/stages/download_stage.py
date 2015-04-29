@@ -11,6 +11,7 @@ import pickle
 import logging
 import pglt.tools.download_tools as dtools
 from pglt.tools.system_tools import TooFewSpeciesError
+from pglt.tools.system_tools import MissingDepError
 
 
 def run(wd=os.getcwd(), logger=logging.getLogger('')):
@@ -23,6 +24,10 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     temp_dir = os.path.join(wd, 'tempfiles')
     if not os.path.isdir(download_dir):
         os.mkdir(download_dir)
+
+    # CHECK DEPS
+    if not dtools.atools.blastn:
+        raise MissingDepError('blastn')
 
     # INPUT
     with open(os.path.join(temp_dir, "genedict.p"), "rb") as file:

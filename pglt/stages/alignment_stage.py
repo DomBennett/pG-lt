@@ -14,6 +14,7 @@ import shutil
 import numpy
 from Bio import SeqIO
 import pglt.tools.alignment_tools as atools
+from pglt.tools.system_tools import MissingDepError
 
 
 # FUNCTIONS
@@ -117,6 +118,12 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     temp_dir = os.path.join(wd, 'tempfiles')
     if not os.path.isdir(alignment_dir):
         os.mkdir(alignment_dir)
+
+    # CHECK DEPS
+    if not atools.blastn:
+        raise MissingDepError('blastn')
+    if not atools.mafft:
+        raise MissingDepError('mafft')
 
     # INPUT
     with open(os.path.join(temp_dir, "genedict.p"), "rb") as file:

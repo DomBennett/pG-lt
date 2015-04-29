@@ -12,6 +12,7 @@ import pickle
 import logging
 from Bio import Phylo
 import pglt.tools.phylogeny_tools as ptools
+from pglt.tools.system_tools import MissingDepError
 
 
 # RUN
@@ -26,6 +27,10 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     outfile_unconstrained = os.path.join(phylogeny_dir,
                                          'distribution_unconstrained.tre')
     temp_dir = os.path.join(wd, 'tempfiles')
+
+    # CHECK DEPS
+    if not ptools.raxml:
+        raise MissingDepError('raxml')
 
     # INPUT
     with open(os.path.join(temp_dir, "paradict.p"), "rb") as file:
