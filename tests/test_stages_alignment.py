@@ -11,6 +11,7 @@ import os
 import shutil
 from pglt.stages import alignment_stage
 from Bio import AlignIO
+from pglt.tools.alignment_tools import mafft
 
 # DIRS
 working_dir = os.path.dirname(__file__)
@@ -68,6 +69,7 @@ for name in names:
                        'genes': 2}
 
 
+@unittest.skipIf(not mafft, "Requires MAFFT")
 class AlignmentStageTestSuite(unittest.TestCase):
 
     def setUp(self):

@@ -12,6 +12,7 @@ import shutil
 from pglt.stages import download_stage
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from pglt.tools.alignment_tools import blastn
 
 
 # DUMMIES
@@ -45,6 +46,7 @@ namesdict['outgroup'] = {"txids": [3], "unique_name": 'outgroup',
 allrankids = []
 
 
+@unittest.skipIf(not blastn, "Requires BLASTN")
 class DownloadStageTestSuite(unittest.TestCase):
 
     def setUp(self):

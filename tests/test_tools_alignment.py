@@ -104,18 +104,21 @@ class AlignmentTestSuite(unittest.TestCase):
         alignment = atools.genNonAlignment(1, 100)
         self.assertEqual(len(alignment[0]), 100)
 
+    @unittest.skipIf(not all([atools.mafft, atools.mafftq, atools.mafftx]),
+                     "Requires MAFFT, MAFFT-QINSI and MAFFT-XINSI")
     def test_version(self):
         # try different combinations of sequences
         def genSequences(n, length):
             s = 'A' * length
             return [s for i in range(n)]
         res = atools.version(genSequences(30, 800), 'deep')
-        self.assertEqual(os.path.basename(res), 'mafft-xinsi')
+        self.assertEqual(os.path.basename(res), 'mafftx')
         res = atools.version(genSequences(90, 800), 'deep')
-        self.assertEqual(os.path.basename(res), 'mafft-qinsi')
+        self.assertEqual(os.path.basename(res), 'mafftq')
         res = atools.version(genSequences(90, 2000), 'deep')
         self.assertEqual(os.path.basename(res), 'mafft --auto')
 
+    @unittest.skipIf(not atools.mafft, "Requires MAFFT")
     def test_align(self):
         # align and check if results exist
         res = atools.align(command='mafft --auto', sequences=test_seqs,
@@ -123,6 +126,7 @@ class AlignmentTestSuite(unittest.TestCase):
                            wd=self.wd)
         self.assertTrue(res.__class__.__name__ == 'MultipleSeqAlignment')
 
+    @unittest.skipIf(not atools.mafft, "Requires MAFFT")
     def test_add(self):
         # add to test_alignment and check if result
         #  exists
@@ -131,6 +135,7 @@ class AlignmentTestSuite(unittest.TestCase):
                          threads=2)
         self.assertTrue(res.__class__.__name__ == 'MultipleSeqAlignment')
 
+    @unittest.skipIf(not atools.blastn, "Requires BLASTN")
     def test_blast(self):
         # real_alignment and real_sequences are identical
         real_seqs = [e for e in real_alignment]
@@ -178,6 +183,7 @@ class AlignmentTestSuite(unittest.TestCase):
                                     minlen=101, logger=self.logger)
         self.assertFalse(res)
 
+    @unittest.skipIf(not atools.blastn, "Requires BLASTN")
     def test_seqstore_private_alignmentblast(self):
         # use real blast
         atools.blast = self.true_blast

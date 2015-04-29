@@ -13,6 +13,7 @@ from pglt.stages import phylogeny_stage as pstage
 from Bio import AlignIO
 from Bio import Phylo
 from cStringIO import StringIO
+from pglt.tools.phylogeny_tools import raxml
 
 # DIRS
 working_dir = os.path.dirname(__file__)
@@ -53,6 +54,7 @@ genedict = {}
 allrankids = []
 
 
+@unittest.skipIf(not raxml, "Requires RAxML")
 class PhylogenyStageTestSuite(unittest.TestCase):
 
     def setUp(self):
