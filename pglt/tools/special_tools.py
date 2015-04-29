@@ -207,6 +207,7 @@ class Reseter(object):
                     self._resetgeneparameters()
                 if '4' == option:
                     self._setfolders()
+                # TODO: reset the ones that failed
         except KeyboardInterrupt:
             sys.exit('\nExiting reset mode ....')
 

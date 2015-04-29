@@ -196,7 +196,6 @@ def tearDownLogging(logname):
 
 def createParser():
     """Create parser for command-line"""
-    # Add new arg for threads
     parser = argparse.ArgumentParser()
     parser.add_argument("-email", "-e", help="please provide email \
 for NCBI")
