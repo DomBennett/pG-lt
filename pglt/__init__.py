@@ -5,9 +5,18 @@
 # POPULATE NAMESPACE
 # http://stackoverflow.com/questions/4519127/setuptools-package-data-folder-location
 import os
+import pickle
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 _PARS = os.path.join(_ROOT, 'parameters.csv')
 _GPARS = os.path.join(_ROOT, 'gene_parameters.csv')
+with open(os.path.join(_ROOT, 'dependencies.p'), "rb") as file:
+    depsdict = pickle.load(file)
+_RAXML = depsdict['raxml']
+_MAFFT = depsdict['mafft']
+_MAFFTQ = depsdict['mafftq']
+_MAFFTX = depsdict['mafftx']
+_BLASTN = depsdict['blastn']
+del depsdict
 import tools
 import stages
 # add stages -- a dictionary of stage functions -- to Stager
@@ -32,8 +41,8 @@ Kazutaka Katoh) NCBI's standalone BLAST suite 2.2.29+ and online API services
 Biopython (Copyright Cook (C) 2009), Dendropy (Copyright Sukumaran and Holder
 (C) 2010) and Taxon Names Resovler (Copyright (C) Bennett 2014).
 
-For details on how to use pG-lt, please refer to its website:
-`http://dombennett.github.io/pG-lt`
+For details on how to use pG-lt, please refer to its wiki:
+`https://github.com/DomBennett/pG-lt/wiki`
 For any questions or comments, feel free to email:
 `dominic.john.bennett@gmail.com`.
 
@@ -53,3 +62,4 @@ this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
 Street, Fifth Floor, Boston, MA 02110-1301 USA.
 '''.format(__year__)
 del os
+del pickle
