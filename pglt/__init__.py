@@ -25,7 +25,7 @@ tools.system_tools.Stager.STAGES = stages.STAGES
 tools.system_tools.Runner._pars = _PARS
 tools.system_tools.Runner._gpars = _GPARS
 # version (https://www.python.org/dev/peps/pep-0440/)
-__version__ = '1.0.dev2'
+__version__ = 'v0.1-beta'
 __year__ = '2015'
 # docstring
 __doc__ = '''
