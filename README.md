@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/DomBennett/pG-lt/badge.svg)](https://coveralls.io/r/DomBennett/pG-lt)
+[![Coverage Status](https://coveralls.io/repos/DomBennett/pG-lt/badge.svg?branch=master)](https://coveralls.io/r/DomBennett/pG-lt?branch=master)
 
 # pG-lt
 
