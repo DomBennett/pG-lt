@@ -4,6 +4,7 @@
 """
 Set dependencies for pG-lt
 """
+import sys
 import os
 import subprocess
 import re
@@ -16,13 +17,10 @@ from pglt import _MAFFTQ as mafftq
 from pglt import _MAFFTX as mafftx
 from pglt import _BLASTN as blastn
 from pglt import _ROOT as root
-print root
 
 # GLOBALS
 abserr_msg = 'Absolute paths to dependencies only. [{0}] is not an absolute \
 path.'
-with open(os.path.join(root, 'dependencies.p'), "rb") as file:
-    depsdict = pickle.load(file)
 
 
 # FUNCTIONS
@@ -41,6 +39,8 @@ current working directory", type=str)
 search current working directory", type=str)
     parser.add_argument('--overwrite', help='overwrite dependencies already \
 added to pG-lt', action='store_true')
+    parser.add_argument('--local', help='add deps to local pglt for testing \
+purposes', action='store_true')
     return parser
 
 
@@ -77,6 +77,15 @@ def getVersion(args):
 if __name__ == '__main__':
     args = createParser().parse_args()
     print '\nSearching and setting dependencies to pG-lt ....'
+    if args.local:
+        print '.... adding deps to local copy of pglt, not installed version.'
+        folders = os.listdir(os.getcwd())
+        if 'pglt' in folders and 'tests' in folders:
+            root = os.path.join(os.getcwd(), 'pglt')
+        else:
+            sys.exit('Error: to run locally, ensure you`re in downloaded pG-lt/')
+    with open(os.path.join(root, 'dependencies.p'), "rb") as file:
+        depsdict = pickle.load(file)
     changes = False
     # MAFFT
     if args.mafft and not mafft or args.overwrite:
@@ -139,3 +148,6 @@ if __name__ == '__main__':
         else:
             rows.append([d, 'Absent', e, '-'])
     print(tabulate(rows, headers, tablefmt="simple") + '\n')
+    if args.local:
+        print('\nUse `python setup.py test` to test functionality of pG-lt on \
+your machine with these deps.')
