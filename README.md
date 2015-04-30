@@ -1,3 +1,4 @@
+# pG-lt
 [![Coverage Status](https://coveralls.io/repos/DomBennett/pG-lt/badge.svg?branch=master)](https://coveralls.io/r/DomBennett/pG-lt?branch=master)
 
 '[phyloGenerator][pG]-light' or `pG-lt` is a python package for the automated
