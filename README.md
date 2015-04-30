@@ -44,12 +44,13 @@ Click [here][wiki], to see the wiki for information on how to use and install.
 GPL v.2
 
 ## Authors
-[Dom Bennett][db], [Will Pearse][wp] and [Lawrence Hudson][lh]
+[Dom Bennett][db], [Will Pearse][wp], [Lawrence Hudson][lh] and [Andy Purvis][ap]
 
 <!-- References -->
 [db]: https://github.com/DomBennett
 [wp]: https://github.com/willpearse
 [lh]: https://github.com/quicklizard99
+[ap]: https://github.com/AndyPurvis
 [pG]: http://willpearse.github.io/phyloGenerator/
 [wiki]: https://github.com/DomBennett/pG-lt/wiki
 [mafft]: http://mafft.cbrc.jp/alignment/software/

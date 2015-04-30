@@ -32,7 +32,7 @@ __doc__ = '''
 pG-lt (or phyloGenerator-light) is a pipeline for the automated generation of
 phylogenies through `Mass Phylogeny Estimation`. It is adapted from
 phyloGenerator (C) 2013 and was written by D.J. Bennett with additional help
-from W.D. Pearse and L. Hudson.
+and suggestions from W.D. Pearse, L. Hudson and A. Purvis.
 
 It makes use of external programs for phylogeny generation and bioinformatics,
 these are: RAxML (Copyright (C) Stamatakis 2013), MAFFT (Copyright (C) 2013
