@@ -39,9 +39,9 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     outgroupid = paradict["outgroupid"]
     ntools.etools.Entrez.email = paradict["email"]
     minspecies = int(paradict["minspecies"])
+    taxonomy = paradict["taxonomic_constraint"]
+    taxonomy = taxonomy.split('-')
     ntools.logger = logger
-    taxonomy = ['family', 'order', 'class', 'phylum', 'kingdom',
-                'superkingdom']
 
     # PROCESS
     logger.info('Searching for taxids ....')
