@@ -12,6 +12,9 @@ import copy
 import pickle
 import random
 import pglt.tools.alignment_tools as atools
+from pglt import _MAFFT as mafft
+from pglt import _MAFFTQ as mafftq
+from pglt import _MAFFTX as mafftx
 from Bio import SeqIO
 from Bio import AlignIO
 from Bio.SeqRecord import SeqRecord
@@ -112,11 +115,11 @@ class AlignmentTestSuite(unittest.TestCase):
             s = 'A' * length
             return [s for i in range(n)]
         res = atools.version(genSequences(30, 800), 'deep')
-        self.assertEqual(os.path.basename(res), 'mafftx')
+        self.assertEqual(res, mafftx)
         res = atools.version(genSequences(90, 800), 'deep')
-        self.assertEqual(os.path.basename(res), 'mafftq')
+        self.assertEqual(res, mafftq)
         res = atools.version(genSequences(90, 2000), 'deep')
-        self.assertEqual(os.path.basename(res), 'mafft --auto')
+        self.assertEqual(res, mafft + ' --auto')
 
     @unittest.skipIf(not atools.mafft, "Requires MAFFT")
     def test_align(self):

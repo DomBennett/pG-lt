@@ -412,7 +412,7 @@ def version(sequences, gene_type):
     if not mafftq and mafftx:  # return mafft, if no mafftq or x
         return mafft
     if gene_type != 'deep' or len(sequences) > 250:
-        return 'mafft --auto'
+        return mafft + ' --auto'
     seqlens = [len(s) for s in sequences]
     if max(seqlens) > 1500:
         return mafft + ' --auto'
