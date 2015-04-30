@@ -37,7 +37,10 @@ genedict = {'rbcl': {'names': ['rbcl'], 'minlen': '300', 'maxlen': '2000',
                      'minoverlap': '300'},
             'COI': {'names': ['COI'], 'minlen': '300', 'maxlen': '2000',
                     'minoverlap': '300'}}
-paradict = {'email': '', 'nseqs': '100', 'thoroughness': '3', 'maxlen': '2000'}
+paradict = {'email': '', 'nseqs': '100', 'thoroughness': '3', 'maxlen': '2000',
+            'minspecies_gene': '5', 'minspecies_gene': '5',
+            'minnseqs_gene': '1', 'target_ngenes': '1', 'maxpn': '0.1',
+            'seedsize': '10', 'maxseedtrys': '100'}
 namesdict = {}
 namesdict['query_name'] = {"txids": [1, 2], "unique_name": 'returned_name',
                            "rank": 'species'}

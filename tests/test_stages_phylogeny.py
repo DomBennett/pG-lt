@@ -49,7 +49,8 @@ with open(os.path.join(working_dir, 'data', 'test_alignment_ref.faa'), 'r')\
         as file:
     alignment = AlignIO.read(file, 'fasta')
 
-paradict = {'nphylos': 1, 'maxtrys': 1, 'rttstat': 0.5}
+paradict = {'nphylos': '1', 'maxtrys': '1', 'rttstat': '0.5',
+            'constraint': '3'}
 genedict = {}
 allrankids = []
 

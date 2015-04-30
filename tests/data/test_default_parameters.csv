@@ -6,4 +6,12 @@ thoroughness,3,Either 1 2 or 3
 parentid,,Nothing in default
 outgroupid,,Nothing in default
 maxtrys,1000,Max number of phylogeny attempts
-rttstat,0.001,Chisquare p value for uniformity test of root to tip distances
+rttstat,0.5,Max RTT stat
+constraint,3,1 2 or 3 - with without or both
+minspecies,5,5 is minimum
+minspecies_gene,5,5 is minimum
+minnseqs_gene,1,min number of sequences per gene
+target_ngenes,6,number of genes to download
+maxpn,0.1,max proportion of Ns in sequences
+seedsize,10,size of seed for filtering downloaded sequences
+maxseedtrys,100,max attempts to filter downloaded sequences

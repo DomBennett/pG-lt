@@ -60,7 +60,8 @@ class NamesStageTestSuite(unittest.TestCase):
         names_stage.ntools.getOutgroup = dummy_getOutgroup
         names_stage.ntools.genTaxTree = dummy_genTaxTree
         # write out necessary files to run
-        paradict = {'email': '', 'parentid': '', 'outgroupid': ''}
+        paradict = {'email': '', 'parentid': '', 'outgroupid': '',
+                    'minspecies': '5'}
         os.mkdir('tempfiles')
         with open(os.path.join('tempfiles', "paradict.p"), "wb") as file:
             pickle.dump(paradict, file)

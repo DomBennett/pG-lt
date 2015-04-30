@@ -44,8 +44,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     nphylos = int(paradict["nphylos"])
     maxtrys = int(paradict["maxtrys"])
     rttstat = float(paradict["rttstat"])
+    constraint = int(paradict["constraint"])
     ptools.logger = logger
-    constraint = 3  # 1 - no constraint, 2 - constraint, 3 - both
 
     # READ ALIGMENTS
     clusters = sorted(os.listdir(alignment_dir))

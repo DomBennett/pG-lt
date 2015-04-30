@@ -38,7 +38,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # PARAMETERS
     outgroupid = paradict["outgroupid"]
     ntools.etools.Entrez.email = paradict["email"]
-    minspecies = 5
+    minspecies = int(paradict["minspecies"])
     ntools.logger = logger
     taxonomy = ['family', 'order', 'class', 'phylum', 'kingdom',
                 'superkingdom']

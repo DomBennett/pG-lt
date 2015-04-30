@@ -43,12 +43,12 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     dtools.etools.Entrez.email = paradict["email"]
     nseqs = int(paradict['nseqs'])
     thoroughness = int(paradict['thoroughness'])
-    seedsize = 10
-    maxtrys = 100
-    minnseq = 1
-    minnspp = 5
-    target = 6
-    maxpn = 0.1
+    target = int(paradict['target_ngenes'])
+    minnspp = int(paradict['minspecies_gene'])
+    minnseq = int(paradict['minnseqs_gene'])
+    maxpn = float(paradict['maxpn'])
+    seedsize = int(paradict['seedsize'])
+    maxtrys = int(paradict['maxseedtrys'])
     seqcounter = basecounter = 0
 
     # PROCESS
