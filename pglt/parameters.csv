@@ -7,11 +7,12 @@ parentid,,Nothing in default
 outgroupid,,Nothing in default
 maxtrys,1000,Max number of phylogeny attempts
 rttstat,0.5,Max RTT stat
-constraint,3,1 2 or 3 - with without or both
+constraint,3,1 2 or 3 - without with or both
 minspecies,5,5 is minimum
 minspecies_gene,5,5 is minimum
 minnseqs_gene,1,min number of sequences per gene
 target_ngenes,6,number of genes to download
 maxpn,0.1,max proportion of Ns in sequences
-seedsize,10,size of seed for filtering downloaded sequences
+votesize,10,size of number of overlapping sequences for filtering
 maxseedtrys,100,max attempts to filter downloaded sequences
+taxonomic_constraint,family-order-class-phylum-kingdom-superkingdom, ranks in taxonomic tree for constraint
