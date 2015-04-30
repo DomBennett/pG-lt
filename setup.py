@@ -36,7 +36,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
     ],
     install_requires=['setuptools', 'taxon_names_resolver', 'biopython',
-                      'dendropy', 'numpy', 'tabulate'],
+                      'dendropy', 'numpy', 'tabulate', 'python-coveralls'],
 )
 print('''
 Congratulations -- you`ve installed pglt!

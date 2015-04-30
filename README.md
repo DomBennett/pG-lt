@@ -1,4 +1,4 @@
-MassPhylogenyEstimation
-=======================
+# pG-lt
 
-Pipeline for the automated generation of phylogenies from lists of taxon names
+A python package pipeline for the automated generation of phylogenies from
+multiple lists of taxon names.
