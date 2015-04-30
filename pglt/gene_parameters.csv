@@ -1,4 +1,4 @@
-gene,names,group,taxid,minlen,maxlen,mingaps,minoverlap,minfails,maxtrys,minseedsize,maxseedsize,maxseedtrys,partition,type,notes
+gene,names,group,taxid,minlen,maxlen,mingaps,minoverlap,maxfails,maxtrys,minseedsize,maxseedsize,maxseedtrys,partition,type,notes
 COI,COI:CO1:COX1:COXI,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,mt,shallow,mitochondrial
 CYTB,cytb:cytochrome b,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,both,mitochondrial
 COII,COII:CO2:COXII:COX2,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,shallow,mitochondrial

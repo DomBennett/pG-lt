@@ -37,12 +37,12 @@ class SeqStore(dict):
     """Store species' gene sequences with functions for pulling \
 sequences for alignments and adding penalties for sequences that did \
 not align"""
-    def __init__(self, genedir, seqfiles, minfails, mingaps, minoverlap,
+    def __init__(self, genedir, seqfiles, maxfails, mingaps, minoverlap,
                  logger, wd=os.getcwd()):
         self.wd = wd
         self.logger = logger
         self.threads = getThreads(wd)
-        self.minfails = minfails  # minimum number of fails in a row
+        self.maxfails = maxfails  # minimum number of fails in a row
         self.dspp = []  # species dropped
         self.nseqs = 0  # counter for seqs
         self.blast_prop = 0.5  # the p sequences a sequence must overlap
@@ -169,7 +169,7 @@ species"""
         spp = self.keys()
         for sp in spp:
             to_drop = [ei for ei, e in enumerate(self[sp][0]) if e[1] >
-                       self.minfails]
+                       self.maxfails]
             for i in to_drop:
                 self.logger.info("Dropping [{0}] for [{1}] as nfails is \
 [{2}]".format(self[sp][0][i][0].description, sp, self[sp][0][i][1]))

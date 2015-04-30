@@ -32,10 +32,10 @@ def readSequences(download_dir, namesdict, genedict, logger, wd):
     for gene in genes:
         gene_dir = os.path.join(download_dir, gene)
         seq_files = os.listdir(gene_dir)
-        minfails = int(genedict[genekeys[gene]]["minfails"])
+        maxfails = int(genedict[genekeys[gene]]["maxfails"])
         mingaps = float(genedict[genekeys[gene]]["mingaps"])
         minoverlap = int(genedict[genekeys[gene]]["minoverlap"])
-        seqstore = atools.SeqStore(gene_dir, seq_files, minfails=minfails,
+        seqstore = atools.SeqStore(gene_dir, seq_files, maxfails=maxfails,
                                    mingaps=mingaps, minoverlap=minoverlap,
                                    logger=logger, wd=wd)
         genestore.append((gene, seqstore))

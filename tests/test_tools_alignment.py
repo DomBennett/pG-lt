@@ -88,7 +88,7 @@ class AlignmentTestSuite(unittest.TestCase):
         seqfiles = sorted(os.listdir(genedir))
         seqfiles = [e for e in seqfiles if not re.search("^\.|^log\.txt$", e)]
         self.store = atools.SeqStore(genedir=genedir, seqfiles=seqfiles,
-                                     minfails=10, mingaps=0.5, minoverlap=50,
+                                     maxfails=10, mingaps=0.5, minoverlap=50,
                                      logger=self.logger)
         self.aligner = atools.Aligner(self.store, mingaps=0.5, minoverlap=50,
                                       minseedsize=3, maxseedsize=20,

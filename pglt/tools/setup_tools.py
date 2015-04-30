@@ -359,7 +359,7 @@ def readInGenePars(gpars_file, default_gpars_file):
     genedict = {}
     # template of dict in genedict
     template = {'names': None, 'taxid': None, 'minlen': None, 'maxlen': None,
-                'mingaps': None, 'minoverlap': None, 'minfails': None,
+                'mingaps': None, 'minoverlap': None, 'maxfails': None,
                 'maxtrys': None, 'minseedsize': None, 'maxseedsize': None,
                 'maxseedtrys': None, 'partition': None, 'type': None}
     # open file, read each row and fill in template
