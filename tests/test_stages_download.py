@@ -23,7 +23,7 @@ def dummy_findBestGenes(namesdict, genedict, thoroughness, allrankids, logger,
 
 
 class Dummy_Downloader(object):
-    def __init__(self, gene_names, nseqs, thoroughness, maxpn, seedsize,
+    def __init__(self, gene_names, nseqs, thoroughness, maxpn, votesize,
                  maxtrys, minoverlap, maxlen, minlen, logger, wd):
         pass
 
@@ -40,7 +40,7 @@ genedict = {'rbcl': {'names': ['rbcl'], 'minlen': '300', 'maxlen': '2000',
 paradict = {'email': '', 'nseqs': '100', 'thoroughness': '3', 'maxlen': '2000',
             'minspecies_gene': '5', 'minspecies_gene': '5',
             'minnseqs_gene': '1', 'target_ngenes': '1', 'maxpn': '0.1',
-            'seedsize': '10', 'maxseedtrys': '100'}
+            'votesize': '10', 'maxvotetrys': '100'}
 namesdict = {}
 namesdict['query_name'] = {"txids": [1, 2], "unique_name": 'returned_name',
                            "rank": 'species'}

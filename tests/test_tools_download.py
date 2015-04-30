@@ -110,7 +110,7 @@ gene_names = ['name1', 'name2']
 nseqs = 2
 thoroughness = 3
 maxpn = 0.1
-seedsize = 3
+votesize = 3
 mingaps = 0.01
 minoverlap = 200
 maxtrys = 100
@@ -141,7 +141,7 @@ class DownloadTestSuite(unittest.TestCase):
         self.downloader = dtools.Downloader(gene_names=gene_names,
                                             nseqs=nseqs,
                                             thoroughness=thoroughness,
-                                            maxpn=maxpn, seedsize=seedsize,
+                                            maxpn=maxpn, votesize=votesize,
                                             maxtrys=maxtrys,
                                             minoverlap=minoverlap,
                                             maxlen=maxlen, minlen=minlen,

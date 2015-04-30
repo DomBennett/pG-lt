@@ -18,7 +18,7 @@ from Bio.SeqFeature import SeqFeature
 # CLASSES
 class Downloader(object):
     """Download sequences given taxids and gene_names"""
-    def __init__(self, gene_names, nseqs, thoroughness, maxpn, seedsize,
+    def __init__(self, gene_names, nseqs, thoroughness, maxpn, votesize,
                  maxtrys, minoverlap, maxlen, minlen, logger, wd=os.getcwd()):
         self.wd = wd
         self.logger = logger
@@ -27,7 +27,7 @@ class Downloader(object):
         self.nseqs = nseqs
         self.max_thoroughness = thoroughness
         self.maxpn = maxpn
-        self.seedsize = seedsize
+        self.votesize = votesize
         self.maxtrys = maxtrys
         self.minoverlap = minoverlap
         self.maxlen = maxlen
@@ -117,9 +117,9 @@ fewer matches than target nseqs"""
         filtered = [sequences[i] for i, e in enumerate(blast_bool) if e]
         # sequence pool are all sequences that are false
         seqpool = [sequences[i] for i, e in enumerate(blast_bool) if not e]
-        # return filtered if there are more than 5 sequences in
+        # return filtered if there are more than votesize sequences in
         #  filtered
-        if len(filtered) > self.seedsize:
+        if len(filtered) > self.votesize:
             return filtered, seqpool
         # else return empty list of filtered and the sequences
         else:
@@ -275,7 +275,7 @@ matches in GenBank"""
                 downloader = Downloader(gene_names=genedict[gene]["names"],
                                         nseqs=minnseq + 1,
                                         thoroughness=thoroughness, maxpn=0,
-                                        seedsize=0, maxtrys=0, minoverlap=0,
+                                        votesize=0, maxtrys=0, minoverlap=0,
                                         maxlen=0, minlen=0, logger=logger)
                 res = downloader._search(tipids)
                 # if gene is deep or both, then make sure it has

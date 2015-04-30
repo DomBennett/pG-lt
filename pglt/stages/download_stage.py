@@ -47,8 +47,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     minnspp = int(paradict['minspecies_gene'])
     minnseq = int(paradict['minnseqs_gene'])
     maxpn = float(paradict['maxpn'])
-    seedsize = int(paradict['seedsize'])
-    maxtrys = int(paradict['maxseedtrys'])
+    votesize = int(paradict['votesize'])
+    maxtrys = int(paradict['maxvotetrys'])
     seqcounter = basecounter = 0
 
     # PROCESS
@@ -80,7 +80,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
             taxids = namesdict[name]["txids"]
             downloader = dtools.Downloader(gene_names=gene_names, nseqs=nseqs,
                                            thoroughness=thoroughness,
-                                           maxpn=maxpn, seedsize=seedsize,
+                                           maxpn=maxpn, votesize=votesize,
                                            maxtrys=maxtrys,
                                            minoverlap=minoverlap,
                                            maxlen=maxlen, minlen=minlen,
