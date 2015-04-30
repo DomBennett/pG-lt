@@ -288,7 +288,7 @@ multiple genes."""
 
     def _partition(self, alignments, stops):
         """Return partition argument, write out partition postitions
-to .partitions.txt"""
+to partitions.txt"""
         if len(alignments) == 1:
             if not stops[0]:
                 return alignments, None

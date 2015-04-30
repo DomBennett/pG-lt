@@ -194,7 +194,7 @@ class PhylogenyTestSuite(unittest.TestCase):
         res = self.generator._outgroup(alignment)
         self.assertEqual(res, 'outgroup')
         # try without outgroup
-        with open(".constraint.tre", "w") as file:
+        with open("constraint.tre", "w") as file:
             Phylo.write(constraint, file, "newick")
         res = self.generator._outgroup(test_alignment)
         # should return one of the basal tips from the constraint
@@ -244,10 +244,10 @@ class PhylogenyTestSuite(unittest.TestCase):
     @unittest.skipIf(not ptools.raxml, "Requires RAxML")
     def test_raxml(self):
         # write out a .constraint.tre
-        with open('.constraint.tre', 'w') as file:
+        with open('constraint.tre', 'w') as file:
             Phylo.write(self.constraint, file, 'newick')
         # write out a .partitions.txt
-        with open('.partitions.txt', 'w') as file:
+        with open('partitions.txt', 'w') as file:
             file.write(self.partition_text)
         phylo = self.true_RAxML(test_alignment, wd=self.wd, logger=self.logger,
                                 threads=2, partitions=self.parg,
