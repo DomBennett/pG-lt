@@ -396,7 +396,8 @@ def readInPars(pars_file, default_pars_file):
                 'parentid': None, 'outgroupid': None, 'constraint': None,
                 'minspecies': None, 'minspecies_gene': None,
                 'minnseqs_gene': None, 'target_ngenes': None, 'maxpn': None,
-                'seedsize': None, 'maxseedtrys': None}
+                'votesize': None, 'maxvotetrys': None, 'taxonomic_constraint':
+                None}
     # open file, read each row, extract value
     paradict = _read(pars_file, paradict)
     # if Nones remain, use default
