@@ -291,7 +291,7 @@ def prime(directory, arguments, threads):
     record = 'Working with [{0}] names\n'.format(len(arguments['terms']))
     record += recordPars(arguments['paradict'])
     record += recordGpars(arguments['genedict'])
-    with open(os.path.join(directory, 'info.txt'), 'wd') as file:
+    with open(os.path.join(directory, 'info.txt'), 'w') as file:
         file.write(record)
 
 
