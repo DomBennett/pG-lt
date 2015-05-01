@@ -24,15 +24,15 @@ working_dir = os.path.dirname(__file__)
 # two alignments for two genes
 # N.B. I split the original concatenated alignment +1bp out. The first
 #  alignment should really be 1760 and the second 1381, not 1761 and 1380.
-with open(os.path.join(working_dir, "data", "test_alignment.p"), "rb") as file:
+with open(os.path.join(working_dir, "data", "test_alignment.p"), "r") as file:
     test_alignment = pickle.load(file)
 
 # super alignment of both genes
-with open(os.path.join(working_dir, "data", "test_alignments.p"), "rb") \
+with open(os.path.join(working_dir, "data", "test_alignments.p"), "r") \
         as file:
     test_alignments = pickle.load(file)
 
-with open(os.path.join(working_dir, "data", "test_phylo.p"), "rb") as file:
+with open(os.path.join(working_dir, "data", "test_phylo.p"), "r") as file:
     test_phylo = pickle.load(file)
 
 with open(os.path.join(working_dir, "data", "test_constraint.tre"), "r") \

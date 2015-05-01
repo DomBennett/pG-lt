@@ -31,7 +31,7 @@ outgroup_res = {'Count': 3, 'IdList': ['seq4', 'seq5', 'seq6']}
 
 # Example seqrecord for findgeneinseq
 with open(os.path.join(working_dir, 'data', "test_findgeneinseq_examplesequence\
-.p"), "rb") as file:
+.p"), "r") as file:
     sequence = pickle.load(file)
 
 

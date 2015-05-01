@@ -42,7 +42,7 @@ with open(os.path.join(working_dir, 'data', 'test_sequences.faa'),
         test_alignment = AlignIO.read(infile, "fasta")
 
 with open(os.path.join(working_dir, "data", "test_alignment.p"),
-          "rb") as file:
+          "r") as file:
     real_alignment = pickle.load(file)
 
 
@@ -114,6 +114,7 @@ class AlignmentTestSuite(unittest.TestCase):
         alignment = atools.genNonAlignment(1, 100)
         self.assertEqual(len(alignment[0]), 100)
 
+    @unittest.skipIf(no_mafft, "Requires MAFFT")
     def test_version(self):
         # try different combinations of sequences
         def genSequences(n, length):
