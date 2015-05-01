@@ -125,6 +125,9 @@ class SetupTestSuite(unittest.TestCase):
         self.assertTrue(logger.level == 10)
         # a log file has been created
         self.assertTrue(os.path.isfile('log.txt'))
+        # bring down the logger
+        stools.tearDownLogging('a_logger')
+        # remove log file
         os.remove('log.txt')
         del logger
 
@@ -217,6 +220,9 @@ class SetupTestSuite(unittest.TestCase):
         self.assertTrue(isinstance(res['genedict'], dict))
         self.assertTrue(isinstance(res['paradict'], dict))
         os.remove('names.txt')
+        # bring down the logger
+        stools.tearDownLogging('testlogger')
+        # remove its log file
         os.remove('log.txt')
 
 if __name__ == '__main__':
