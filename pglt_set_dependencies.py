@@ -84,7 +84,7 @@ if __name__ == '__main__':
             root = os.path.join(os.getcwd(), 'pglt')
         else:
             sys.exit('Error: to run locally, ensure you`re in downloaded pG-lt/')
-    with open(os.path.join(root, 'dependencies.p'), "rb") as file:
+    with open(os.path.join(root, 'dependencies.p'), "r") as file:
         depsdict = pickle.load(file)
     changes = False
     # MAFFT
