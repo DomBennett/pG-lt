@@ -390,6 +390,7 @@ class AlignmentTestSuite(unittest.TestCase):
         # last store entry will be test_alignment
         self.assertEqual(self.aligner.store[-1], test_alignment)
 
+    @unittest.skipIf(no_mafft, "Requires MAFFT")
     def test_aligner_run(self):
         # all the outgroup seqs should not align, alignment
         #  cannot have outgroup species
