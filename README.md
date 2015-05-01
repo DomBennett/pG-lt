@@ -15,7 +15,11 @@ pG-lt is a member of the phyloGenerator family.
 
 ## Installation and usage
 
-Click [here][wiki], to see the wiki for information on how to use and install.
+Available on pip: `pip install pglt`.
+Set dependencies: `pglt_set_dependencies.py`
+Run: `run_pglt.py -e [EMAIL ADDRESS]`
+
+See [wiki][wiki] for further information on how to use and install.
 
 ## Features
 
@@ -44,12 +48,14 @@ Click [here][wiki], to see the wiki for information on how to use and install.
 GPL v.2
 
 ## Authors
-[Dom Bennett][db], [Will Pearse][wp], [Lawrence Hudson][lh] and [Andy Purvis][ap]
+[Dom Bennett][db], [Will Pearse][wp], [Lawrence Hudson][lh],
+[Gerard Gorman][gg] and [Andy Purvis][ap]
 
 <!-- References -->
 [db]: https://github.com/DomBennett
 [wp]: https://github.com/willpearse
 [lh]: https://github.com/quicklizard99
+[gg]: https://github.com/ggorman
 [ap]: https://github.com/AndyPurvis
 [pG]: http://willpearse.github.io/phyloGenerator/
 [wiki]: https://github.com/DomBennett/pG-lt/wiki
