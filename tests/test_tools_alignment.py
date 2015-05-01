@@ -23,6 +23,13 @@ from Bio.Seq import Seq
 # DIRS
 working_dir = os.path.dirname(__file__)
 
+# SORT DEP
+if not atools.mafft:
+    no_mafft = True
+    atools.mafft = 'mafft'
+else:
+    no_mafft = False
+
 # TEST DATA
 test_seqs = []
 with open(os.path.join(working_dir, 'data', 'test_sequences.faa'),
@@ -107,7 +114,7 @@ class AlignmentTestSuite(unittest.TestCase):
         alignment = atools.genNonAlignment(1, 100)
         self.assertEqual(len(alignment[0]), 100)
 
-    @unittest.skipIf(not all([atools.mafft, atools.mafftq, atools.mafftx]),
+    @unittest.skipIf(not all([not no_mafft, atools.mafftq, atools.mafftx]),
                      "Requires MAFFT, MAFFT-QINSI and MAFFT-XINSI")
     def test_version(self):
         # try different combinations of sequences
@@ -121,15 +128,16 @@ class AlignmentTestSuite(unittest.TestCase):
         res = atools.version(genSequences(90, 2000), 'deep')
         self.assertEqual(res, mafft + ' --auto')
 
-    @unittest.skipIf(not atools.mafft, "Requires MAFFT")
+    @unittest.skipIf(no_mafft, "Requires MAFFT")
     def test_align(self):
         # align and check if results exist
-        res = atools.align(command='mafft --auto', sequences=test_seqs,
+        cmd = atools.mafft + ' --auto'
+        res = atools.align(command=cmd, sequences=test_seqs,
                            timeout=99999, logger=self.logger, threads=2,
                            wd=self.wd)
         self.assertTrue(res.__class__.__name__ == 'MultipleSeqAlignment')
 
-    @unittest.skipIf(not atools.mafft, "Requires MAFFT")
+    @unittest.skipIf(no_mafft, "Requires MAFFT")
     def test_add(self):
         # add to test_alignment and check if result
         #  exists
