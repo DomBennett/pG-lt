@@ -350,7 +350,7 @@ if successful"""
                                             timeout=self._getTimeout(alignment,
                                                                      sequence))
         except MafftError:
-            self.logger.debug('MAFTT error raised')
+            self.logger.debug('MAFFT error raised')
             success = False
         else:
             success = self._check(new_alignment)
@@ -409,8 +409,8 @@ def version(sequences, gene_type):
     # determine auto, qinsi or xinsi based on:
     # http://mafft.cbrc.jp/alignment/software/source66.html
     # always using default algorithms
-    if not mafftq and mafftx:  # return mafft, if no mafftq or x
-        return mafft
+    if not mafftq and not mafftx:  # return mafft, if no mafftq or x
+        return mafft + ' --auto'
     if gene_type != 'deep' or len(sequences) > 250:
         return mafft + ' --auto'
     seqlens = [len(s) for s in sequences]

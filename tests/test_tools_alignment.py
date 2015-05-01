@@ -114,17 +114,21 @@ class AlignmentTestSuite(unittest.TestCase):
         alignment = atools.genNonAlignment(1, 100)
         self.assertEqual(len(alignment[0]), 100)
 
-    @unittest.skipIf(not all([not no_mafft, atools.mafftq, atools.mafftx]),
-                     "Requires MAFFT, MAFFT-QINSI and MAFFT-XINSI")
     def test_version(self):
         # try different combinations of sequences
         def genSequences(n, length):
             s = 'A' * length
             return [s for i in range(n)]
         res = atools.version(genSequences(30, 800), 'deep')
-        self.assertEqual(res, mafftx)
+        if mafftx:
+            self.assertEqual(res, mafftx)
+        else:
+            self.assertEqual(res, mafft + ' --auto')
         res = atools.version(genSequences(90, 800), 'deep')
-        self.assertEqual(res, mafftq)
+        if mafftq:
+            self.assertEqual(res, mafftq)
+        else:
+            self.assertEqual(res, mafft + ' --auto')
         res = atools.version(genSequences(90, 2000), 'deep')
         self.assertEqual(res, mafft + ' --auto')
 
