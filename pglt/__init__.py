@@ -9,7 +9,7 @@ import pickle
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 _PARS = os.path.join(_ROOT, 'parameters.csv')
 _GPARS = os.path.join(_ROOT, 'gene_parameters.csv')
-with open(os.path.join(_ROOT, 'dependencies.p'), "rb") as file:
+with open(os.path.join(_ROOT, 'dependencies.p'), "r") as file:
     depsdict = pickle.load(file)
 _RAXML = depsdict['raxml']
 _MAFFT = depsdict['mafft']
