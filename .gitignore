@@ -29,16 +29,13 @@ nosetests.xml
 # Translations
 *.mo
 
-# Folders
-1_names
-2_download
-3_alignment
-4_phylogeny
-requires
-
-# Sublime
-*.sublime-workspace
-*.sublime-project
+# Example generated files and folders
+*1_names*
+*2_download*
+*3_alignment*
+*4_phylogeny*
+*tempfiles*
+*info.txt
 
 # Externals
 mafft*

@@ -1,0 +1,8 @@
+gene,names,group,taxid,minlen,maxlen,mingaps,minoverlap,maxfails,maxtrys,minseedsize,maxseedsize,maxseedtrys,partition,type,notes
+COI,COI:CO1:COX1:COXI,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,mt,shallow,mitochondrial
+CYTB,cytb:cytochrome b,eukaryotes,2759,300,2000,10,300,10,10,5,10,10,False,both,mitochondrial
+12S,12S:12S ribosomal RNA,eukaryotes,2759,500,2000,20,300,10,10,5,10,10,False,shallow,ribosomal mitochondrial
+18S,18S:18S ribosomal RNA,eukaryotes,2759,500,2000,20,300,10,10,5,10,10,False,deep,ribosomal nuclear
+28S,28S:28S ribosomal RNA,eukaryotes,2759,500,2000,20,300,10,10,5,10,10,False,deep,ribosomal nuclear
+rbcl,rbcl,viridiplantae,33090,300,2000,10,300,10,10,5,10,10,False,both,chloroplast
+matk,matk,viridiplantae,33090,300,2000,10,300,10,10,5,10,10,False,shallow,chloroplast
