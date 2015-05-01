@@ -16,7 +16,9 @@ pG-lt is a member of the phyloGenerator family.
 ## Installation and usage
 
 Available on pip: `pip install pglt`.
+
 Set dependencies: `pglt_set_dependencies.py`
+
 Run: `run_pglt.py -e [EMAIL ADDRESS]`
 
 See [wiki][wiki] for further information on how to use and install.
