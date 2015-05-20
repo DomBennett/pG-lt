@@ -36,6 +36,7 @@ nosetests.xml
 *4_phylogeny*
 *tempfiles*
 *info.txt
+!tests/data/*
 
 # Externals
 mafft*
