@@ -30,15 +30,18 @@ nosetests.xml
 *.mo
 
 # Example generated files and folders
-*1_names*
-*2_download*
-*3_alignment*
-*4_phylogeny*
-*tempfiles*
-*info.txt
-!tests/data/*
+examples/*/1_names/
+examples/*/2_download/
+examples/*/3_alignment/
+examples/*/4_phylogeny
+examples/*/tempfiles
+examples/*/info.txt
 
 # Externals
 mafft*
 raxml
 blastn
+
+# Unignore test data
+!tests/data/test_reset/
+!tests/data/test_reset/names_0/
