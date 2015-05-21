@@ -87,8 +87,8 @@ run pG-lt here?')
         self._print('-'*70)
         while True:
             self._print('Reset `folders` to previous stages.')
-            self._print('This will delete all files on folders from but not \
-including the stage number given')
+            self._print('This will delete all files in folders from, but not \
+including, the stage number given')
             if not stage:
                 stage = raw_input('Enter stage (1-3): ')
             if int(stage) <= 3 and int(stage) > 0:
