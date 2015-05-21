@@ -201,9 +201,7 @@ class Runner(object):
             temp_dir = os.path.join(folder, 'tempfiles')
             if not os.path.isdir(temp_dir):
                 arguments = sortArgs(directory=folder, email=self.email,
-                                     logger=self.logger,
-                                     default_pars_file=self._pars,
-                                     default_gpars_file=self._gpars)
+                                     logger=self.logger)
                 prime(folder, arguments, self.threads_per_worker)
 
     def _worker(self):

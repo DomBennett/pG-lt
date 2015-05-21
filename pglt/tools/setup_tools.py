@@ -15,12 +15,14 @@ import csv
 import logging
 import platform
 from datetime import datetime
+from reseter_tools import Reseter
 from special_tools import clean
-from special_tools import Reseter
 from special_tools import stats
 from special_tools import getThreads
 
 # GLOBALS
+PARS = None  # both set at init
+GPARS = None
 pglt_version = None  # set at run_pglt.py
 pglt_doc = None
 pglt_year = None
@@ -113,7 +115,10 @@ numbers 1 through 4.'
         clean()
         sys.exit('Files and folders deleted')
     if args.reset:
-        reseter = Reseter()
+        # first read default paradict and genedict
+        paradict = readInPars('')
+        genedict = readInGenePars('')
+        reseter = Reseter(paradict=paradict, genedict=genedict)
         reseter.run()
     if args.restart:
         if args.retry:
@@ -328,7 +333,7 @@ def readInNames(directory):
     return terms
 
 
-def readInGenePars(gpars_file, default_gpars_file):
+def readInGenePars(gpars_file):
     """Read gene_parameters.csv. Return list of dictionaries."""
     # TODO: too complex, consider breaking up
     def _read(gpars_file, template, genes=None):
@@ -354,7 +359,7 @@ def readInGenePars(gpars_file, default_gpars_file):
         return genedict
     # check if file exists, else use default
     if not os.path.isfile(gpars_file):
-        return readInGenePars(default_gpars_file, None)
+        return readInGenePars(GPARS)
     # genedicts
     genedict = {}
     # template of dict in genedict
@@ -373,11 +378,11 @@ def readInGenePars(gpars_file, default_gpars_file):
                 break
     if nones:
         # run _read for defaults and limit to genes in genedict
-        genedict = _read(default_gpars_file, template, genedict.keys())
+        genedict = _read(GPARS, template, genedict.keys())
     return genedict
 
 
-def readInPars(pars_file, default_pars_file):
+def readInPars(pars_file):
     """Read gene_parameters.csv. Return dictionary."""
     def _read(pars_file, paradict):
         # open csv, and replace all Nones
@@ -389,7 +394,7 @@ def readInPars(pars_file, default_pars_file):
         return paradict
     # check if file exists, else use default
     if not os.path.isfile(pars_file):
-        return readInPars(default_pars_file, None)
+        return readInPars(PARS)
     # template
     paradict = {'nseqs': None, 'naligns': None, 'nphylos': None,
                 'thoroughness': None, 'maxtrys': None, 'rttstat': None,
@@ -407,11 +412,11 @@ def readInPars(pars_file, default_pars_file):
             nones = True
             break
     if nones:
-        paradict = _read(default_pars_file, paradict)
+        paradict = _read(PARS, paradict)
     return paradict
 
 
-def sortArgs(directory, email, logger, default_pars_file, default_gpars_file):
+def sortArgs(directory, email, logger):
     """Search for relevant files in dir, return list of arguments"""
     # find text file and read, raise error if fail
     try:
@@ -422,16 +427,14 @@ def sortArgs(directory, email, logger, default_pars_file, default_gpars_file):
     # find gene parameter file and read, raise error if fail
     try:
         genedict = readInGenePars(os.path.join(directory,
-                                               'gene_parameters.csv'),
-                                  default_gpars_file)
+                                               'gene_parameters.csv'))
     except IOError:
         logger.error(ioerror_msg.format('gene_parameters.csv', directory))
         raise PrimingError()
     # find parameter file and read, raise error if fail
     try:
         paradict = readInPars(os.path.join(directory,
-                                           'parameters.csv'),
-                              default_pars_file)
+                                           'parameters.csv'))
     except IOError:
         logger.error(ioerror_msg.format('parameters.csv', directory))
         raise PrimingError()

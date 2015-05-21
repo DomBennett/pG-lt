@@ -32,8 +32,7 @@ def dummyNamesStageWError(wd, logger):
     raise(stools.TooFewSpeciesError)
 
 
-def dummySortArgs(directory, email, logger, default_pars_file,
-                  default_gpars_file):
+def dummySortArgs(directory, email, logger):
     pass
 
 

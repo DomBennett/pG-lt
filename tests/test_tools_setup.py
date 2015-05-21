@@ -14,6 +14,10 @@ import pglt.tools.setup_tools as stools
 
 # GLOBALS
 working_dir = os.path.dirname(__file__)
+stools.PARS = os.path.join(working_dir, 'data',
+                           'test_default_parameters.csv')
+stools.GPARS = os.path.join(working_dir, 'data',
+                            'test_default_gene_parameters.csv')
 
 
 # DUMMIES
@@ -179,20 +183,16 @@ class SetupTestSuite(unittest.TestCase):
 
     def test_read_in_gene_pars(self):
         # read in test parameters in /data
-        default_file = os.path.join(working_dir, 'data',
-                                    'test_default_gene_parameters.csv')
         test_file = os.path.join(working_dir, 'data',
                                  'test_gene_parameters.csv')
-        res = stools.readInGenePars(test_file, default_file)
+        res = stools.readInGenePars(test_file)
         # COI minlen should be 'a different value'
         self.assertEqual(res['COI']['minlen'], 'a different value')
 
     def test_read_in_pars(self):
         # read in test parameters in /data
-        default_file = os.path.join(working_dir, 'data',
-                                    'test_default_parameters.csv')
         test_file = os.path.join(working_dir, 'data', 'test_parameters.csv')
-        res = stools.readInPars(test_file, default_file)
+        res = stools.readInPars(test_file)
         # nseqs should be 'a different value'
         self.assertEqual(res['nseqs'], 'a different value')
 
@@ -202,20 +202,14 @@ class SetupTestSuite(unittest.TestCase):
         email = 'an.email'
         logger = stools.setUpLogging(verbose=False, debug=False,
                                      logname='testlogger')
-        default_pars_file = os.path.join(working_dir, 'data',
-                                         'test_default_parameters.csv')
-        default_gpars_file = os.path.join(working_dir, 'data',
-                                          'test_default_gene_parameters.csv')
         with self.assertRaises(stools.PrimingError):
-            stools.sortArgs(directory, email, logger, default_pars_file,
-                            default_gpars_file)
+            stools.sortArgs(directory, email, logger)
         # create a names.txt and test arguments returned
         names = ['name1', 'name2', 'name3', 'name4', 'name5', 'name6']
         with open('names.txt', 'w') as file:
             for name in names:
                 file.write(name + '\n')
-        res = stools.sortArgs(directory, email, logger, default_pars_file,
-                              default_gpars_file)
+        res = stools.sortArgs(directory, email, logger)
         self.assertTrue(isinstance(res['terms'], list))
         self.assertTrue(isinstance(res['genedict'], dict))
         self.assertTrue(isinstance(res['paradict'], dict))

@@ -1,19 +1,16 @@
 #! /bin/usr/env python
 # D.J. Bennett
-# 06/11/2014
+# 21/05/2015
 """
-pglt special tools
+pglt reseter tools
 """
 
 # PACKAGES
 import re
 import os
-import time
 import sys
-import subprocess
 import shutil
 import pickle
-from tabulate import tabulate
 
 
 # CLASSES
@@ -26,6 +23,7 @@ class Reseter(object):
     2 - Change general parameters for all in `folders`
     3 - Change gene parameters for all in `folders`
     4 - Specify `folders` and return to these options
+    5 - Restore to defaults for all in `folders`
 
     By default, `folders` is a list of all pG-lt generated folders in current
     directory. To specify the folders for which you want to change settings,
@@ -35,19 +33,8 @@ class Reseter(object):
 
     To exit, press ctrl+c at any time.
     '''
-    parameter_keys = ['nseqs', 'naligns', 'nphylos', 'thoroughness',
-                      'parentid', 'outgroupid', 'maxtrys', 'rttstat',
-                      'threads']
-    # numerical only at this stage
-    gene_parameter_keys = ['minlen', 'maxlen', 'mingaps', 'minoverlap',
-                           'maxtrys', 'minseedsize', 'maxseedsize',
-                           'maxseedtrys']
-    gene_keys = ['NADHs1', 'NADHs2', 'NADHs3', 'NADHs4', 'NADHs5', 'NADHs6',
-                 'NADHs7', 'NADHs8', 'NADHs9', 'NADHs10', 'NADHs11', 'NADHs12',
-                 'COI', 'CYTB', 'COII', '12S', '16S', '18S', '28S', 'rbcl',
-                 'matk']
 
-    def __init__(self, wd=os.getcwd()):
+    def __init__(self, paradict, genedict, wd=os.getcwd()):
         self.wd = wd
         folders = os.listdir(wd)
         if 'tempfiles' not in folders:
@@ -58,6 +45,12 @@ run pG-lt here?')
         folders = [os.path.join(wd, e) for e in folders]
         self.folders = folders
         self.backup_folders = folders
+        self.parameter_keys = paradict.keys()
+        self.parameter_keys.append('threads')
+        self.gene_parameter_keys = genedict[genedict.keys()[0]].keys()
+        self.gene_keys = genedict.keys()
+        self.paradict = paradict
+        self.genedict = genedict
 
     def _print(self, str):
         '''Special print'''
@@ -99,7 +92,8 @@ run pG-lt here?')
             if int(stage) <= 3 and int(stage) > 0:
                 break
             else:
-                self._print('Invalid stage!')
+                stage = None
+                self._print('Invalid stage')
         counter = 0
         stagenames = {'1': '1_names', '2': '2_download', '3': '3_alignment',
                       '4': '4_phylogeny'}
@@ -135,6 +129,7 @@ Available options:')
             if not key:
                 key = raw_input('Enter parameter name of setting to change: ')
             if key not in self.parameter_keys:
+                key = None
                 self._print('Invalid parameter name!')
             else:
                 break
@@ -174,9 +169,10 @@ Available options:')
             if gene in self.gene_keys:
                 break
             else:
-                self._print('Invalid gene name!')
+                gene = None
+                self._print('Invalid gene name')
         while True:
-            self._print('Enter parameter name of setting to change.\
+            self._print('Enter parameter name of setting to change. \
 Available options:')
             self._optionPrint(self.gene_parameter_keys)
             if not key:
@@ -184,7 +180,8 @@ Available options:')
             if key in self.gene_parameter_keys:
                 break
             else:
-                self._print('Invalid parameter name!')
+                key = None
+                self._print('Invalid parameter name')
         if not value:
             value = raw_input('Enter new parameter setting: ')
         counter = 0
@@ -213,6 +210,46 @@ Available options:')
                             format(folder))
             self.folders.append(os.path.join(self.wd, folder))
 
+    def _restore(self, for_genedict=None, for_paradict=None, check=True):
+        '''Save paradict and/or genedict in all `folders`'''
+        while True:
+            if for_genedict is None:
+                for_genedict = raw_input('Restore default gene parameters? \
+(y/n)')
+            if for_genedict.lower() == 'y':
+                for_genedict = True
+                break
+            elif for_genedict.lower() == 'n':
+                for_genedict = False
+                break
+            else:
+                self._print('Invalid argument')
+        while True:
+            if for_paradict is None:
+                for_paradict = raw_input('Restore default parameters? \
+(y/n)')
+            if for_paradict.lower() == 'y':
+                for_paradict = True
+                break
+            elif for_paradict.lower() == 'n':
+                for_paradict = False
+                break
+            else:
+                self._print('Invalid argument')
+        if not for_genedict and not for_paradict:
+            return(None)
+        if check:
+            _ = raw_input('Are you sure you want to restore to defaults? \
+This is unreversable! Ctrl+c to exit, or hit enter to contiune')
+            del _
+        for folder in self.folders:
+            if for_paradict:
+                self._writePickledFile(folder=folder, filename='paradict.p',
+                                       pickled=self.paradict)
+            if for_genedict:
+                self._writePickledFile(folder=folder, filename='genedict.p',
+                                       pickled=self.genedict)
+
     def run(self):
         '''Run reset'''
         try:
@@ -221,7 +258,7 @@ Available options:')
                 self._print('\n{0} RESET MODE {0}'.format(' '*29))
                 self._print('-'*70)
                 self._print(self.options_msg.format(self.wd))
-                option = str(raw_input('Enter option number (1-4): '))
+                option = str(raw_input('Enter option number (1-5): '))
                 if '1' == option:
                     self._resetstage()
                 if '2' == option:
@@ -230,143 +267,8 @@ Available options:')
                     self._resetgeneparameters()
                 if '4' == option:
                     self._setfolders()
+                if '5' == option:
+                    self._restore()
                 # TODO: reset the ones that failed
         except KeyboardInterrupt:
             sys.exit('\nExiting reset mode ....')
-
-
-# FUNCTIONS
-def timeit(func, **kwargs):
-    """Time a function (platform independent)"""
-    # http://stackoverflow.com/questions/10884751/python-timeit-and-program-output
-    if sys.platform == "win32":
-        # On Windows, the best timer is time.clock()
-        default_timer = time.clock
-    else:
-        # On most other platforms the best timer is time.time()
-        default_timer = time.time
-    t0 = default_timer()
-    output = func(**kwargs)
-    t1 = default_timer()
-    return output, t1-t0
-
-
-def getThreads(wd=None):
-    """Find number of cores on machine (platform independent). If wd, \
-search wd for pickled threads.p."""
-    if wd:
-        filepath = os.path.join(wd, 'threads.p')
-        if os.path.isfile(filepath):
-            with open(filepath, "rb") as file:
-                nthreads = pickle.load(file)
-        else:
-            nthreads = 1
-        return nthreads
-    if sys.platform == 'darwin':
-        # find threads for a mac
-        cmd = "system_profiler SPHardwareDataType | grep Cores | awk \
-'{print $5}'"
-    elif sys.platform == 'linux2':
-        # find threads for a unix
-        cmd = "cat /proc/cpuinfo | grep processor | tail -1 | awk '{print $3}'"
-    else:
-        # TODO: work out n cores for windows
-        # TODO: add a threads parameter to parameters.csv
-        return 1
-    s = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                         shell=True)
-    nthreads = s.stdout.readline()
-    try:
-        nthreads = int(nthreads)
-    except:
-        nthreads = 1
-    return nthreads
-
-
-def clean():
-    """Remove all pglt files and folders"""
-    # remove log.txt in parent folder
-    try:
-        os.remove('log.txt')
-    except OSError:
-        pass
-
-    # remove tempfiles
-    try:
-        shutil.rmtree('tempfiles')
-    except OSError:
-        pass
-
-    # remove resolved_names
-    try:
-        shutil.rmtree('resolved_names')
-    except OSError:
-        pass
-
-    # go through all subdirs and remove files in list
-    files_to_remove = ['info.txt', 'log.txt']
-    folders = os.listdir(os.getcwd())
-    while folders:
-        temp_folder = folders.pop()
-        temp_files_to_remove = files_to_remove[:]
-        while temp_files_to_remove:
-            temp_file_to_remove = temp_files_to_remove.pop()
-            try:
-                os.remove(os.path.join(temp_folder, temp_file_to_remove))
-            except OSError:
-                pass
-
-    # go through all subdirs and remove folders in list
-    folders_to_remove = ['1_names', '2_download', '3_alignment', '4_phylogeny',
-                         'tempfiles']
-    folders = os.listdir(os.getcwd())
-    while folders:
-        temp_folder = folders.pop()
-        temp_folders_to_remove = folders_to_remove[:]
-        while temp_folders_to_remove:
-            temp_folder_to_remove = temp_folders_to_remove.pop()
-            try:
-                shutil.rmtree(os.path.join(temp_folder, temp_folder_to_remove))
-            except OSError:
-                pass
-
-
-def check(stage, stagecounter, directory):
-        '''Check stage'''
-        progress_path = os.path.join(directory, 'tempfiles', 'progress.p')
-        if not os.path.isfile(progress_path):
-            stagecounter[stage]['not run'] += 1
-        else:
-            with open(progress_path, "rb") as file:
-                progress = pickle.load(file)
-            stagecounter[stage][progress[stage]] += 1
-        return stagecounter
-
-
-def stats():
-    """Print success status of folders"""
-    # counter dicts
-    statecounter = {'not run': 0, 'failed': 0, 'success': 0}
-    stagecounter = {'1': statecounter.copy(), '2': statecounter.copy(),
-                    '3': statecounter.copy(), '4': statecounter.copy()}
-    consensus_counter = 0
-    # get all folders
-    folders = os.listdir(os.getcwd())
-    avoid_pattern = "^\.|^log\.txt$|resolved_names|README|tempfiles"
-    folders = [e for e in folders if not re.search(avoid_pattern, e)]
-    stages = ['1', '2', '3', '4']
-    for folder in folders:
-        for stage in stages:
-            stagecounter = check(stage=stage, stagecounter=stagecounter,
-                                 directory=os.path.join(os.getcwd(), folder))
-        if os.path.isfile(os.path.join(os.getcwd(), folder, '4_phylogeny',
-                                       'consensus.tre')):
-            consensus_counter += 1
-    print ('\n{0}/{1} folders with phylogenetic trees....\n'.
-           format(consensus_counter, len(folders)))
-    headers = ['Stage', 'Not run', 'Failed', 'Success']
-    rows = []
-    for stage in stages:
-        sc = stagecounter[stage]
-        rows.append([stage, sc['not run'], sc['failed'], sc['success']])
-    print(tabulate(rows, headers, tablefmt="simple"))

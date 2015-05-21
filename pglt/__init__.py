@@ -21,9 +21,9 @@ import tools
 import stages
 # add stages -- a dictionary of stage functions -- to Stager
 tools.system_tools.Stager.STAGES = stages.STAGES
-# add default pars roots to Runner
-tools.system_tools.Runner._pars = _PARS
-tools.system_tools.Runner._gpars = _GPARS
+# add defaults to setup_tools
+tools.setup_tools.PARS = _PARS
+tools.setup_tools.GPARS = _GPARS
 # version (https://www.python.org/dev/peps/pep-0440/)
 __version__ = 'v0.1-beta'
 __year__ = '2015'
