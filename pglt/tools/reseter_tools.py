@@ -87,6 +87,8 @@ run pG-lt here?')
         self._print('-'*70)
         while True:
             self._print('Reset `folders` to previous stages.')
+            self._print('This will delete all files on folders from but not \
+including the stage number given')
             if not stage:
                 stage = raw_input('Enter stage (1-3): ')
             if int(stage) <= 3 and int(stage) > 0:
@@ -97,7 +99,7 @@ run pG-lt here?')
         counter = 0
         stagenames = {'1': '1_names', '2': '2_download', '3': '3_alignment',
                       '4': '4_phylogeny'}
-        stages = range(int(stage), 5)
+        stages = range(int(stage)+1, 5)
         for folder in self.folders:
             # if progress exists, read in progress.p, delete stage folders
             progress = self._readPickledFile(folder=folder,

@@ -60,7 +60,7 @@ class ReseterTestSuite(unittest.TestCase):
         progress = self.reseter._readPickledFile(folder=study_folder,
                                                  filename='progress.p')
         self.assertEqual(progress['1'], 'success')
-        self.assertEqual(progress['2'], 'not run')
+        self.assertEqual(progress['2'], 'success')
         self.assertEqual(progress['3'], 'not run')
         self.assertEqual(progress['4'], 'not run')
 
