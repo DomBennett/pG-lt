@@ -259,6 +259,7 @@ class Runner(object):
                 clock(stage=stage)  # clock stage for all folders
                 logMessage('stage-end', logger=self.logger, stage=stage,
                            counter=self.counter)
+            self.counter = 0
         logMessage('program-end', logger=self.logger)
 
 
