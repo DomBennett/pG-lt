@@ -18,6 +18,15 @@ from pglt.tools.system_tools import MissingDepError
 
 
 # FUNCTIONS
+def countNAligns(naligns, gene_dir):
+    """Return number start and end naligns"""
+    # sometimes if pG-lt is restarted, alignments will have been made
+    # but not enough in a single run. This funciton searches the genedir
+    # to see if some already exist
+    files = os.listdir(gene_dir)
+    files = [f for f in files if f.endswith('.faa')]
+    return len(files), naligns+1
+
 def readSequences(download_dir, namesdict, genedict, logger, wd):
     """Read sequences into a genestore"""
     # add alignments key to namesdict
@@ -65,10 +74,11 @@ def setUpAligner(gene, genedict, genekeys, seqstore, logger, wd):
 def runAligner(aligner, naligns, namesdict, gene_dir, logger):
     """Run aligner, save alignments as their made"""
     # run for naligns
-    each_counter = 0
     alignment = None
+    start, end = countNAligns (naligns, gene_dir)
+    each_counter = start
     try:
-        for i in range(1, naligns + 1):
+        for i in range(start, end):
             logger.info(".... iteration [{0}]".format(i))
             while not alignment:
                 alignment = aligner.run()
