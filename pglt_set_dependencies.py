@@ -57,6 +57,7 @@ def runCommand(args):
 def getVersion(args):
     """Return version number of program"""
     # first check its absolute
+    print args
     if not os.path.isabs(args[0]):
         print abserr_msg.format(args[0])
         return
@@ -88,7 +89,7 @@ if __name__ == '__main__':
         depsdict = pickle.load(file)
     changes = False
     # MAFFT
-    if args.mafft and not mafft or args.overwrite:
+    if args.mafft and (not mafft or args.overwrite):
         version = getVersion([args.mafft, '-u'])
         if version and version > 7.0:
             depsdict['mafft'] = args.mafft
@@ -96,7 +97,7 @@ if __name__ == '__main__':
         else:
             print 'No MAFFT detected -- requires MAFFT v7+'
     # MAFFTQ
-    if args.mafftq and not mafftq or args.overwrite:
+    if args.mafftq and (not mafftq or args.overwrite):
         version = getVersion([args.mafftq, '-u'])
         if version and version > 7.0:
             depsdict['mafftq'] = args.mafftq
@@ -104,7 +105,7 @@ if __name__ == '__main__':
         else:
             print 'No mafft-qinsi detected'
     # MAFFTX
-    if args.mafftx and not mafftx or args.overwrite:
+    if args.mafftx and (not mafftx or args.overwrite):
         version = getVersion([args.mafftx, '-u'])
         if version and version > 7.0:
             depsdict['mafftx'] = args.mafftx
@@ -112,7 +113,7 @@ if __name__ == '__main__':
         else:
             print 'No mafft-xinsi detected'
     # RAXML
-    if args.raxml and not raxml or args.overwrite:
+    if args.raxml and (not raxml or args.overwrite):
         version = getVersion([args.raxml, '-version'])
         if version and version > 7.0:
             depsdict['raxml'] = args.raxml
@@ -120,7 +121,7 @@ if __name__ == '__main__':
         else:
             print 'No RAxML detected -- requires RAxML v7+'
     # BLAST
-    if args.blastn and not blastn or args.overwrite:
+    if args.blastn and (not blastn or args.overwrite):
         version = getVersion([args.blastn, '-h'])
         if version and version > 2.0:
             depsdict['blastn'] = args.blastn

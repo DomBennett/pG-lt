@@ -9,6 +9,9 @@ import pickle
 from pglt import __version__ as pglt_version
 from pglt import __doc__ as pglt_doc
 from pglt import __year__ as pglt_year
+from pglt import _MAFFT as mafft
+from pglt import _BLASTN as blastn
+from pglt import _BLASTN as raxml
 import pglt.tools.setup_tools as stools
 from pglt.tools.system_tools import Runner
 
@@ -67,6 +70,9 @@ pG-lt?')
 
 
 if __name__ == '__main__':
+    # make sure pglt knows about deps
+    if not mafft or not raxml or not blastn:
+        sys.exit('Missing essential dependencies -- use `pglt_set_dependencies.py`')
     # parse args
     restart, retry, email, threads, verbose, debug, stages = \
         stools.parseArguments()
