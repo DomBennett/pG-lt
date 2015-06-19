@@ -30,11 +30,13 @@ nosetests.xml
 *.mo
 
 # Example generated files and folders
+examples/log.txt
 examples/*/1_names/
 examples/*/2_download/
 examples/*/3_alignment/
 examples/*/4_phylogeny
 examples/*/tempfiles
+examples/tempfiles/
 examples/*/info.txt
 
 # Externals
