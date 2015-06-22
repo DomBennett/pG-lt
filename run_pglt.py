@@ -72,7 +72,7 @@ pG-lt?')
 if __name__ == '__main__':
     # make sure pglt knows about deps
     if not mafft or not raxml or not blastn:
-        sys.exit('Missing essential dependencies -- use `pglt_set_dependencies.py`')
+        print('WARNING: Missing essential dependencies -- use `pglt_set_dependencies.py`')
     # parse args
     restart, retry, email, threads, verbose, debug, stages = \
         stools.parseArguments()
