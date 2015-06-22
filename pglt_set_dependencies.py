@@ -57,9 +57,7 @@ def runCommand(args):
 def getVersion(args):
     """Return version number of program"""
     # first check its absolute
-    print args
     if not os.path.isabs(args[0]):
-        print abserr_msg.format(args[0])
         return
     # check if program exists
     try:
