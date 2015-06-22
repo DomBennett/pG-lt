@@ -28,19 +28,23 @@ def genPhylogeny():
 
 
 # DUMMIES
+def dummyCountNPhylos(nphylos, f):
+    return nphylos
+
 class DummyAlignmentStore(object):
     def __init__(self, clusters, genedict, allrankids, indir, logger):
         pass
 
 
 class DummyGenerator(object):
-    phylogenies = [genPhylogeny()]
+    phylogenies = []
 
     def __init__(self, alignment_store, rttstat, outdir, maxtrys, logger,
                  wd):
         pass
 
     def run(self):
+        self.phylogenies.append(genPhylogeny())
         return True
 
 
@@ -62,8 +66,10 @@ class PhylogenyStageTestSuite(unittest.TestCase):
         # stub out
         self.true_AlignmentStore = pstage.ptools.AlignmentStore
         self.true_Generator = pstage.ptools.Generator
+        self.true_countNPhylos = pstage.ptools.countNPhylos
         pstage.ptools.Generator = DummyGenerator
         pstage.ptools.AlignmentStore = DummyAlignmentStore
+        pstage.ptools.countNPhylos = dummyCountNPhylos
         # create input data
         os.mkdir('tempfiles')
         with open(os.path.join('tempfiles', "paradict.p"), "wb") as file:
@@ -97,6 +103,7 @@ class PhylogenyStageTestSuite(unittest.TestCase):
         # stub in
         pstage.ptools.Generator = self.true_Generator
         pstage.ptools.AlignmentStore = self.true_AlignmentStore
+        pstage.ptools.countNPhylos = self.true_countNPhylos
 
     def test_phylogeny_stage(self):
         # run

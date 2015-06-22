@@ -241,6 +241,13 @@ class PhylogenyTestSuite(unittest.TestCase):
     def test_generator_run(self):
         self.assertTrue(self.generator.run())
 
+    def test_countnphylos(self):
+        filecontents = '\n' * 50
+        with open('distribution.tre', 'w') as f:
+            f.write(filecontents)
+        res = ptools.countNPhylos(100, 'distribution.tre')
+        self.assertEqual(res, 50)
+
     @unittest.skipIf(not ptools.raxml, "Requires RAxML")
     def test_raxml(self):
         # write out a .constraint.tre

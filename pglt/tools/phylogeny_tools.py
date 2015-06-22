@@ -354,6 +354,13 @@ to partitions.txt"""
             self.trys += 1
             return False
 
+def countNPhylos(nphylos, file):
+    """Return number of nphylos still needed to be generated"""
+    with open(file) as f:
+        for i, l in enumerate(f):
+            pass
+    return nphylos - (i + 1)
+
 
 def RAxML(alignment, wd, logger, threads, outgroup=None, partitions=None,
           constraint=None, timeout=999999999):
@@ -425,13 +432,13 @@ def consensus(phylogenies, outdir, min_freq=0.5, is_rooted=True,
         Phylo.write(phylogenies, file, 'newick')
     # create dendropy list
     trees = dp.TreeList()
-    trees.read_from_path('.for_consensus.tre', "newick", as_rooted=True)
+    trees.read_from_path('.for_consensus.tre', "newick", rooting='force-rooted')
     os.remove('.for_consensus.tre')
     # https://groups.google.com/forum/#!topic/dendropy-users/iJ32ibnS5Bc
-    sd = dp.treesplit.SplitDistribution(taxon_set=trees.taxon_set)
-    sd.is_rooted = is_rooted
-    tsum = dp.treesum.TreeSummarizer()
-    tsum.count_splits_on_trees(trees, split_distribution=sd,
-                               trees_splits_encoded=trees_splits_encoded)
+    sd = dp.SplitDistribution(taxon_namespace=trees.taxon_namespace)
+    #sd.is_rooted = is_rooted
+    tsum = dp.calculate.treesum.TreeSummarizer()
+    tsum.count_splits_on_trees(trees, split_distribution=sd)
+                               #trees_splits_encoded=trees_splits_encoded)
     consensus = tsum.tree_from_splits(sd, min_freq=min_freq)
     consensus.write_to_path(os.path.join(outdir, 'consensus.tre'), "newick")

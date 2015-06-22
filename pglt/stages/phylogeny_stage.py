@@ -63,13 +63,13 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
                                  maxtrys=maxtrys, logger=logger, wd=temp_dir)
     if 1 == constraint:
         generator.constraint = False
-    for i in range(nphylos):
+    for i in range(ptools.countNPhylos(nphylos, outfile)):
         logging.info(".... Iteration [{0}]".format(i + 1))
         success = False
         while not success:
             success = generator.run()
-    with open(outfile, "w") as file:
-        counter = Phylo.write(generator.phylogenies, file, 'newick')
+        with open(outfile, "a") as file:
+            counter = Phylo.write(generator.phylogenies[-1], file, 'newick')
 
     # GENERATE CONSENSUS
     logging.info('Generating consensus ....')
@@ -81,13 +81,13 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         logging.info('Repeating unconstrained ....')
         generator.phylogenies = []
         generator.constraint = False
-        for i in range(nphylos):
+        for i in range(ptools.countNPhylos(nphylos, outfile_unconstrained)):
             logging.info(".... Iteration [{0}]".format(i + 1))
             success = False
             while not success:
                 success = generator.run()
-        with open(outfile_unconstrained, "w") as file:
-            counter = Phylo.write(generator.phylogenies, file, 'newick')
+            with open(outfile_unconstrained, "a") as file:
+                counter = Phylo.write(generator.phylogenies[-1], file, 'newick')
 
     # FINISH MESSAGE
     logging.info('Stage finished. Generated [{0}] phylogenies.'.
