@@ -1,4 +1,4 @@
-DendroPy>=3.12.0
+DendroPy>=4.0.0
 biopython>=1.64
 numpy==1.8.1
 tabulate>=0.7.4
