@@ -356,6 +356,9 @@ to partitions.txt"""
 
 def countNPhylos(nphylos, file):
     """Return number of nphylos still needed to be generated"""
+    if not os.path.isfile(file):
+        return nphylos
+    i = 0
     with open(file) as f:
         for i, l in enumerate(f):
             pass
@@ -412,13 +415,18 @@ RAxML (external program)."""
         raise RuntimeError()
 
 
-def consensus(phylogenies, outdir, min_freq=0.5, is_rooted=True,
+def consensus(outdir, min_freq=0.5, is_rooted=True,
               trees_splits_encoded=False):
     """Generate a rooted consensus tree"""
     # first ensure that all trees in the distribution have same number
     # of taxa, otherwise, make it so by dropping taxa not present in
     # all trees
     all_tip_names = []
+    # read in from distribution.tre
+    phylogenies = []
+    phyloparse = Phylo.parse(os.path.join(outdir, 'distribution.tre'), 'newick')
+    for p in phyloparse:
+        phylogenies.append(p)
     for phylogeny in phylogenies:
         terminals = phylogeny.get_terminals()
         all_tip_names.append([e.name for e in terminals])

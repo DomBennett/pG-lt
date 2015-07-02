@@ -265,7 +265,9 @@ class PhylogenyTestSuite(unittest.TestCase):
     def test_consensus(self):
         # create a list of trees and make a consensus
         phylogenies = [self.phylo for i in range(100)]
-        ptools.consensus(phylogenies=phylogenies, outdir='.', min_freq=0.5,
+        with open('distribution.tre', 'w') as file:
+            Phylo.write(phylogenies, file, 'newick')
+        ptools.consensus(outdir='.', min_freq=0.5,
                          is_rooted=True, trees_splits_encoded=False)
         self.assertTrue(os.path.isfile('consensus.tre'))
 

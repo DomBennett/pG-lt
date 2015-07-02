@@ -73,8 +73,8 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
 
     # GENERATE CONSENSUS
     logging.info('Generating consensus ....')
-    ptools.consensus(generator.phylogenies, phylogeny_dir, min_freq=0.5,
-                     is_rooted=True, trees_splits_encoded=False)
+    ptools.consensus(phylogeny_dir, min_freq=0.5, is_rooted=True,
+                     trees_splits_encoded=False)
 
     # RUN UNCONSTRAINED
     if 3 == constraint:
