@@ -77,7 +77,7 @@ def dummy_add(alignment, sequence, timeout, logger, wd, threads):
     return test_alignment
 
 
-def dummy_check_alignment(alignment, mingaps, minoverlap, minlen, logger):
+def dummy_check_alignment(alignment, maxgaps, minoverlap, minlen, logger):
     return True
 
 
@@ -95,9 +95,9 @@ class AlignmentTestSuite(unittest.TestCase):
         seqfiles = sorted(os.listdir(genedir))
         seqfiles = [e for e in seqfiles if not re.search("^\.|^log\.txt$", e)]
         self.store = atools.SeqStore(genedir=genedir, seqfiles=seqfiles,
-                                     maxfails=10, mingaps=0.5, minoverlap=50,
+                                     maxfails=10, maxgaps=0.5, minoverlap=50,
                                      logger=self.logger)
-        self.aligner = atools.Aligner(self.store, mingaps=0.5, minoverlap=50,
+        self.aligner = atools.Aligner(self.store, maxgaps=0.5, minoverlap=50,
                                       minseedsize=3, maxseedsize=20,
                                       maxtrys=10, maxseedtrys=10,
                                       gene_type='shallow', outgroup=False,
@@ -163,10 +163,10 @@ class AlignmentTestSuite(unittest.TestCase):
         # all true
         self.assertTrue(all(res))
 
-    def test_checkalignment_arg_mingaps(self):
-        # check mingaps argument (proportion of internal gaps)
+    def test_checkalignment_arg_maxgaps(self):
+        # check maxgaps argument (proportion of internal gaps)
         # check with good alignment
-        res = atools.checkAlignment(test_alignment, mingaps=0.5, minoverlap=1,
+        res = atools.checkAlignment(test_alignment, maxgaps=0.5, minoverlap=1,
                                     minlen=1, logger=self.logger)
         self.assertTrue(res)
         # check with bad alignment
@@ -176,7 +176,7 @@ class AlignmentTestSuite(unittest.TestCase):
         bad_seq = SeqRecord(Seq(bad_seq), id='bad')
         bad_alignment = test_alignment[:]
         bad_alignment.append(bad_seq)
-        res = atools.checkAlignment(bad_alignment, mingaps=0.1, minoverlap=50,
+        res = atools.checkAlignment(bad_alignment, maxgaps=0.1, minoverlap=50,
                                     minlen=1, logger=self.logger)
         self.assertFalse(res)
 
@@ -189,13 +189,13 @@ class AlignmentTestSuite(unittest.TestCase):
         bad_seq = SeqRecord(Seq(bad_seq), id='bad')
         bad_alignment = test_alignment[:]
         bad_alignment.append(bad_seq)
-        res = atools.checkAlignment(bad_alignment, mingaps=0.5, minoverlap=50,
+        res = atools.checkAlignment(bad_alignment, maxgaps=0.5, minoverlap=50,
                                     minlen=1, logger=self.logger)
         self.assertFalse(res)
 
     def test_checkalignment_arg_minlen(self):
         # check minlen argument
-        res = atools.checkAlignment(test_alignment, mingaps=0.5, minoverlap=1,
+        res = atools.checkAlignment(test_alignment, maxgaps=0.5, minoverlap=1,
                                     minlen=101, logger=self.logger)
         self.assertFalse(res)
 

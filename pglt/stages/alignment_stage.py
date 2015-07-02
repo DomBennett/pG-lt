@@ -42,10 +42,10 @@ def readSequences(download_dir, namesdict, genedict, logger, wd):
         gene_dir = os.path.join(download_dir, gene)
         seq_files = os.listdir(gene_dir)
         maxfails = int(genedict[genekeys[gene]]["maxfails"])
-        mingaps = float(genedict[genekeys[gene]]["mingaps"])
+        maxgaps = float(genedict[genekeys[gene]]["maxgaps"])
         minoverlap = int(genedict[genekeys[gene]]["minoverlap"])
         seqstore = atools.SeqStore(gene_dir, seq_files, maxfails=maxfails,
-                                   mingaps=mingaps, minoverlap=minoverlap,
+                                   maxgaps=maxgaps, minoverlap=minoverlap,
                                    logger=logger, wd=wd)
         genestore.append((gene, seqstore))
     return namesdict, genestore, genekeys
@@ -54,7 +54,7 @@ def readSequences(download_dir, namesdict, genedict, logger, wd):
 def setUpAligner(gene, genedict, genekeys, seqstore, logger, wd):
     """Set-up Aligner class for gene"""
     # get parameters
-    mingaps = float(genedict[genekeys[gene]]["mingaps"])
+    maxgaps = float(genedict[genekeys[gene]]["maxgaps"])
     minoverlap = int(genedict[genekeys[gene]]["minoverlap"])
     minseedsize = int(genedict[genekeys[gene]]["minseedsize"])
     maxseedsize = int(genedict[genekeys[gene]]["maxseedsize"])
@@ -63,7 +63,7 @@ def setUpAligner(gene, genedict, genekeys, seqstore, logger, wd):
     gene_type = genedict[genekeys[gene]]['type']
     outgroup = 'outgroup' in seqstore.keys()
     # set up aligner obj
-    aligner = atools.Aligner(seqstore, mingaps=mingaps, minoverlap=minoverlap,
+    aligner = atools.Aligner(seqstore, maxgaps=maxgaps, minoverlap=minoverlap,
                              minseedsize=minseedsize, maxseedsize=maxseedsize,
                              maxtrys=maxtrys, maxseedtrys=maxseedtrys,
                              gene_type=gene_type, outgroup=outgroup,

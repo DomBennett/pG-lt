@@ -101,7 +101,7 @@ def dummy_blast(query, subj, minoverlap, logger, wd, threads):
     return query, [0, 100]
 
 
-def dummy_checkAlignment(alignment, mingaps, minoverlap, minlen, logger):
+def dummy_checkAlignment(alignment, maxgaps, minoverlap, minlen, logger):
     return alignment
 
 # downloader init variables
@@ -111,7 +111,7 @@ nseqs = 2
 thoroughness = 3
 maxpn = 0.1
 votesize = 3
-mingaps = 0.01
+maxgaps = 0.01
 minoverlap = 200
 maxtrys = 100
 maxlen = 2000

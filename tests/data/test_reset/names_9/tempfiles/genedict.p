@@ -10,7 +10,7 @@ sS'maxtrys'
 p5
 S'10'
 p6
-sS'mingaps'
+sS'maxgaps'
 p7
 S'10'
 p8

@@ -19,7 +19,7 @@ working_dir = os.path.dirname(__file__)
 
 # DUMMIES
 class Dummy_SeqStore(object):
-    def __init__(self, gene_dir, seq_files, maxfails, mingaps, minoverlap,
+    def __init__(self, gene_dir, seq_files, maxfails, maxgaps, minoverlap,
                  logger, wd):
         pass
 
@@ -31,7 +31,7 @@ class Dummy_SeqStore(object):
 
 
 class Dummy_Aligner(object):
-    def __init__(self, seqstore, mingaps, minoverlap, minseedsize,
+    def __init__(self, seqstore, maxgaps, minoverlap, minseedsize,
                  maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup,
                  logger, wd):
         pass
@@ -46,10 +46,10 @@ with open(os.path.join(working_dir, 'data',
     alignment = AlignIO.read(file, 'fasta')
 
 # reference genedict
-genedict = {'rbcl': {'mingaps': 0.1, 'minoverlap': 0.1, 'maxtrys': 100,
+genedict = {'rbcl': {'maxgaps': 0.1, 'minoverlap': 0.1, 'maxtrys': 100,
                      'minseedsize': 5, 'maxseedsize': 20, 'maxseedtrys': 10,
                      'maxfails': 10, 'type': 'both'},
-            'COI': {'mingaps': 0.1, 'minoverlap': 0.1, 'maxtrys': 100,
+            'COI': {'maxgaps': 0.1, 'minoverlap': 0.1, 'maxtrys': 100,
                     'minseedsize': 5, 'maxseedsize': 20, 'maxseedtrys': 10,
                     'maxfails': 10, 'type': 'shallow'}}
 

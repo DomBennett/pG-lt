@@ -37,7 +37,7 @@ class SeqStore(dict):
     """Store species' gene sequences with functions for pulling \
 sequences for alignments and adding penalties for sequences that did \
 not align"""
-    def __init__(self, genedir, seqfiles, maxfails, mingaps, minoverlap,
+    def __init__(self, genedir, seqfiles, maxfails, maxgaps, minoverlap,
                  logger, wd=os.getcwd()):
         self.wd = wd
         self.logger = logger
@@ -46,7 +46,7 @@ not align"""
         self.dspp = []  # species dropped
         self.nseqs = 0  # counter for seqs
         self.blast_prop = 0.5  # the p sequences a sequence must overlap
-        self.mingaps = mingaps
+        self.maxgaps = maxgaps
         self.minoverlap = minoverlap
         for i, seqfile in enumerate(seqfiles):
             name = re.sub('\.fasta$', '', seqfile)
@@ -189,14 +189,14 @@ species"""
 
 class Aligner(object):
     """Build alignments from seqstore"""
-    def __init__(self, seqstore, mingaps, minoverlap, minseedsize,
+    def __init__(self, seqstore, maxgaps, minoverlap, minseedsize,
                  maxseedsize, maxtrys, maxseedtrys, gene_type, outgroup,
                  logger, wd=os.getcwd()):
         self.wd = wd
         self.logger = logger
         self.threads = getThreads(wd=wd)
         self.seqstore = seqstore
-        self.mingaps = mingaps
+        self.maxgaps = maxgaps
         self.minoverlap = minoverlap
         self.minseedsize = minseedsize
         self.maxtrys = 2  # trys for alignment attempts
@@ -242,7 +242,7 @@ class Aligner(object):
         return self.timeout
 
     def _check(self, alignment):
-        return checkAlignment(alignment, self.mingaps, self.minoverlap,
+        return checkAlignment(alignment, self.maxgaps, self.minoverlap,
                               self.minlen, self.logger)
 
     def _return(self):
@@ -533,7 +533,7 @@ with subject given parameters."""
     return bools, positions
 
 
-def checkAlignment(alignment, mingaps, minoverlap, minlen, logger):
+def checkAlignment(alignment, maxgaps, minoverlap, minlen, logger):
     """Determine if an alignment is good or not based on given \
 parameters. Return bool"""
     # TODO: too complex, consider breaking up
@@ -570,7 +570,7 @@ parameters. Return bool"""
             logger.debug('........ alignment too little overlap')
             return False
         ngap = calcNgap(sequence)
-        if ngap > mingaps:
+        if ngap > maxgaps:
             logger.debug('........ alignment too many gaps')
             return False
     return True
