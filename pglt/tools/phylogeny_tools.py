@@ -432,6 +432,8 @@ def consensus(outdir, min_freq=0.5, is_rooted=True,
         all_tip_names.append([e.name for e in terminals])
     counted = Counter(sum(all_tip_names, []))
     to_drop = [e for e in counted.keys() if counted[e] < len(phylogenies)]
+    if (len(counted.keys()) - len(to_drop)) < 3:
+        return False
     for tip_names, phylogeny in zip(all_tip_names, phylogenies):
         dropping = [e for e in tip_names if e in to_drop]
         for tip_name in dropping:
@@ -450,3 +452,4 @@ def consensus(outdir, min_freq=0.5, is_rooted=True,
                                #trees_splits_encoded=trees_splits_encoded)
     consensus = tsum.tree_from_splits(sd, min_freq=min_freq)
     consensus.write_to_path(os.path.join(outdir, 'consensus.tre'), "newick")
+    return True

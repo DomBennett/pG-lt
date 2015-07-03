@@ -18,7 +18,7 @@ from pglt.tools.system_tools import MissingDepError
 # RUN
 def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # PRINT STAGE
-    logging.info("Stage 4: Phylogeny generation")
+    logger.info("Stage 4: Phylogeny generation")
 
     # DIRS
     alignment_dir = os.path.join(wd, '3_alignment')
@@ -50,21 +50,21 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     # READ ALIGMENTS
     clusters = sorted(os.listdir(alignment_dir))
     clusters = [e for e in clusters if not re.search("^\.|^log\.txt$", e)]
-    logging.info("Reading in alignments ....")
+    logger.info("Reading in alignments ....")
     alignment_store = ptools.AlignmentStore(clusters=clusters,
                                             genedict=genedict,
                                             allrankids=allrankids,
                                             indir=alignment_dir, logger=logger)
 
     # GENERATE TREE DIST
-    logging.info("Generating [{0}] phylogenies ....".format(nphylos))
+    logger.info("Generating [{0}] phylogenies ....".format(nphylos))
     generator = ptools.Generator(alignment_store=alignment_store,
                                  rttstat=rttstat, outdir=phylogeny_dir,
                                  maxtrys=maxtrys, logger=logger, wd=temp_dir)
     if 1 == constraint:
         generator.constraint = False
     for i in range(ptools.countNPhylos(nphylos, outfile)):
-        logging.info(".... Iteration [{0}]".format(i + 1))
+        logger.info(".... Iteration [{0}]".format(i + 1))
         success = False
         while not success:
             success = generator.run()
@@ -72,17 +72,19 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
             counter = Phylo.write(generator.phylogenies[-1], file, 'newick')
 
     # GENERATE CONSENSUS
-    logging.info('Generating consensus ....')
-    ptools.consensus(phylogeny_dir, min_freq=0.5, is_rooted=True,
-                     trees_splits_encoded=False)
+    logger.info('Generating consensus ....')
+    success = ptools.consensus(phylogeny_dir, min_freq=0.5, is_rooted=True,
+                               trees_splits_encoded=False)
+    if not success:
+        logger.info('.... can`t generate consensus, too few names in all trees.')
 
     # RUN UNCONSTRAINED
     if 3 == constraint:
-        logging.info('Repeating unconstrained ....')
+        logger.info('Repeating unconstrained ....')
         generator.phylogenies = []
         generator.constraint = False
         for i in range(ptools.countNPhylos(nphylos, outfile_unconstrained)):
-            logging.info(".... Iteration [{0}]".format(i + 1))
+            logger.info(".... Iteration [{0}]".format(i + 1))
             success = False
             while not success:
                 success = generator.run()
@@ -90,5 +92,5 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
                 counter = Phylo.write(generator.phylogenies[-1], file, 'newick')
 
     # FINISH MESSAGE
-    logging.info('Stage finished. Generated [{0}] phylogenies.'.
+    logger.info('Stage finished. Generated [{0}] phylogenies.'.
                  format(counter))
