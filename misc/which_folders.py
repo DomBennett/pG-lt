@@ -1,11 +1,15 @@
 # 03/07/2015
 # Dom Bennett
 # Which folders succeeded or failed for which stages
+"""
+Usage: python which_folders.py [STAGE NUMBER] [Y/N]
+"""
 
 # LIBS
 import os
 import sys
 import sys
+import pickle
 
 # FUNCTIONS
 def checkProgress(folder, stage, succeed):
@@ -41,4 +45,4 @@ if __name__ == '__main__':
         if checkProgress(folder, stage, succeed):
             print folder
             counter += 1
-    sys.exit('Complete. [' + str (counter), '] folders.')
+    sys.exit('Complete. [{0}] folders.'.format(counter))
