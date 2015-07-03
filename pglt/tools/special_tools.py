@@ -51,14 +51,14 @@ search wd for pickled threads.p."""
         # find threads for a unix
         cmd = "cat /proc/cpuinfo | grep processor | tail -1 | awk '{print $3}'"
     else:
-        # TODO: work out n cores for windows
-        # TODO: add a threads parameter to parameters.csv
-        return 1
+        return None
     s = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                          shell=True)
     nthreads = s.stdout.readline()
     try:
         nthreads = int(nthreads)
+        if sys.platform == 'linux2':
+            nthreads += 1
     except:
         nthreads = 1
     return nthreads

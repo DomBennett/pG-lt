@@ -65,11 +65,14 @@ def calcWorkers(threads, nfolders, min_threads_per_worker=2,
     """Calculate the number of workers for parallel running of folders"""
     # get available threads on machine
     available_threads = getThreads()
-    # make sure threads arg is not greater than those available
-    if threads > available_threads:
-        sys.exit('More threads specified than avaiable on machine')
-    if threads == -1:
-        threads = available_threads
+    if available_threads:
+        # make sure threads arg is not greater than those available
+        if threads > available_threads:
+            sys.exit('More threads specified than avaiable on machine')
+        if threads == -1:
+            threads = available_threads
+    # make sure threads is absolute
+    threads = abs(threads)
     # calc min_threads_per_worker if it is greater than threads
     if min_threads_per_worker > threads:
         min_threads_per_worker = threads
