@@ -166,9 +166,9 @@ class Stager(object):
         return failed
 
     @classmethod
-    def run_all(klass, wd, stages):
+    def run_all(klass, wd, stages, retry=False):
         for s in stages:
-            if not check(stage=s, directory=wd):
+            if not check(stage=s, directory=wd, retry=retry):
                 Stager(wd, s).run()
 
 

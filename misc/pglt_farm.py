@@ -7,16 +7,17 @@ print 'WARNING: This script is for running pG-lt in parallel. It must only be \
 run from a .sh script and for folders for which pG-lt stages 1-2 have already \
 been executed. It requires MPI and mpi4py.'
 
+# PACKAGES
 import os
 import sys
 import pickle
 from mpi4py import MPI
 from pglt.tools.system_tools import Stager
 
-
 # GLOBALS
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
+retry = True  # retry folders that have failed
 
 
 # FUNCTIONS
@@ -25,7 +26,7 @@ def generate_trees(folder):
         generates a distribution of trees.'''
     print "running job ", folder
     # Run stages 3 (alignment) and 4 (phylogeny)
-    Stager.run_all(wd=folder, stages=['3', '4'])
+    Stager.run_all(wd=folder, stages=['3', '4'], retry=retry)
 
     # Check with Dom that the data has also been written to disk at this point.
     return
