@@ -13,17 +13,26 @@ import pickle
 folders = os.listdir('.')
 counter = 0
 for folder in folders:
-    gdpath = os.path.join(folder, 'tempfiles', 'genedict.p')
-    if os.path.isfile(gdpath):
+    parpath = os.path.join(folder, 'tempfiles', 'paradict.p')
+    if os.path.isfile(parpath):
         counter += 1
-        with open(gdpath, "rb") as file:
-            genedict = pickle.load(file)
-        rna_genes = ['12S', '16S', '18S', '28S']
-        genes = [e for e in genedict.keys() if e not in rna_genes]
-        for g in genes:
-            genedict[g]['maxgaps'] = 10
-        for rg in rna_genes:
-            genedict[rg]['maxgaps'] = 20
-        with open(gdpath, "wb") as file:
-            pickle.dump(genedict, file)
+        with open(parpath, "rb") as file:
+            pardict = pickle.load(file)
+        pardict['minspecies'] = '5'
+        with open(parpath, "wb") as file:
+            pickle.dump(pardict, file)
+print '[{0}] folders'.format(counter)
+
+# Here converting all progress dicts
+folders = os.listdir('.')
+counter = 0
+for folder in folders:
+    prgpath = os.path.join(folder, 'tempfiles', 'progress.p')
+    if os.path.isfile(prgpath):
+        counter += 1
+        with open(prgpath, "rb") as file:
+            progress = pickle.load(file)
+        progress['1'] = 'not run'
+        with open(prgpath, "wb") as file:
+            pickle.dump(progress, file)
 print '[{0}] folders'.format(counter)
