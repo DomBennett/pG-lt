@@ -99,8 +99,8 @@ def genNamesDict(resolver, logger, parentid=None):
                 # if there are no unclaimed, just use children
                 if not unclaimed:
                     txids = children
-            else:
-                # if no children, just use rident
+            if 'txids' not in locals():
+                # if no unclaimed children, just use rident
                 txids = [str(rident)]
             namesdict[key] = {"txids": txids,
                               "unique_name": 'Non-unique resolution',
