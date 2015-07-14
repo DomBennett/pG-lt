@@ -1,5 +1,5 @@
 DendroPy>=4.0.0
 biopython>=1.64
-numpy==1.8.1
+numpy>=1.8.1
 tabulate>=0.7.4
 taxon-names-resolver>=1.0.3
