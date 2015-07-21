@@ -19,6 +19,7 @@ from reseter_tools import Reseter
 from special_tools import clean
 from special_tools import stats
 from special_tools import getThreads
+from pglt import _PTHREADS as pthreads
 
 # GLOBALS
 PARS = None  # both set at init
@@ -142,6 +143,8 @@ numbers 1 through 4.'
     # check threads is a valid argument
     if args.threads == 0 or args.threads < -1:
         sys.exit('Invalid threads argument, must be -1 or >0.')
+    if pthreads and args.threads < 2:
+        sys.exit('pG-lt is set to use a parallelised version of RAxML, threads must be >= 2')
     return False, False, args.email, args.threads, args.verbose, args.debug,\
         stages
 
