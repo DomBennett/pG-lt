@@ -58,6 +58,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
 
     # GENERATE TREE DIST
     logger.info("Generating [{0}] phylogenies ....".format(nphylos))
+    counter = 0
     generator = ptools.Generator(alignment_store=alignment_store,
                                  rttstat=rttstat, outdir=phylogeny_dir,
                                  maxtrys=maxtrys, logger=logger, wd=temp_dir)
@@ -69,7 +70,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
         while not success:
             success = generator.run()
         with open(outfile, "a") as file:
-            counter = Phylo.write(generator.phylogenies[-1], file, 'newick')
+            counter += Phylo.write(generator.phylogenies[-1], file, 'newick')
 
     # GENERATE CONSENSUS
     logger.info('Generating consensus ....')
@@ -89,7 +90,7 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
             while not success:
                 success = generator.run()
             with open(outfile_unconstrained, "a") as file:
-                counter = Phylo.write(generator.phylogenies[-1], file, 'newick')
+                counter += Phylo.write(generator.phylogenies[-1], file, 'newick')
 
     # FINISH MESSAGE
     logger.info('Stage finished. Generated [{0}] phylogenies.'.
