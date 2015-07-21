@@ -40,6 +40,7 @@ search wd for pickled threads.p."""
         if os.path.isfile(filepath):
             with open(filepath, "rb") as file:
                 nthreads = pickle.load(file)
+            nthreads = int(nthreads)
         else:
             nthreads = 1
         return nthreads
