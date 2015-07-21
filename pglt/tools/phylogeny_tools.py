@@ -21,6 +21,7 @@ from system_tools import TerminationPipe
 from system_tools import RAxMLError
 from special_tools import getThreads
 from pglt import _RAXML as raxml
+from pglt import _PTHREADS as pthreads
 
 
 # CLASSES
@@ -129,7 +130,7 @@ class Generator(object):
         self.logger = logger
         self.wd = wd
         self.threads = getThreads(wd=wd)
-        self.threads = self.threads + 1  # RAxML runs a small master process
+        self.threads = self.threads
         self.trys = 0
         self.phylogenies = []
         self.maxtrys = maxtrys
@@ -373,7 +374,10 @@ RAxML (external program)."""
     input_file = 'phylogeny_in.phylip'
     output_file = 'phylogeny_out'
     file_line = ' -s ' + input_file + ' -n ' + output_file
-    options = ' -p ' + str(random.randint(0, 10000000)) + ' -T ' + str(threads)
+    options = ' -p ' + str(random.randint(0, 10000000))
+    # only add -T arg if pthreads version
+    if pthreads:
+        options += ' -T ' + str(threads)
     if outgroup:
         options += ' -o ' + outgroup
     with open(os.path.join(wd, input_file), "w") as file:
