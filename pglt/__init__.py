@@ -16,6 +16,7 @@ _MAFFT = depsdict['mafft']
 _MAFFTQ = depsdict['mafftq']
 _MAFFTX = depsdict['mafftx']
 _BLASTN = depsdict['blastn']
+_PTHREADS = depsdict['pthreads']  # T/F - parallelised or not?
 del depsdict
 import tools
 import stages
