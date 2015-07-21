@@ -116,6 +116,12 @@ if __name__ == '__main__':
         if version and version > 7.0:
             depsdict['raxml'] = args.raxml
             changes = True
+            # get pthreads
+            initout = runCommand([args.raxml, '-T', '2'])
+            if 'Option -T does not' in initout:
+                depsdict['pthreads'] = False
+            else:
+                depsdict['pthreads'] = True
         else:
             print 'No RAxML detected -- requires RAxML v7+'
     # BLAST
