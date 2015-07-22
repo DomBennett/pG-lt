@@ -21,13 +21,10 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     logger.info("Stage 1: Names resolution")
 
     # DIRS
-    names_dir = os.path.join(wd, '1_names')
-    phylogeny_dir = os.path.join(wd, '4_phylogeny')
+    outdir = os.path.join(wd, '1_names')
     temp_dir = os.path.join(wd, 'tempfiles')
-    if not os.path.isdir(names_dir):
-        os.mkdir(names_dir)
-    if not os.path.isdir(phylogeny_dir):
-        os.mkdir(phylogeny_dir)
+    if not os.path.isdir(outdir):
+        os.mkdir(outdir)
 
     # INPUT
     with open(os.path.join(temp_dir, "paradict.p"), "rb") as file:
@@ -80,9 +77,9 @@ def run(wd=os.getcwd(), logger=logging.getLogger('')):
     with open(os.path.join(temp_dir, "allrankids.p"), "wb") as file:
         pickle.dump(allrankids, file)
     # write namesdict as csv
-    ntools.writeNamesDict(names_dir, namesdict)
+    ntools.writeNamesDict(outdir, namesdict)
     # write taxon tree
-    ntools.Phylo.write(taxontree, os.path.join(phylogeny_dir, "taxontree.tre"),
+    ntools.Phylo.write(taxontree, os.path.join(outdir, "taxontree.tre"),
                        "newick")
 
     # FINISH MESSAGE

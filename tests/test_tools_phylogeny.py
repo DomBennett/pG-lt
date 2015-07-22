@@ -87,8 +87,10 @@ class PhylogenyTestSuite(unittest.TestCase):
         clusters = ['gene1_cluster0', 'gene2_cluster0']
         indir = '3_alignment'
         outdir = '4_phylogeny'
+        ndir = '1_names'
         os.mkdir(indir)
         os.mkdir(outdir)
+        os.mkdir(ndir)
         j = 0
         for cluster in clusters:
             os.mkdir(os.path.join(indir, cluster))
@@ -98,7 +100,7 @@ class PhylogenyTestSuite(unittest.TestCase):
                 with open(directory, "w") as file:
                     AlignIO.write(test_alignments[j], file, "fasta")
             j += 1
-        with open(os.path.join(outdir, "taxontree.tre"), "w") as file:
+        with open(os.path.join(ndir, "taxontree.tre"), "w") as file:
             Phylo.write(test_phylo, file, "newick")
         self.alignment_store = ptools.AlignmentStore(clusters=clusters,
                                                      genedict=genedict,
@@ -133,7 +135,7 @@ class PhylogenyTestSuite(unittest.TestCase):
                 os.remove(ptool_file)
             except OSError:
                 pass
-        phylogeny_folders = ['3_alignment', '4_phylogeny']
+        phylogeny_folders = ['1_names', '3_alignment', '4_phylogeny']
         while phylogeny_folders:
             try:
                 phylogeny_folder = phylogeny_folders.pop()

@@ -138,7 +138,7 @@ class Generator(object):
         self.genes = alignment_store.keys()
         self.rttstat = rttstat
         self.outdir = outdir
-        self.taxontree = os.path.join(outdir, "taxontree.tre")
+        self.taxontree = os.path.join('1_names', "taxontree.tre")
         self.constraint = os.path.isfile(self.taxontree)
 
     def _getTrys(self, outdir):
