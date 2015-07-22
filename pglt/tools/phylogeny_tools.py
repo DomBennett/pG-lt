@@ -131,7 +131,7 @@ class Generator(object):
         self.wd = wd
         self.threads = getThreads(wd=wd)
         self.threads = self.threads
-        self.trys = 0
+        self.trys = self._getTrys(outdir)
         self.phylogenies = []
         self.maxtrys = maxtrys
         self.alignment_store = alignment_store
@@ -140,6 +140,20 @@ class Generator(object):
         self.outdir = outdir
         self.taxontree = os.path.join(outdir, "taxontree.tre")
         self.constraint = os.path.isfile(self.taxontree)
+
+    def _getTrys(self, outdir):
+        '''Return number of attempts using try_counter'''
+        if os.path.isfile(os.path.join(outdir, 'try_counter')):
+            with open(os.path.join(outdir, 'try_counter'), 'r') as f:
+                trys = int(f.readline())
+            return trys
+        else:
+            return 0
+
+    def _addTrys(self):
+        '''Write to try_counter the number of trys'''
+        with open(os.path.join(self.outdir, 'try_counter'), 'w') as f:
+            f.write(str(self.trys))
 
     def _test(self, phylogeny):
         """Return phylogeny if RTT stat is below max RTT stat"""
@@ -338,6 +352,7 @@ to partitions.txt"""
         """Generate phylogeny from alignments"""
         if self.trys > self.maxtrys:
             raise RAxMLError()
+        self._addTrys()
         # choose random alignment for each gene
         alignments, stops = self.alignment_store.pull()
         # set up
@@ -453,7 +468,6 @@ def consensus(outdir, min_freq=0.5, is_rooted=True,
     #sd.is_rooted = is_rooted
     tsum = dp.calculate.treesum.TreeSummarizer()
     tsum.count_splits_on_trees(trees, split_distribution=sd)
-                               #trees_splits_encoded=trees_splits_encoded)
     consensus = tsum.tree_from_splits(sd, min_freq=min_freq)
     consensus.write_to_path(os.path.join(outdir, 'consensus.tre'), "newick")
     return True

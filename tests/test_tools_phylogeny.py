@@ -126,7 +126,7 @@ class PhylogenyTestSuite(unittest.TestCase):
                        '.partitions.txt.reduced', 'partitions.txt',
                        'RAxML_bestTree..phylogeny_out',
                        'RAxML_log..phylogeny_out',
-                       'RAxML_result..phylogeny_out']
+                       'RAxML_result..phylogeny_out', 'try_counter']
         while ptool_files:
             try:
                 ptool_file = ptool_files.pop()
