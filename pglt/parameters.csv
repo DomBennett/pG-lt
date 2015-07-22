@@ -5,7 +5,7 @@ nphylos,100,Number of phylogenies to generate from alignments
 thoroughness,3,Either 1 2 or 3
 parentid,,Nothing in default
 outgroupid,,Nothing in default
-maxtrys,1000,Max number of phylogeny attempts
+maxtrys,100,Max number of phylogeny attempts
 rttstat,0.5,Max RTT stat
 constraint,3,1 2 or 3 - without with or both
 minspecies,5,5 is minimum
