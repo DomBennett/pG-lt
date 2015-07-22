@@ -179,7 +179,7 @@ class Generator(object):
             else:
                 self.logger.info('........ poor phylogeny, retrying')
         else:
-            self.logger.debug('.... no phylogeny, retrying')
+            self.logger.info('.... no phylogeny, retrying')
 
     def _concatenate(self, alignments):
         """Return single alignment from list of alignments for
