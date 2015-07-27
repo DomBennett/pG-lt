@@ -148,7 +148,11 @@ def stats():
            format(consensus_counter, len(folders)))
     headers = ['Stage', 'Not run', 'Failed', 'Success']
     rows = []
+    cfailed = 0
     for stage in stages:
         sc = stagecounter[stage]
-        rows.append([stage, sc['not run'], sc['failed'], sc['success']])
+        uniq_fails = sc['failed'] - cfailed
+        rows.append([stage, sc['not run'], uniq_fails,
+                     sc['success']])
+        cfailed = uniq_fails  # count the number of fails in previous stage
     print(tabulate(rows, headers, tablefmt="simple"))
